@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator, MaxValueValidator
-from django.core.validators import ValidationError
+from django.core.exceptions import ValidationError
 
 
 class Profile(models.Model):
@@ -218,6 +218,13 @@ class Comment(models.Model):
 
     def __str__(self):
         return f"Comment by {self.user.username}"
+
+    def clean(self):
+        if not self.episode and not self.movie:
+            raise ValidationError("Comment must be linked to either Episode or Movie")
+        if self.episode and self.movie:
+            raise ValidationError("Comment cannot be linked to both Episode and Movie")
+
 
 
 class CommentLike(models.Model):
