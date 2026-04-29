@@ -4,7 +4,7 @@
 
 <!-- ================= BANNER ================= -->
 <section class="banner style-1 banner-slider">
-    {% for anime in featured_animes|slice:":3" %}
+    {% for anime in featured_animes %}
     <div class="banner-block overflow-hidden style-{{ forloop.counter }}"
          {% if anime.thumb_img %}
          style="background-image: url('{{ anime.thumb_img.image.url }}'); background-size: cover; background-position: center;"
