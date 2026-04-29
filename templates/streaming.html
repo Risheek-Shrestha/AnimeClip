@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block body %}
+
+<section class="breadcrumb sec-mar">
+    <div class="container">
+        <div class="breadcrumb-content">
+            <ul>
+                <li><a href="{% url 'index' %}">Home</a></li>
+                <li><a>Listing</a></li>
+                <li><a class="active">{{ anime.title }}</a></li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<section class="video sec-mar">
+    <div class="container">
+        <div class="row">
+
+            <!-- LEFT VIDEO -->
+            <div class="col-lg-9 col-sm-8 col-12">
+
+                <!-- VIDEO PLAYER -->
+                <div class="video-box">
+                    {% with src=episode.sources.all.0 %}
+                        {% if src and src.video %}
+                            <video
+                                id="main-player"
+                                controls
+                                width="100%"
+                                preload="none"
+                                {% if src.poster %}
+                                    poster="{{ src.poster.url }}"
+                                {% elif anime.thumb_img %}
+                                    poster="{{ anime.thumb_img.image.url }}"
+                                {% elif anime.banner_img %}
+                                    poster="{{ anime.banner_img.image.url }}"
+                                {% endif %}
+                            >
+                                <source src="{{ src.video.url }}" type="video/mp4">
+                                Your browser does not support the video tag.
+                            </video>
+                        {% else %}
+                            <!-- Fallback: show image if no video source yet -->
+                            {% if anime.banner_img %}
+                                <img class="detail-image" src="{{ anime.banner_img.image.url }}" alt="{{ anime.title }}">
+                            {% elif anime.thumb_img %}
+                                <img class="detail-image" src="{{ anime.thumb_img.image.url }}" alt="{{ anime.title }}">
+                            {% endif %}
+                            <p class="text-center mt-2">No video source available for this episode.</p>
+                        {% endif %}
+                    {% endwith %}
+                </div>
+
+            </div>
+
+            <!-- SIDEBAR -->
+            <div class="col-lg-3 col-sm-4 col-12">
+                <ul class="video-sidebar overflow-auto">
+                    {% for season in seasons %}
+                    <li>
+                        <a href="#" class="accordion-button" data-bs-toggle="collapse"
+                           data-bs-target="#season{{ season.id }}">
+                            Season {{ season.number }}
+                            <span><i class="fa fa-chevron-down"></i></span>
+                        </a>
+                        <div id="season{{ season.id }}" class="accordion-collapse collapse
+                            {% for ep in season.episodes.all %}{% if ep.id == episode.id %}show{% endif %}{% endfor %}">
+                            <ul class="accordion-body">
+                                {% for ep in season.episodes.all %}
+                                <li>
+                                    <a href="{% url 'streaming' ep.id %}"
+                                       class="{% if ep.id == episode.id %}active{% endif %}">
+                                        Episode {{ ep.number }}
+                                        {% if ep.title %} — {{ ep.title }}{% endif %}
+                                    </a>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+        </div>
+
+        <!-- INFO -->
+        <div class="video-content bg-color-black">
+            <div class="row">
+
+                <div class="col-lg-3 col-md-4 col-sm-12">
+                    <p>You're watching <b>Episode {{ episode.number }}</b>
+                        {% if episode.title %}<br><small>{{ episode.title }}</small>{% endif %}
+                    </p>
+                </div>
+
+                <div class="col-lg-6 col-md-8 col-sm-12">
+                    <div class="server-blok">
+                        {% regroup episode.sources.all by type as sources_group %}
+                        {% for group in sources_group %}
+                            <p class="primery">{{ group.grouper|upper }}</p>
+                            <div class="btn-block">
+                                {% for src in group.list %}
+                                    <a href="{% url 'streaming' episode.id %}"
+                                       class="{% if forloop.first %}active{% endif %}">
+                                        {{ src.label }}
+                                    </a>
+                                {% endfor %}
+                            </div>
+                            <br>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="col-lg-3">
+                    <p class="text">RATING: {{ anime.rating }} /10</p>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+</section>
+
+{% endblock body %}

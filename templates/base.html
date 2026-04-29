@@ -1,0 +1,312 @@
+{% load static %}
+
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ title }}</title>
+
+    <link href="{% static 'assets/css/bootstrap.min.css' %}" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'assets/css/font-awesome.css' %}">
+    <link HREF="{% static 'assets/css/slick-theme.css' %}" rel="stylesheet">
+    <link href="{% static 'assets/css/slick.css' %}" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'assets/css/style.css' %}?v=2.0">
+
+</head>
+<body class="sticky-header">
+<div class="main-wrapper" id="main-wrapper">
+    <header class="header style-1">
+        <div class="container">
+            <!-- Start Mainmanu Nav -->
+            <nav class="navbar navbar-expand-lg">
+                <a class="navbar-brand" href="{% url 'index' %}"><img src="{% static 'assets/media/logo.png' %}" alt=""></a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mynavbar">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="collapse navbar-collapse" id="mynavbar">
+                    <ul class="navbar-nav ms-auto mainmenu">
+                        <li class="menu-item-has-children">
+                            <a href="{% url 'index' %}">Anime</a>
+                        </li>
+                        <li class="menu-item-has-children">
+                            <a href="{% url 'movies' %}">Movie</a>
+                        </li>
+                        <li class="menu-item-has-children">
+                            <a href="./home-3.html">Manga</a>
+                        </li>
+                        <li class="menu-item-has-children dropdown">
+                            <a href="#" class="dropdown-toggle" id="genre"
+                               data-bs-toggle="dropdown"
+                               data-bs-auto-close="outside"
+                               aria-expanded="false">
+                                Categories <i class="fas fa-angle-down"></i>
+
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="genre"
+                                style="position: absolute; inset: 50px auto auto 0px; margin: 0px; transform: translate(0px, 40px);"
+                                data-popper-placement="bottom-start">
+
+                                <li>
+                                    <div class="custom-control custom-checkbox">
+                                        <a href="/category/action/">
+                                            <i class="fas fa-bolt me-2"></i> Action
+                                        </a>
+                                    </div>
+                                </li>
+
+                                <li>
+                                    <div class="custom-control custom-checkbox">
+                                        <a href="/category/adventure/">
+                                            <i class="fas fa-compass me-2"></i> Adventure
+                                        </a>
+                                    </div>
+                                </li>
+
+                                <li>
+                                    <div class="custom-control custom-checkbox">
+                                        <a href="/category/comedy/">
+                                            <i class="fas fa-laugh me-2"></i> Comedy
+                                        </a>
+                                    </div>
+                                </li>
+
+                                <li>
+                                    <div class="custom-control custom-checkbox">
+                                        <a href="/category/drama/">
+                                            <i class="fas fa-theater-masks me-2"></i> Drama
+                                        </a>
+                                    </div>
+                                </li>
+
+                                <li>
+                                    <div class="custom-control custom-checkbox">
+                                        <a href="/category/fantasy/">
+                                            <i class="fas fa-hat-wizard me-2"></i> Fantasy
+                                        </a>
+                                    </div>
+                                </li>
+
+                                <li>
+                                    <div class="custom-control custom-checkbox">
+                                        <a href="/category/horror/">
+                                            <i class="fas fa-skull me-2"></i> Horror
+                                        </a>
+                                    </div>
+                                </li>
+
+                                <li>
+                                    <div class="custom-control custom-checkbox">
+                                        <a href="/category/isekai/">
+                                            <i class="fas fa-door-open me-2"></i> Isekai
+                                        </a>
+                                    </div>
+                                </li>
+
+                                <li>
+                                    <div class="custom-control custom-checkbox">
+                                        <a href="/category/romance/">
+                                            <i class="fas fa-heart me-2"></i> Romance
+                                        </a>
+                                    </div>
+                                </li>
+
+                                <li>
+                                    <div class="custom-control custom-checkbox">
+                                        <a href="/category/sci-fi/">
+                                            <i class="fas fa-rocket me-2"></i> Sci-Fi
+                                        </a>
+                                    </div>
+                                </li>
+
+                                <li>
+                                    <div class="custom-control custom-checkbox">
+                                        <a href="/category/slice-of-life/">
+                                            <i class="fas fa-leaf me-2"></i> Slice of Life
+                                        </a>
+                                    </div>
+                                </li>
+                            </ul>
+
+                        </li>
+                    </ul>
+                    <form onsubmit="return false;">
+                        <div class="input-group form-group header-search-box">
+                            <button class="input-group-text anime-btn" type="submit"><i class="fas fa-search"></i>
+                            </button>
+                            <input class="form-control" type="text" id="searchInput" placeholder="Search">
+                            <div id="searchResults"></div>
+                        </div>
+                    </form>
+                    <div class="d-flex right-nav">
+                        {% if user.is_authenticated %}
+                        <a href="{% url 'profile' %}" class="anime-btn2 light me-3">{{ user.first_name }}</a>
+                        <a href="{% url 'logout' %}" class="anime-btn2 dark">LOG OUT</a>
+                        {% else %}
+                        <a href="{% url 'signup' %}" class="anime-btn2 light me-3">SIGN UP</a>
+                        <a href="{% url 'login' %}" class="anime-btn2 dark">LOG IN</a>
+                        {% endif %}
+                    </div>
+
+                </div>
+            </nav>
+        </div>
+    </header>
+</div>
+
+{% block body %}
+
+{% endblock body %}
+
+<footer class="footer">
+    <div class="footer-main style-1">
+        <div class="container">
+            <div class="row justify-content-between align-items-center">
+                <div class="col-lg-5 col-sm-12 col-12">
+                    <div class="footer-widget">
+                        <a href="./home.html">
+                            <img alt="" src="{% static 'assets/media/logo.png' %}">
+                        </a>
+                        <p class="mb-5">Lorem ipsum dolor sit, amet consectetur adipisicing elit. Eum
+                            modi, possimus dolore saepe nobis itaque cupiditate veniam nostrum,
+                            provident quam, nequeab dicta velit debitis cum unde recusandae. Fuga,
+                            consectetur.</p>
+                        <h6 class="mb-2">Join Us on</h6>
+                        <ul class="social-icons">
+                            <li><a href=""><img alt="" src="{% static 'assets/media/footer/reddit.png' %}"></a></li>
+                            <li><a href=""><img alt="" src="{% static 'assets/media/footer/discord.png' %}"></a></li>
+                            <li><a href=""><img alt="" src="{% static 'assets/media/footer/instagram.png' %}"></a></li>
+                            <li><a href=""><img alt="" src="{% static 'assets/media/footer/twitter.png' %}"></a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-lg-7 col-sm-12 col-12">
+                    <div class="footer-widget align-middle">
+                        <h6>GET NOTIFIED</h6>
+                        <p class="light-text">Get emails for latest news about anime, and more.</p>
+                        <form action="home.html">
+                            <div class="input-group form-group footer-email-box">
+                                <input class="form-control" type="email" name="email" placeholder="info@example.com"
+                                       required="">
+                                <button class="input-group-text anime-btn" type="submit">Subscribe</button>
+                            </div>
+                        </form>
+                        <p class="text">By subscribing you agree to our terms and conditions</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="footer-bottom bg-color-black">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-6 col-12">
+                    <div class="footer-copyright">
+                        <span class="copyright-text">© 2025 All rights reserved by <a href="#">Animeloop</a>.</span>
+                    </div>
+                </div>
+                <div class="col-lg-6 col-12">
+                    <div class="footer-bottom-link text-end">
+                        <a href="./privacy.html">Privacy Policy</a>
+                        <a href="./comments.html" class="ps-2">Comments Policy</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</footer>
+
+{% block signup-script %}
+
+{% endblock signup-script %}
+
+<!-- 1️⃣ jQuery -->
+<script src="{% static 'assets/js/jquery-min.js' %}"></script>
+
+<!-- 2️⃣ jQuery -->
+<script src="{% static 'assets/js/slick.min.js' %}"></script>
+<script src="{% static 'assets/js/images-loaded.js' %}"></script>
+<script src="{% static 'assets/js/jquery-validator.js' %}"></script>
+<script src="{% static 'assets/js/jquery-appear.js' %}"></script>
+<script src="{% static 'assets/js/jquery-countdown.js' %}"></script>
+
+<!-- 3️⃣ Other Libraries -->
+<script src="{% static 'assets/js/sal.js' %}"></script>
+
+<!-- 4️⃣ Bootstrap  -->
+<script src="{% static 'assets/js/bootstrap.bundle.min.js' %}"></script>
+
+<!-- 5️⃣  Custom Script  -->
+<script>
+    $(document).ready(function () {
+        $('.banner-slider').slick({
+            autoplay: true,
+            autoplaySpeed: 3000,
+            arrows: true,
+            dots: false,
+            fade: true,
+            infinite: true
+        });
+    });
+</script>
+<script>
+    $(document).ready(function () {
+        var block = document.getElementById('coming-out-block');
+        if (!block) return;
+
+        var releaseDate = block.dataset.release;
+        var streamUrl   = block.dataset.streamUrl;
+
+        $('.countdown').countdown(releaseDate, function (event) {
+            if (event.offset.totalSeconds <= 0) {
+                $('#coming-label').hide();
+                $('#countdown-timer').hide();
+                $('#play-now-btn').attr('href', streamUrl).show();
+            } else {
+                $(this).html(
+                    '<li>' + event.offset.totalDays  + '<small>d</small></li>' +
+                    '<li>' + event.offset.hours      + '<small>h</small></li>' +
+                    '<li>' + event.offset.minutes    + '<small>m</small></li>' +
+                    '<li>' + event.offset.seconds    + '<small>s</small></li>'
+                );
+            }
+        });
+    });
+</script>
+<script>
+    const input = document.getElementById("searchInput");
+    const resultsBox = document.getElementById("searchResults");
+
+    input.addEventListener("keyup", function () {
+        let query = this.value;
+
+        if (query.length === 0) {
+            resultsBox.innerHTML = "";
+            return;
+        }
+
+        fetch(`/live-search/?q=${query}`)
+            .then(res => res.json())
+            .then(data => {
+                let html = "";
+
+                data.results.forEach(movie => {
+                    html += `
+                        <div class="search-item" onclick="goToMovie(${movie.id})">
+                            ${movie.title}
+                        </div>
+                    `;
+                });
+
+                resultsBox.innerHTML = html;
+            });
+    });
+
+    function goToMovie(id) {
+        window.location.href = `/streaming/${id}/`;
+    }
+</script>
+
+</body>
+</html>

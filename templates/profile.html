@@ -1,0 +1,447 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block body %}
+    <section class="breadcrumb">
+        <div class="container">
+            <div class="breadcrumb-content">
+                <ul>
+                    <li><a href="{% url 'index' %}">Anime</a></li>
+                    <li><a class="active">Profile</a></li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <section class="profile sec-mar mb-0">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-9 col-sm-12 col-12">
+                    <div class="row align-items-center pb-5">
+                        <div class="col-lg-4 col-sm-6 col-12">
+                            <div class="img-box mb-4">
+                                <img src="{% static 'assets/media/profile/profile.png' %}" alt="">
+                            </div>
+                        </div>
+                        <div class="profile-seting col-lg-8 col-sm-6 col-12">
+                            <h5>Risheek</h5>
+                            <p>@risheek</p>
+                            <p class="pb-3">shrestharisheek@gmail.com</p>
+                            <a href="{% url 'edit_profile' %}" class="anime-btn btn-dark border-change">
+                                EDIT PROFILE
+                            </a>
+                            <div class="footer-widget p-0">
+                                <p class="mb-1">Join Us on</p>
+                                <ul class="social-icons">
+                                    <li><a href=""><img alt="" src="{% static 'assets/media/footer/reddit.png' %}"></a>
+                                    </li>
+                                    <li><a href=""><img alt="" src="{% static 'assets/media/footer/discord.png' %}"></a>
+                                    </li>
+                                    <li><a href=""><img alt=""
+                                                        src="{% static 'assets/media/footer/instagram.png' %}"></a></li>
+                                    <li><a href=""><img alt="" src="{% static 'assets/media/footer/twitter.png' %}"></a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                        <h5>Risheek</h5>
+                        <p>Nunc consectetur ornare varius. Nulla massa velit, ultricies in volutpat a, viverra et nunc.
+                            Suspendisse non velit
+                            consequat, elementum tellus a, commodo lectus. Pellentesque dictum ante in erat congue
+                            consectetur. Fusce
+                            vestibulum, ex vitae vestibulum mollis, massa purus sagittis nisl, id euismod quam quam at
+                            ipsum</p>
+                    </div>
+                </div>
+                <div class="col-lg-3 offset-lg-0 col-sm-8 offset-sm-2 col-12">
+                    <div class="profile-link bg-color-black">
+                        <h5>Important Links</h5>
+                        <a href="{% url 'playlist' %}" class="pb-3">Watch Later</a>
+                        <h5>Playlists</h5>
+                        <a href="{% url 'index' %}">Sci-fi Anime</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="schedule style-3 sec-mar">
+            <div class="container">
+                <div class="heading style-1">
+                    <h2>Watch History</h2>
+                </div>
+                <div class="row">
+                    <div class="schedule-box">
+                        <div class="card">
+                            <div class="card-header">
+                                <ul class="nav nav-tabs card-header-tabs" data-bs-tabs="tabs" role="tablist">
+                                    <li class="nav-item" role="presentation">
+                                        <a class="nav-link text-center active" aria-current="true" data-bs-toggle="tab" href="#today" aria-selected="true" role="tab">
+                                            <h2>TODAY</h2>
+                                        </a>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <a class="nav-link text-center" aria-current="true" data-bs-toggle="tab" href="#week" aria-selected="false" tabindex="-1" role="tab">
+                                            <h2>THIS WEEK</h2>
+                                        </a>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <a class="nav-link text-center" aria-current="true" data-bs-toggle="tab" href="#month" aria-selected="false" tabindex="-1" role="tab">
+                                            <h2>THIS MONTH</h2>
+                                        </a>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <a class="nav-link text-center" aria-current="true" data-bs-toggle="tab" href="#year" aria-selected="false" tabindex="-1" role="tab">
+                                            <h2>THIS YEAR</h2>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="card-body style-1 h-auto tab-content">
+                                <div class="row justify-content-between ps-3 pe-3 pb-4">
+                                    <div class="col-lg-6 col-sm-6 col-12">
+                                        <h4 class="d-inline">Anime Details</h4>
+                                    </div>
+                                    <div class="col-lg-6 col-sm-6 col-0 text-end">
+                                        <h4 class="space-right d-inline">Season 04</h4>
+                                        <h4 class="d-inline">Episode</h4>
+                                    </div>
+                                </div>
+                                <div class="tab-pane show fade active" id="today" role="tabpanel">
+                                    <a href="./streaming-season.html">
+                                        <div class="row ps-3 pe-3">
+                                            <div class="col-xl-7 col-lg-8 col-12 col-md-7 col-sm-8">
+                                                <div class="row">
+                                                    <div class="col-lg-2 col-sm-3 col-3 ps-0 space-left pe-0 text-end">
+                                                        <img src="{% static 'assets/media/anime-sm-img/anime-img-1.png' %}" alt="">
+                                                    </div>
+                                                    <div class="col-lg-10 col-sm-9 col-9">
+                                                        <div class="schedule-content align-middle align-middle">
+                                                            <p class="small-title">Darling in the Franxx!</p>
+                                                            <p class="text-box">dub 8</p>
+                                                            <p class="text-box">sub 12</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class=" col-xl-5 col-lg-4 col-md-5 col-sm-4 col-0 space-top text-end">
+                                                <p class="space-right d-inline">Season 04</p>
+                                                <p class="d-inline">Episode 04</p>
+                                            </div>
+                                        </div>
+                                    </a>
+                                    <hr>
+                                    <a href="./streaming-season.html">
+                                        <div class="row ps-3 pe-3">
+                                            <div class="col-xl-7 col-lg-8 col-12 col-md-7 col-sm-8">
+                                                <div class="row">
+                                                    <div class="col-lg-2 col-sm-3 col-3 ps-0 space-left pe-0 text-end">
+                                                        <img src="{% static 'assets/media/anime-sm-img/anime-img-2.png' %}" alt="">
+                                                    </div>
+                                                    <div class="col-lg-10 col-sm-9 col-9">
+                                                        <div class="schedule-content align-middle">
+                                                            <p class="small-title">Plastic Memories</p>
+                                                            <p class="text-box">dub 8</p>
+                                                            <p class="text-box">sub 12</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class=" col-xl-5 col-lg-4 col-md-5 col-sm-4 col-0 space-top text-end">
+                                                <p class="space-right d-inline">Season 06</p>
+                                                <p class="d-inline">Episode 06</p>
+                                            </div>
+                                        </div>
+                                    </a>
+                                    <hr>
+                                    <a href="./streaming-season.html">
+                                        <div class="row ps-3 pe-3">
+                                            <div class="col-xl-7 col-lg-8 col-12 col-md-7 col-sm-8">
+                                                <div class="row">
+                                                    <div class="col-lg-2 col-sm-3 col-3 ps-0 space-left pe-0 text-end">
+                                                        <img src="{% static 'assets/media/anime-sm-img/anime-img-3.png' %}" alt="">
+                                                    </div>
+                                                    <div class="col-lg-10 col-sm-9 col-9">
+                                                        <div class="schedule-content align-middle">
+                                                            <p class="small-title">That Time I Reincarnated As a Slime
+                                                                Season 2</p>
+                                                            <p class="text-box">dub 8</p>
+                                                            <p class="text-box">sub 12</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-xl-5 col-lg-4 col-md-5 col-sm-4 col-0 space-top text-end">
+                                                <p class="space-right d-inline">Season 12</p>
+                                                <p class="d-inline">Episode 12</p>
+                                            </div>
+                                        </div>
+                                    </a>
+                                    <hr>
+                                    <a href="./streaming-season.html">
+                                        <div class="row ps-3 pe-3">
+                                            <div class="col-xl-7 col-lg-8 col-12 col-md-7 col-sm-8">
+                                                <div class="row">
+                                                    <div class="col-lg-2 col-sm-3 col-3 ps-0 space-left pe-0 text-end">
+                                                        <img src="{% static 'assets/media/anime-sm-img/anime-img-4.png' %}" alt="">
+                                                    </div>
+                                                    <div class="col-lg-10 col-sm-9 col-9">
+                                                        <div class="schedule-content align-middle">
+                                                            <p class="small-title">Assassination Classroom</p>
+                                                            <p class="text-box">dub 8</p>
+                                                            <p class="text-box">sub 12</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class=" col-xl-5 col-lg-4 col-md-5 col-sm-4 col-0 space-top text-end">
+                                                <p class="space-right d-inline">Season 09</p>
+                                                <p class="d-inline">Episode 09</p>
+                                            </div>
+                                        </div>
+                                    </a>
+                                </div>
+                                <div class="tab-pane fade" id="week" role="tabpanel">
+
+                                    <a href="./streaming-season.html">
+                                        <div class="row ps-3 pe-3">
+                                            <div class="col-xl-7 col-lg-8 col-12 col-md-7 col-sm-8">
+                                                <div class="row">
+                                                    <div class="col-lg-2 col-sm-3 col-3 ps-0 space-left pe-0 text-end">
+                                                        <img src="{% static 'assets/media/anime-sm-img/anime-img-3.png' %}" alt="">
+                                                    </div>
+                                                    <div class="col-lg-10 col-sm-9 col-9">
+                                                        <div class="schedule-content align-middle">
+                                                            <p class="small-title">Plastic Memories</p>
+                                                            <p class="text-box">dub 8</p>
+                                                            <p class="text-box">sub 12</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class=" col-xl-5 col-lg-4 col-md-5 col-sm-4 col-0 space-top text-end">
+                                                <p class="space-right d-inline">Season 06</p>
+                                                <p class="d-inline">Episode 06</p>
+                                            </div>
+                                        </div>
+                                    </a>
+                                    <hr>
+                                    <a href="./streaming-season.html">
+                                        <div class="row ps-3 pe-3">
+                                            <div class="col-xl-7 col-lg-8 col-12 col-md-7 col-sm-8">
+                                                <div class="row">
+                                                    <div class="col-lg-2 col-sm-3 col-3 ps-0 space-left pe-0 text-end">
+                                                        <img src="{% static 'assets/media/anime-sm-img/anime-img-4.png' %}" alt="">
+                                                    </div>
+                                                    <div class="col-lg-10 col-sm-9 col-9">
+                                                        <div class="schedule-content align-middle">
+                                                            <p class="small-title">That Time I Reincarnated As a Slime
+                                                                Season 2</p>
+                                                            <p class="text-box">dub 8</p>
+                                                            <p class="text-box">sub 12</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-xl-5 col-lg-4 col-md-5 col-sm-4 col-0 space-top text-end">
+                                                <p class="space-right d-inline">Season 12</p>
+                                                <p class="d-inline">Episode 12</p>
+                                            </div>
+                                        </div>
+                                    </a>
+                                    <hr>
+                                    <a href="./streaming-season.html">
+                                        <div class="row ps-3 pe-3">
+                                            <div class="col-xl-7 col-lg-8 col-12 col-md-7 col-sm-8">
+                                                <div class="row">
+                                                    <div class="col-lg-2 col-sm-3 col-3 ps-0 space-left pe-0 text-end">
+                                                        <img src="{% static 'assets/media/anime-sm-img/anime-img-2.png' %}" alt="">
+                                                    </div>
+                                                    <div class="col-lg-10 col-sm-9 col-9">
+                                                        <div class="schedule-content align-middle">
+                                                            <p class="small-title">Darling in the Franxx!</p>
+                                                            <p class="text-box">dub 8</p>
+                                                            <p class="text-box">sub 12</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class=" col-xl-5 col-lg-4 col-md-5 col-sm-4 col-0 space-top text-end">
+                                                <p class="space-right d-inline">Season 04</p>
+                                                <p class="d-inline">Episode 04</p>
+                                            </div>
+                                        </div>
+                                    </a>
+                                </div>
+                                <div class="tab-pane fade" id="month" role="tabpanel">
+                                    <a href="./streaming-season.html">
+                                        <div class="row ps-3 pe-3">
+                                            <div class="col-xl-7 col-lg-8 col-12 col-md-7 col-sm-8">
+                                                <div class="row">
+                                                    <div class="col-lg-2 col-sm-3 col-3 ps-0 space-left pe-0 text-end">
+                                                        <img src="{% static 'assets/media/anime-sm-img/anime-img-1.png' %}" alt="">
+                                                    </div>
+                                                    <div class="col-lg-10 col-sm-9 col-9">
+                                                        <div class="schedule-content align-middle">
+                                                            <p class="small-title">Darling in the Franxx!</p>
+                                                            <p class="text-box">dub 8</p>
+                                                            <p class="text-box">sub 12</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class=" col-xl-5 col-lg-4 col-md-5 col-sm-4 col-0 space-top text-end">
+                                                <p class="space-right d-inline">Season 04</p>
+                                                <p class="d-inline">Episode 04</p>
+                                            </div>
+                                        </div>
+                                    </a>
+                                    <hr>
+                                    <a href="./streaming-season.html">
+                                        <div class="row ps-3 pe-3">
+                                            <div class="col-xl-7 col-lg-8 col-12 col-md-7 col-sm-8">
+                                                <div class="row">
+                                                    <div class="col-lg-2 col-sm-3 col-3 ps-0 space-left pe-0 text-end">
+                                                        <img src="{% static 'assets/media/anime-sm-img/anime-img-2.png' %}" alt="">
+                                                    </div>
+                                                    <div class="col-lg-10 col-sm-9 col-9">
+                                                        <div class="schedule-content align-middle">
+                                                            <p class="small-title">Plastic Memories</p>
+                                                            <p class="text-box">dub 8</p>
+                                                            <p class="text-box">sub 12</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class=" col-xl-5 col-lg-4 col-md-5 col-sm-4 col-0 space-top text-end">
+                                                <p class="space-right d-inline">Season 06</p>
+                                                <p class="d-inline">Episode 06</p>
+                                            </div>
+                                        </div>
+                                    </a>
+                                    <hr>
+                                    <a href="./streaming-season.html">
+                                        <div class="row ps-3 pe-3">
+                                            <div class="col-xl-7 col-lg-8 col-12 col-md-7 col-sm-8">
+                                                <div class="row">
+                                                    <div class="col-lg-2 col-sm-3 col-3 ps-0 space-left pe-0 text-end">
+                                                        <img src="{% static 'assets/media/anime-sm-img/anime-img-3.png' %}" alt="">
+                                                    </div>
+                                                    <div class="col-lg-10 col-sm-9 col-9">
+                                                        <div class="schedule-content align-middle">
+                                                            <p class="small-title">That Time I Reincarnated As a Slime
+                                                                Season 2</p>
+                                                            <p class="text-box">dub 8</p>
+                                                            <p class="text-box">sub 12</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-xl-5 col-lg-4 col-md-5 col-sm-4 col-0 space-top text-end">
+                                                <p class="space-right d-inline">Season 12</p>
+                                                <p class="d-inline">Episode 12</p>
+                                            </div>
+                                        </div>
+                                    </a>
+                                    <hr>
+                                    <a href="./streaming-season.html">
+                                        <div class="row ps-3 pe-3">
+                                            <div class="col-xl-7 col-lg-8 col-12 col-md-7 col-sm-8">
+                                                <div class="row">
+                                                    <div class="col-lg-2 col-sm-3 col-3 ps-0 space-left pe-0 text-end">
+                                                        <img src="{% static 'assets/media/anime-sm-img/anime-img-4.png' %}" alt="">
+                                                    </div>
+                                                    <div class="col-lg-10 col-sm-9 col-9">
+                                                        <div class="schedule-content align-middle">
+                                                            <p class="small-title">Assassination Classroom</p>
+                                                            <p class="text-box">dub 8</p>
+                                                            <p class="text-box">sub 12</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class=" col-xl-5 col-lg-4 col-md-5 col-sm-4 col-0 space-top text-end">
+                                                <p class="space-right d-inline">Season 09</p>
+                                                <p class="d-inline">Episode 09</p>
+                                            </div>
+                                        </div>
+                                    </a>
+                                </div>
+                                <div class="tab-pane fade" id="year" role="tabpanel">
+                                    <a href="./streaming-season.html">
+                                        <div class="row ps-3 pe-3">
+                                            <div class="col-xl-7 col-lg-8 col-12 col-md-7 col-sm-8">
+                                                <div class="row">
+                                                    <div class="col-lg-2 col-sm-3 col-3 ps-0 space-left pe-0 text-end">
+                                                        <img src="{% static 'assets/media/anime-sm-img/anime-img-4.png' %}" alt="">
+                                                    </div>
+                                                    <div class="col-lg-10 col-sm-9 col-9">
+                                                        <div class="schedule-content align-middle">
+                                                            <p class="small-title">That Time I Reincarnated As a Slime
+                                                                Season 2</p>
+                                                            <p class="text-box">dub 8</p>
+                                                            <p class="text-box">sub 12</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-xl-5 col-lg-4 col-md-5 col-sm-4 col-0 space-top text-end">
+                                                <p class="space-right d-inline">Season 12</p>
+                                                <p class="d-inline">Episode 12</p>
+                                            </div>
+                                        </div>
+                                    </a>
+                                    <hr>
+                                    <a href="./streaming-season.html">
+                                        <div class="row ps-3 pe-3">
+                                            <div class="col-xl-7 col-lg-8 col-12 col-md-7 col-sm-8">
+                                                <div class="row">
+                                                    <div class="col-lg-2 col-sm-3 col-3 ps-0 space-left pe-0 text-end">
+                                                        <img src="{% static 'assets/media/anime-sm-img/anime-img-6.png' %}" alt="">
+                                                    </div>
+                                                    <div class="col-lg-10 col-sm-9 col-9">
+                                                        <div class="schedule-content align-middle">
+                                                            <p class="small-title">Chainsaw Man</p>
+                                                            <p class="text-box">dub 8</p>
+                                                            <p class="text-box">sub 12</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class=" col-xl-5 col-lg-4 col-md-5 col-sm-4 col-0 space-top text-end">
+                                                <p class="space-right d-inline">Season 20</p>
+                                                <p class="d-inline">Episode 20</p>
+                                            </div>
+                                        </div>
+                                    </a>
+                                    <hr>
+                                    <a href="./streaming-season.html">
+                                        <div class="row ps-3 pe-3">
+                                            <div class="col-xl-7 col-lg-8 col-12 col-md-7 col-sm-8">
+                                                <div class="row">
+                                                    <div class="col-lg-2 col-sm-3 col-3 ps-0 space-left pe-0 text-end">
+                                                        <img src="{% static 'assets/media/anime-sm-img/anime-img-1.png' %}" alt="">
+                                                    </div>
+                                                    <div class="col-lg-10 col-sm-9 col-9">
+                                                        <div class="schedule-content align-middle">
+                                                            <p class="small-title">No Game No Life Zero</p>
+                                                            <p class="text-box">dub 8</p>
+                                                            <p class="text-box">sub 12</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class=" col-xl-5 col-lg-4 col-md-5 col-sm-4 col-0 space-top text-end">
+                                                <p class="space-right d-inline">Season 22</p>
+                                                <p class="d-inline">Episode 22</p>
+                                            </div>
+                                        </div>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+{% endblock body%}
