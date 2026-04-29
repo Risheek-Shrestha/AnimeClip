@@ -65,4 +65,6 @@ urlpatterns = [
 
     path('live-search/', views.live_search, name='live_search'),
 
+    path('category/<str:genre>/', views.category_page, name='category_page'),
+
 ]

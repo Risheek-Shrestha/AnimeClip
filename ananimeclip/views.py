@@ -9,11 +9,9 @@ from django.db.models import Max, Prefetch, Q
 from django.utils import timezone
 from datetime import timedelta, datetime
 
-
 context = {
     'title': 'ananimeclip',
 }
-
 
 
 def index(request):
@@ -48,7 +46,7 @@ def index(request):
         )
     )
 
-    #comint_out_in
+    # comint_out_in
     coming_soon_season = Season.objects.filter(
         status='upcoming',
         release_date__isnull=False
@@ -296,7 +294,6 @@ def reset(request):
 
 def live_search(request):
     query = request.GET.get('q', '')
-
     results = []
 
     if query:
@@ -304,10 +301,35 @@ def live_search(request):
             Q(title__icontains=query)
         )[:5]
 
+        anime = Anime.objects.filter(
+            Q(title__icontains=query)
+        )[:5]
+
         for movie in movies:
             results.append({
                 'id': movie.id,
                 'title': movie.title,
+                'type': 'movie'
             })
 
+        for a in anime:
+            first_episode = a.seasons.first().episodes.first() if a.seasons.exists() else None
+
+            if first_episode:
+                results.append({
+                    'id': first_episode.id,
+                    'title': a.title,
+                    'type': 'anime'
+                })
+
     return JsonResponse({'results': results})
+
+def category_page(request, genre):
+    movies = Movie.objects.filter(genres__name__iexact=genre)
+    anime = Anime.objects.filter(genres__name__iexact=genre)
+
+    return render(request, 'category.html', {
+        'genre': genre,
+        'movies': movies,
+        'anime': anime,
+    })

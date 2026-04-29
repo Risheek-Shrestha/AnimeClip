@@ -132,11 +132,14 @@
                         </li>
                     </ul>
                     <form onsubmit="return false;">
-                        <div class="input-group form-group header-search-box">
-                            <button class="input-group-text anime-btn" type="submit"><i class="fas fa-search"></i>
+                        <div class="input-group form-group header-search-box position-relative">
+                            <button class="input-group-text anime-btn" type="submit">
+                                <i class="fas fa-search"></i>
                             </button>
-                            <input class="form-control" type="text" id="searchInput" placeholder="Search">
-                            <div id="searchResults"></div>
+
+                            <input class="form-control" type="text" id="searchInput" placeholder="Search" autocomplete="off">
+
+                            <div id="searchResults" class="search-dropdown"></div>
                         </div>
                     </form>
                     <div class="d-flex right-nav">
@@ -256,7 +259,7 @@
         if (!block) return;
 
         var releaseDate = block.dataset.release;
-        var streamUrl   = block.dataset.streamUrl;
+        var streamUrl = block.dataset.streamUrl;
 
         $('.countdown').countdown(releaseDate, function (event) {
             if (event.offset.totalSeconds <= 0) {
@@ -265,10 +268,10 @@
                 $('#play-now-btn').attr('href', streamUrl).show();
             } else {
                 $(this).html(
-                    '<li>' + event.offset.totalDays  + '<small>d</small></li>' +
-                    '<li>' + event.offset.hours      + '<small>h</small></li>' +
-                    '<li>' + event.offset.minutes    + '<small>m</small></li>' +
-                    '<li>' + event.offset.seconds    + '<small>s</small></li>'
+                    '<li>' + event.offset.totalDays + '<small>d</small></li>' +
+                    '<li>' + event.offset.hours + '<small>h</small></li>' +
+                    '<li>' + event.offset.minutes + '<small>m</small></li>' +
+                    '<li>' + event.offset.seconds + '<small>s</small></li>'
                 );
             }
         });
@@ -291,20 +294,25 @@
             .then(data => {
                 let html = "";
 
-                data.results.forEach(movie => {
+                data.results.forEach(item => {
                     html += `
-                        <div class="search-item" onclick="goToMovie(${movie.id})">
-                            ${movie.title}
-                        </div>
-                    `;
+        <div class="search-item" onclick="goToItem(${item.id}, '${item.type}')">
+            ${item.title} <small>(${item.type})</small>
+        </div>
+    `;
                 });
 
                 resultsBox.innerHTML = html;
+                resultsBox.style.display = html ? "block" : "none";
             });
     });
 
-    function goToMovie(id) {
-        window.location.href = `/streaming/${id}/`;
+    function goToItem(id, type) {
+        if (type === 'movie') {
+            window.location.href = `/streaming_movie/${id}/`;
+        } else if (type === 'anime') {
+            window.location.href = `/streaming/${id}/`;
+        }
     }
 </script>
 

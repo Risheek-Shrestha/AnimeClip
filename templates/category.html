@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block body %}
+
+<section class="recent sec-mar">
+    <div class="container">
+
+        <div class="heading style-1">
+            <h2>{{ genre.name }} - Anime</h2>
+        </div>
+
+        <div class="row">
+            {% for anime in anime %}
+            <div class="col-xl-3 col-lg-4 col-sm-6 col-12">
+                <div class="anime-blog">
+                    <div class="img-block">
+
+                        {% if anime.poster_img %}
+                        <img src="{{ anime.poster_img.image.url }}">
+                        {% elif anime.thumb_img %}
+                        <img src="{{ anime.thumb_img.image.url }}">
+                        {% endif %}
+
+                        {% with ep=anime.seasons.first.episodes.first %}
+                        <div class="action-overlay">
+                            <a href="{% if ep %}{% url 'streaming' ep.id %}{% endif %}">
+                                <i class="fas fa-play-circle"></i> Play Now
+                            </a>
+                        </div>
+                        {% endwith %}
+                    </div>
+
+                    <a href="#">
+                        <p>{{ anime.title }}</p>
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+    </div>
+</section>
+
+{% endblock body %}

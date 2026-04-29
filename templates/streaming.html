@@ -24,13 +24,13 @@
 
                 <!-- VIDEO PLAYER -->
                 <div class="video-box">
-                    {% with src=episode.sources.all.0 %}
+                    {% with episode.sources.all|first as src %}
                         {% if src and src.video %}
                             <video
                                 id="main-player"
                                 controls
                                 width="100%"
-                                preload="none"
+                                preload="metadata"
                                 {% if src.poster %}
                                     poster="{{ src.poster.url }}"
                                 {% elif anime.thumb_img %}
