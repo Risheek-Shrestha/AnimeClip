@@ -9,7 +9,7 @@ db.sqlite3
 # Videos
 *.mp4
 media/videos/
-
+    
 # Environment files
 .env
 

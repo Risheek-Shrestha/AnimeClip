@@ -395,10 +395,6 @@ input[type='radio']:checked {
   accent-color: var(--color-primary);
 }
 
-.form-group {
-  margin-bottom: 24px;
-}
-
 .form-group label {
   font-size: 14px;
   font-weight: 500;
@@ -3272,7 +3268,7 @@ ul.pagination li a.current {
 }
 
 .video .video-box {
-  display: none;
+  display: block;
   height: 100%;
 }
 
@@ -4374,4 +4370,35 @@ input:focus,
             transform: translateY(0);
     opacity: 1;
   }
+}
+
+
+/* SEARCH DROPDOWN FIX */
+.header-search-box {
+  position: relative;
+}
+
+#searchResults {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  background: #111;
+  border: 1px solid #333;
+  border-radius: 5px;
+  z-index: 9999;
+  max-height: 300px;
+  overflow-y: auto;
+  display: none;
+}
+
+.search-item {
+  padding: 10px;
+  color: white;
+  cursor: pointer;
+  border-bottom: 1px solid #222;
+}
+
+.search-item:hover {
+  background: #333;
 }
