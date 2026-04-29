@@ -25,32 +25,32 @@
                 <!-- VIDEO PLAYER -->
                 <div class="video-box">
                     {% with episode.sources.all|first as src %}
-                        {% if src and src.video %}
-                            <video
-                                id="main-player"
-                                controls
-                                width="100%"
-                                preload="metadata"
-                                {% if src.poster %}
-                                    poster="{{ src.poster.url }}"
-                                {% elif anime.thumb_img %}
-                                    poster="{{ anime.thumb_img.image.url }}"
-                                {% elif anime.banner_img %}
-                                    poster="{{ anime.banner_img.image.url }}"
-                                {% endif %}
-                            >
-                                <source src="{{ src.video.url }}" type="video/mp4">
-                                Your browser does not support the video tag.
-                            </video>
-                        {% else %}
-                            <!-- Fallback: show image if no video source yet -->
-                            {% if anime.banner_img %}
-                                <img class="detail-image" src="{{ anime.banner_img.image.url }}" alt="{{ anime.title }}">
+                    {% if src and src.video %}
+                    <video
+                            id="main-player"
+                            controls
+                            width="100%"
+                            preload="metadata"
+                            {% if src.poster %}
+                            poster="{{ src.poster.url }}"
                             {% elif anime.thumb_img %}
-                                <img class="detail-image" src="{{ anime.thumb_img.image.url }}" alt="{{ anime.title }}">
+                            poster="{{ anime.thumb_img.image.url }}"
+                            {% elif anime.banner_img %}
+                            poster="{{ anime.banner_img.image.url }}"
                             {% endif %}
-                            <p class="text-center mt-2">No video source available for this episode.</p>
-                        {% endif %}
+                    >
+                        <source src="http://127.0.0.1{{ src.video.url }}" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                    {% else %}
+                    <!-- Fallback: show image if no video source yet -->
+                    {% if anime.banner_img %}
+                    <img class="detail-image" src="{{ anime.banner_img.image.url }}" alt="{{ anime.title }}">
+                    {% elif anime.thumb_img %}
+                    <img class="detail-image" src="{{ anime.thumb_img.image.url }}" alt="{{ anime.title }}">
+                    {% endif %}
+                    <p class="text-center mt-2">No video source available for this episode.</p>
+                    {% endif %}
                     {% endwith %}
                 </div>
 
@@ -101,16 +101,16 @@
                     <div class="server-blok">
                         {% regroup episode.sources.all by type as sources_group %}
                         {% for group in sources_group %}
-                            <p class="primery">{{ group.grouper|upper }}</p>
-                            <div class="btn-block">
-                                {% for src in group.list %}
-                                    <a href="{% url 'streaming' episode.id %}"
-                                       class="{% if forloop.first %}active{% endif %}">
-                                        {{ src.label }}
-                                    </a>
-                                {% endfor %}
-                            </div>
-                            <br>
+                        <p class="primery">{{ group.grouper|upper }}</p>
+                        <div class="btn-block">
+                            {% for src in group.list %}
+                            <a href="{% url 'streaming' episode.id %}"
+                               class="{% if forloop.first %}active{% endif %}">
+                                {{ src.label }}
+                            </a>
+                            {% endfor %}
+                        </div>
+                        <br>
                         {% endfor %}
                     </div>
                 </div>
@@ -120,9 +120,393 @@
                 </div>
 
             </div>
+            <div class="row">
+                <div class="col-lg-9 col-12">
+                    <div class="row">
+                        <div class="col-lg-6 col-md-4 col-sm-6 col-12">
+                            <div class="trailer-box">
+                                <img src="./assets/media/video/trailer-img.png" alt="" class="image">
+                                <div class="overlay">
+                                    <a href="#" class="icon" data-bs-toggle="modal" data-bs-target="#videoModal"><i
+                                            class="fas fa-play"></i></a>
+                                    <p>Watch Trailer</p>
+                                </div>
+                            </div>
+                            <div class="modal fade" id="videoModal" tabindex="-1" role="dialog" aria-hidden="true">
+                                <div class="modal-dialog" role="document">
+                                    <div class="modal-content">
+                                        <div class="modal-body">
+                                            <iframe style="border: 0;width: 100%;height: 350px;"
+                                                    src="https://www.youtube.com/embed/V8eWxOLXLK8?si=qWfCochFxm8hvBlY&amp;start=4"
+                                                    title="YouTube video player" frameborder="0"
+                                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                                    referrerpolicy="strict-origin-when-cross-origin"
+                                                    allowfullscreen=""></iframe>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-6 col-md-8 col-sm-6 col-12">
+                            <div class="trailer-content">
+                                <h2>My Hero Academia</h2>
+                                <p class="light-text">Season 06</p>
+                                <div class="dropdown">
+                                    <button type="button" class="dropdown-toggle" data-bs-toggle="dropdown">
+                                        <svg width="32" height="22" viewBox="0 0 32 22" fill="none"
+                                             xmlns="http://www.w3.org/2000/svg">
+                                            <rect x="0.145264" y="0.00012207" width="21.4395" height="2.68125"
+                                                  rx="1.34062" fill="#999999"></rect>
+                                            <rect x="0.145264" y="7.41272" width="21.4395" height="2.68125" rx="1.34062"
+                                                  fill="#999999"></rect>
+                                            <rect x="0.145264" y="14.8258" width="16.4914" height="2.68125" rx="1.34062"
+                                                  fill="#999999"></rect>
+                                            <path d="M19.8784 16.0712C19.8784 15.4163 20.4093 14.8854 21.0642 14.8854H30.2463C30.9011 14.8854 31.432 15.4163 31.432 16.0712C31.432 16.7261 30.9011 17.257 30.2463 17.257H21.0642C20.4093 17.257 19.8784 16.7261 19.8784 16.0712Z"
+                                                  fill="#999999"></path>
+                                            <path d="M25.6552 22.0001C25.0171 22.0001 24.4999 21.4828 24.4999 20.8447V11.2977C24.4999 10.6596 25.0171 10.1423 25.6552 10.1423C26.2933 10.1423 26.8106 10.6596 26.8106 11.2977V20.8447C26.8106 21.4828 26.2933 22.0001 25.6552 22.0001Z"
+                                                  fill="#999999"></path>
+                                        </svg>
+                                    </button>
+                                    <ul class="dropdown-menu bg-color-black pt-3 pb-3 ps-3 pe-3">
+                                        <li>
+                                            <a href="" class="none"><i class="fa fa-check"></i> Watch Later </a>
+                                        </li>
+                                        <li>
+                                            <a href=""><i class="fas fa-plus"></i> Add to Playlist </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                                <h3>Plot Summary</h3>
+                                <p>At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis
+                                    praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias
+                                    excepturi sint occaecati cupiditate non provident, similique sunt in culpa qui
+                                    officia deserunt mollitia animi, id est laborum et dolorum fuga. Et harum quidem
+                                    rerum facilis est et expedita distinctio. </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 col-sm-6 col-12">
+                            <div class="rating-content">
+                                <h4>RATE THE SHOW</h4>
+                                <p>YOUR RATING: <b>_/10</b></p>
+                            </div>
+                        </div>
+                        <div class="col-md-4 col-sm-6 col-12">
+                            <div class="rating-content">
+                                <h4>IBM RATING</h4>
+                                <p>RATING: <span>7.2</span> <b>/10</b></p>
+                            </div>
+                        </div>
+                        <div class="col-md-4 col-sm-6 col-12">
+                            <div class="rating-content">
+                                <h4>ROTTEN TOMATO RATING</h4>
+                                <p>RATING: <span>8.8</span> <b>/10</b></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-sm-6 col-12">
+                    <div class="trailer-content">
+                        <h3>Tech Detail</h3>
+                        <p><span>Type:</span> <b>TV</b></p>
+                        <p><span>Studio:</span> <b>Bones</b></p>
+                        <p><span>Date aired:</span> Jan 15, 2023</p>
+                        <p><span>Status:</span> <b>Completed</b></p>
+                        <p><span>Genre:</span> Action, School, Shounen</p>
+                        <p><span>Country:</span> Japan</p>
+                        <p><span>Scores:</span> 2.53 by 4,405 reviews</p>
+                        <p><span>Premiered:</span> Winter 2023</p>
+                        <p><span>Duration:</span> 24 min</p>
+                        <p><span>Views:</span> 18,284</p>
+                    </div>
+                </div>
+            </div>
         </div>
 
     </div>
 </section>
+<section class="comment sec-mar">
+    <div class="container">
+        <div class="row">
+
+            <!-- LEFT -->
+            <div class="col-lg-8 col-md-12 col-sm-12">
+                <div class="comment-block">
+                    <div class="heading style-1 m-0">
+                        <h2>COMMENTS</h2>
+                    </div>
+                    <p>
+                        We hope you have a good time browsing the comment section!
+                    </p>
+                </div>
+
+                <!-- ADD COMMENT -->
+                <div class="row">
+                    <div class="col-lg-1 col-2">
+                        <img src="{% static 'assets/media/comment/comment-img.png' %}" alt="">
+                    </div>
+                    <div class="col-lg-11 col-10">
+                        {% if user.is_authenticated %}
+                        <form method="POST" action="{% url 'add_comment' episode.id %}">
+                            {% csrf_token %}
+                            <div class="input-group form-group footer-email-box">
+                                <input class="form-control" type="text" name="body" placeholder="Join the discussion"
+                                       required>
+                                <button class="input-group-text post-btn" type="submit">Post</button>
+                            </div>
+                        </form>
+                        {% else %}
+                        <p><a href="{% url 'login' %}">Login</a> to comment</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- COMMENTS -->
+                <div class="site-comment mt-4">
+
+                    {% for comment in comments %}
+                    <div class="row mb-4">
+                        <div class="col-lg-1 col-2">
+                            <img src="{% static 'assets/media/comment/comment-img-2.png' %}" alt="">
+                        </div>
+
+                        <div class="col-lg-11 col-10">
+
+                            <h5>
+                                @{{ comment.user.username }}
+                                <b>{{ comment.created_at|timesince }} ago</b>
+                            </h5>
+
+                            <p>{{ comment.body }}</p>
+
+                            <!-- LIKE COMMENT -->
+                            <button class="comment-btn like-btn" data-id="{{ comment.id }}">
+                                <i class="fa fa-thumbs-up"></i>
+                                <span id="like-count-{{ comment.id }}">
+                {{ comment.total_likes }}
+            </span>
+                            </button>
+
+                            <!-- REPLY BUTTON -->
+                            <button class="accordion-button comment-btn"
+                                    data-bs-toggle="collapse"
+                                    data-bs-target="#reply{{ comment.id }}">
+                                Reply
+                            </button>
+
+                            <!-- REPLY FORM -->
+                            <div id="reply{{ comment.id }}" class="accordion-collapse collapse">
+                                <div class="card card-body">
+                                    {% if user.is_authenticated %}
+                                    <form method="POST" action="{% url 'add_comment' episode.id %}">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="parent_id" value="{{ comment.id }}">
+                                        <input type="text" name="body" class="form-control"
+                                               placeholder="Add a reply" required>
+                                        <div class="text-end mt-2">
+                                            <button class="comment-btn active">Reply</button>
+                                        </div>
+                                    </form>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- REPLIES -->
+                            {% if comment.replies.exists %}
+                            <div class="mt-3">
+
+                                {% for reply in comment.replies.all %}
+                                <div class="d-flex mb-2 ms-4">
+
+                                    <img src="{% static 'assets/media/comment/comment-img-sm-1.png' %}" width="40">
+
+                                    <div class="ms-2">
+                                        <h6>
+                                            @{{ reply.user.username }}
+                                            <small>{{ reply.created_at|timesince }} ago</small>
+                                        </h6>
+
+                                        <p>{{ reply.body }}</p>
+
+                                        <!-- LIKE REPLY -->
+                                        <button class="comment-btn like-btn" data-id="{{ reply.id }}">
+                                            <i class="fa fa-thumbs-up"></i>
+                                            <span id="like-count-{{ reply.id }}">
+                            {{ reply.total_likes }}
+                        </span>
+                                        </button>
+
+                                    </div>
+
+                                </div>
+                                {% endfor %}
+
+                            </div>
+                            {% endif %}
+
+                        </div>
+                    </div>
+
+                    {% empty %}
+                    <p>No comments yet. Try being the first human.</p>
+                    {% endfor %}
+
+                </div>
+            </div>
+
+            <div class="col-lg-4 col-md-6 col-sm-8 offset-lg-0 offset-md-3 offset-sm-2 mt-lg-0 mt-3">
+                        <h3 class="small-title">SIMILAR</h3>
+                        <div class="anime-box bg-color-black">
+                            <a href="streaming-season.html">
+                                <div class="row m-0">
+                                    <div class="p-0 col-2">
+                                        <img src="assets/media/anime-sm-img/anime-img-7.png" alt="">
+                                    </div>
+                                    <div class="p-0 col-9">
+                                        <div class="anime-blog">
+                                            <p>86</p>
+                                            <p class="text-box">dub 8</p>
+                                            <p class="text-box">sub 12</p>
+                                        </div>
+                                    </div>
+                                    <div class="p-0 col-1 show-type">
+                                        <span class="show-type">TV</span>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="anime-box bg-color-black">
+                            <a href="streaming-season.html">
+                                <div class="row m-0">
+                                    <div class="p-0 col-2">
+                                        <img src="assets/media/anime-sm-img/anime-img-8.png" alt="">
+                                    </div>
+                                    <div class="p-0 col-9">
+                                        <div class="anime-blog">
+                                            <p>Re-Zero</p>
+                                            <p class="text-box">dub 8</p>
+                                            <p class="text-box">sub 12</p>
+                                            <p class="text-box active">18+</p>
+                                        </div>
+                                    </div>
+                                    <div class="p-0 col-1 show-type">
+                                        <span class="show-type">TV</span>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="anime-box bg-color-black">
+                            <a href="streaming-season.html">
+                                <div class="row m-0">
+                                    <div class="p-0 col-2">
+                                        <img src="assets/media/anime-sm-img/anime-img-9.png" alt="">
+                                    </div>
+                                    <div class="p-0 col-9">
+                                        <div class="anime-blog">
+                                            <p>Tokyo Ghoul</p>
+                                            <p class="text-box">dub 8</p>
+                                            <p class="text-box">sub 12</p>
+                                        </div>
+                                    </div>
+                                    <div class="p-0 col-1 show-type">
+                                        <span class="show-type">TV</span>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="anime-box bg-color-black">
+                            <a href="streaming-season.html">
+                                <div class="row m-0">
+                                    <div class="p-0 col-2">
+                                        <img src="assets/media/anime-sm-img/anime-img-10.png" alt="">
+                                    </div>
+                                    <div class="p-0 col-9">
+                                        <div class="anime-blog">
+                                            <p>Sword Art Online</p>
+                                            <p class="text-box">dub 8</p>
+                                            <p class="text-box">sub 12</p>
+                                        </div>
+                                    </div>
+                                    <div class="p-0 col-1 show-type">
+                                        <span class="show-type">TV</span>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="anime-box bg-color-black">
+                            <a href="streaming-season.html">
+                                <div class="row m-0">
+                                    <div class="p-0 col-2">
+                                        <img src="assets/media/anime-sm-img/anime-img-11.png" alt="">
+                                    </div>
+                                    <div class="p-0 col-9">
+                                        <div class="anime-blog">
+                                            <p>Sword Alicization</p>
+                                            <p class="text-box">dub 8</p>
+                                            <p class="text-box">sub 12</p>
+                                        </div>
+                                    </div>
+                                    <div class="p-0 col-1 show-type">
+                                        <span class="show-type">TV</span>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="anime-box bg-color-black">
+                            <a href="streaming-season.html">
+                                <div class="row m-0">
+                                    <div class="p-0 col-2">
+                                        <img src="assets/media/anime-sm-img/anime-img-12.png" alt="">
+                                    </div>
+                                    <div class="p-0 col-9">
+                                        <div class="anime-blog">
+                                            <p>One Piece</p>
+                                            <p class="text-box">dub 8</p>
+                                            <p class="text-box">sub 12</p>
+                                        </div>
+                                    </div>
+                                    <div class="p-0 col-1 show-type">
+                                        <span class="show-type">TV</span>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+
+        </div>
+    </div>
+</section>
+
+<script>
+function getCSRFToken() {
+    return document.cookie.split('; ')
+        .find(row => row.startsWith('csrftoken'))
+        ?.split('=')[1];
+}
+
+document.addEventListener("click", function(e) {
+    const btn = e.target.closest(".like-btn");
+    if (!btn) return;
+
+    const id = btn.dataset.id;
+
+    fetch(`/comment/${id}/like/`, {
+        method: "POST",
+        headers: {
+            "X-CSRFToken": getCSRFToken()
+        }
+    })
+    .then(res => {
+        if (!res.ok) throw new Error("Request failed");
+        return res.json();
+    })
+    .then(data => {
+        document.getElementById(`like-count-${id}`).innerText = data.total_likes;
+    })
+    .catch(err => console.error(err));
+});
+</script>
+
 
 {% endblock body %}
