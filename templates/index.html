@@ -15,38 +15,30 @@
                     <div class="col-lg-5 col-12">
                         <h2 class="title">{{ anime.title|upper }}</h2>
 
-                        {% with first_season=anime.seasons.first %}
-                        {% if first_season %}
-                        <p class="text">SEASON {{ first_season.number }}</p>
+                        {% if anime.first_season %}
+                        <p class="text">SEASON {{ anime.first_season.number }}</p>
                         {% endif %}
-                        {% endwith %}
 
-                        {% with ep=anime.seasons.first.episodes.first %}
-                        <a href="{% if ep %}{% url 'streaming' ep.id %}{% else %}#{% endif %}" class="text-box active">
+                        <a href="{% if anime.first_episode %}{% url 'streaming' anime.first_episode.id %}{% else %}#{% endif %}" class="text-box active">
                             {{ anime.get_age_rating_display }}
                         </a>
-                        {% if ep %}
-                        {% for source in ep.sources.all %}
-                        <a href="{% url 'streaming' ep.id %}" class="text-box">{{ source.type }}</a>
+                        {% if anime.first_episode %}
+                        {% for source in anime.first_episode.sources.all %}
+                        <a href="{% url 'streaming' anime.first_episode.id %}" class="text-box">{{ source.type }}</a>
                         {% endfor %}
                         {% endif %}
-                        {% endwith %}
 
-                        {% with first_season=anime.seasons.first %}
-                        {% if first_season.release_date %}
-                        <p class="light-text">{{ first_season.release_date|date:"F d, Y"|upper }}</p>
+                        {% if anime.first_season.release_date %}
+                        <p class="light-text">{{ anime.first_season.release_date|date:"F d, Y"|upper }}</p>
                         {% endif %}
-                        {% endwith %}
 
                         <p>{{ anime.description|truncatewords:30 }}</p>
 
-                        {% with ep=anime.seasons.first.episodes.first %}
-                        {% if ep %}
-                        <a class="play-butn" href="{% url 'streaming' ep.id %}"><span>PLAY NOW</span></a>
+                        {% if anime.first_episode %}
+                        <a class="play-butn" href="{% url 'streaming' anime.first_episode.id %}"><span>PLAY NOW</span></a>
                         {% else %}
                         <a class="play-butn" href="#"><span>COMING SOON</span></a>
                         {% endif %}
-                        {% endwith %}
                     </div>
 
                     <div class="col-lg-7 col-12">
@@ -87,26 +79,22 @@
                         <img src="{% static 'assets/media/anime-sm-img/anime-img-1.png' %}" alt="{{ anime.title }}">
                         {% endif %}
 
-                        {% with ep=anime.seasons.first.episodes.first %}
                         <div class="action-overlay">
-                            <a href="{% if ep %}{% url 'streaming' ep.id %}{% else %}#{% endif %}">
+                            <a href="{% if anime.first_episode %}{% url 'streaming' anime.first_episode.id %}{% else %}#{% endif %}">
                                 <i class="fas fa-play-circle"></i> Play Now
                             </a>
                         </div>
-                        {% endwith %}
                     </div>
 
                     <div class="detail">
                         <div class="tags">
-                            {% with ep=anime.seasons.first.episodes.first %}
-                            {% if ep %}
-                            {% for source in ep.sources.all %}
-                            <a href="{% url 'streaming' ep.id %}" class="text-box">
+                            {% if anime.first_episode %}
+                            {% for source in anime.first_episode.sources.all %}
+                            <a href="{% url 'streaming' anime.first_episode.id %}" class="text-box">
                                 {{ source.type }}
                             </a>
                             {% endfor %}
                             {% endif %}
-                            {% endwith %}
                         </div>
                         <div class="dropdown">
                             <button type="button" class="dropdown-toggle" data-bs-toggle="dropdown">
@@ -131,11 +119,9 @@
                         </div>
                     </div>
 
-                    {% with ep=anime.seasons.first.episodes.first %}
-                    <a href="{% if ep %}{% url 'streaming' ep.id %}{% else %}#{% endif %}">
+                    <a href="{% if anime.first_episode %}{% url 'streaming' anime.first_episode.id %}{% else %}#{% endif %}">
                         <p>{{ anime.title }}</p>
                     </a>
-                    {% endwith %}
                 </div>
             </div>
             {% endfor %}
@@ -216,26 +202,22 @@
                         <img src="{% static 'assets/media/anime-sm-img/anime-img-1.png' %}" alt="{{ anime.title }}">
                         {% endif %}
 
-                        {% with ep=anime.seasons.first.episodes.first %}
                         <div class="action-overlay">
-                            <a href="{% if ep %}{% url 'streaming' ep.id %}{% else %}#{% endif %}">
+                            <a href="{% if anime.first_episode %}{% url 'streaming' anime.first_episode.id %}{% else %}#{% endif %}">
                                 <i class="fas fa-play-circle"></i> Play Now
                             </a>
                         </div>
-                        {% endwith %}
                     </div>
 
                     <div class="detail">
                         <div class="tags">
-                            {% with ep=anime.seasons.first.episodes.first %}
-                            {% if ep %}
-                            {% for source in ep.sources.all %}
-                            <a href="{% url 'streaming' ep.id %}" class="text-box">
+                            {% if anime.first_episode %}
+                            {% for source in anime.first_episode.sources.all %}
+                            <a href="{% url 'streaming' anime.first_episode.id %}" class="text-box">
                                 {{ source.type }}
                             </a>
                             {% endfor %}
                             {% endif %}
-                            {% endwith %}
                         </div>
                         <div class="dropdown">
                             <button type="button" class="dropdown-toggle" data-bs-toggle="dropdown">
@@ -260,11 +242,9 @@
                         </div>
                     </div>
 
-                    {% with ep=anime.seasons.first.episodes.first %}
-                    <a href="{% if ep %}{% url 'streaming' ep.id %}{% else %}#{% endif %}">
+                    <a href="{% if anime.first_episode %}{% url 'streaming' anime.first_episode.id %}{% else %}#{% endif %}">
                         <p>{{ anime.title }}</p>
                     </a>
-                    {% endwith %}
                 </div>
             </div>
             {% endfor %}
@@ -316,13 +296,11 @@
                     <div class="tab-pane fade{% if day.is_today %} show active{% endif %}"
                          id="{{ day.id }}" role="tabpanel">
                         {% for anime in day.animes %}
-                        {% with ep=anime.seasons.first.episodes.first %}
-                        {% with season=anime.seasons.first %}
-                        <a href="{% if ep %}{% url 'streaming' ep.id %}{% else %}#{% endif %}">
+                        <a href="{% if anime.first_episode %}{% url 'streaming' anime.first_episode.id %}{% else %}#{% endif %}">
                             <div class="row align-items-center">
                                 <div class="col-xl-1 col-lg-1 col-md-2 col-sm-2 col-0">
-                                    {% if season.release_time %}
-                                    <p class="text">{{ season.release_time|time:"H:i" }}</p>
+                                    {% if anime.first_season.release_time %}
+                                    <p class="text">{{ anime.first_season.release_time|time:"H:i" }}</p>
                                     {% endif %}
                                 </div>
                                 <div class="col-xl-8 col-lg-8 col-md-7 col-sm-10 col-12">
@@ -338,23 +316,23 @@
                                         <div class="col-xl-8 col-lg-8 col-md-7 col-sm-7 col-9">
                                             <div class="schedule-content align-middle">
                                                 <p class="small-title">{{ anime.title }}</p>
-                                                {% if ep %}
-                                                {% for source in ep.sources.all %}
+                                                {% if anime.first_episode %}
+                                                {% for source in anime.first_episode.sources.all %}
                                                 <p class="text-box">{{ source.type }}</p>
                                                 {% endfor %}
                                                 {% endif %}
                                             </div>
                                         </div>
                                         <div class="col-xl-3 col-lg-2 col-md-3 col-sm-3 col-0">
-                                            {% if season %}
-                                            <p class="text text-end">{{ season.get_status_display }}</p>
+                                            {% if anime.first_season %}
+                                            <p class="text text-end">{{ anime.first_season.get_status_display }}</p>
                                             {% endif %}
                                         </div>
                                     </div>
                                 </div>
                                 <div class="col-xl-3 col-lg-3 col-md-3 col-sm-0 col-0 text-end">
-                                    {% if ep %}
-                                    <p class="text">Episode {{ ep.number|stringformat:"02d" }}</p>
+                                    {% if anime.first_episode %}
+                                    <p class="text">Episode {{ anime.first_episode.number|stringformat:"02d" }}</p>
                                     {% endif %}
                                 </div>
                             </div>
@@ -362,8 +340,6 @@
                         {% if not forloop.last %}
                         <hr>
                         {% endif %}
-                        {% endwith %}
-                        {% endwith %}
 
                         {% empty %}
                         <p class="text text-center py-3">No anime scheduled for {{ day.day }}.</p>
@@ -387,10 +363,8 @@
             <div class="col-xl-4 col-lg-6 col-md-6 col-sm-8 offset-xl-0 offset-lg-0 offset-md-0 offset-sm-2 col-12">
                 <h3>Top Rated Anime</h3>
                 {% for anime in top_animes %}
-                {% with ep=anime.seasons.first.episodes.first %}
-                {% with season=anime.seasons.first %}
                 <div class="anime-box bg-color-black">
-                    <a href="{% if ep %}{% url 'streaming' ep.id %}{% else %}#{% endif %}">
+                    <a href="{% if anime.first_episode %}{% url 'streaming' anime.first_episode.id %}{% else %}#{% endif %}">
                         <div class="row m-0">
                             <div class="p-0 col-2">
                                 <span class="light-text text-center
@@ -402,11 +376,8 @@
                                 </span>
                             </div>
                             <div class="p-0 col-2">
-                                {% if anime.thumb_img %}
-                                <img src="{{ anime.thumb_img.image.url }}" alt="{{ anime.title }}">
-                                {% else %}
-                                <img src="{% static 'assets/media/anime-sm-img/anime-img-1.png' %}"
-                                     alt="{{ anime.title }}">
+                                {% if anime.logo_img %}
+                                <img src="{{ anime.logo_img.image.url }}" alt="{{ anime.title }}">
                                 {% endif %}
                             </div>
                             <div class="p-0 col-7">
@@ -420,8 +391,6 @@
                         </div>
                     </a>
                 </div>
-                {% endwith %}
-                {% endwith %}
                 {% endfor %}
             </div>
 
@@ -429,17 +398,12 @@
             <div class="col-xl-4 col-lg-6 col-md-6 col-sm-8 offset-xl-0 offset-lg-0 offset-md-0 offset-sm-2 col-12">
                 <h3>New</h3>
                 {% for anime in new_animes %}
-                {% with ep=anime.seasons.first.episodes.first %}
-                {% with season=anime.seasons.first %}
                 <div class="anime-box bg-color-black">
-                    <a href="{% if ep %}{% url 'streaming' ep.id %}{% else %}#{% endif %}">
+                    <a href="{% if anime.first_episode %}{% url 'streaming' anime.first_episode.id %}{% else %}#{% endif %}">
                         <div class="row m-0">
                             <div class="p-0 col-2">
-                                {% if anime.thumb_img %}
-                                <img src="{{ anime.thumb_img.image.url }}" alt="{{ anime.title }}">
-                                {% else %}
-                                <img src="{% static 'assets/media/anime-sm-img/anime-img-7.png' %}"
-                                     alt="{{ anime.title }}">
+                                {% if anime.logo_img %}
+                                <img src="{{ anime.logo_img.image.url }}" alt="{{ anime.title }}">
                                 {% endif %}
                             </div>
                             <div class="p-0 col-9">
@@ -453,8 +417,6 @@
                         </div>
                     </a>
                 </div>
-                {% endwith %}
-                {% endwith %}
                 {% endfor %}
             </div>
 
@@ -462,17 +424,12 @@
             <div class="col-xl-4 col-lg-6 col-md-6 col-sm-8 offset-xl-0 offset-lg-3 offset-md-3 offset-sm-2 col-12">
                 <h3>Recently Completed</h3>
                 {% for anime in completed_animes %}
-                {% with ep=anime.seasons.first.episodes.first %}
-                {% with season=anime.seasons.first %}
                 <div class="anime-box bg-color-black{% if forloop.last %} mb-0{% endif %}">
-                    <a href="{% if ep %}{% url 'streaming' ep.id %}{% else %}#{% endif %}">
+                    <a href="{% if anime.first_episode %}{% url 'streaming' anime.first_episode.id %}{% else %}#{% endif %}">
                         <div class="row m-0">
                             <div class="p-0 col-2">
-                                {% if anime.thumb_img %}
-                                <img src="{{ anime.thumb_img.image.url }}" alt="{{ anime.title }}">
-                                {% else %}
-                                <img src="{% static 'assets/media/anime-sm-img/anime-img-1.png' %}"
-                                     alt="{{ anime.title }}">
+                                {% if anime.logo_img %}
+                                <img src="{{ anime.logo_img.image.url }}" alt="{{ anime.title }}">
                                 {% endif %}
                             </div>
                             <div class="p-0 col-9">
@@ -486,8 +443,6 @@
                         </div>
                     </a>
                 </div>
-                {% endwith %}
-                {% endwith %}
                 {% endfor %}
             </div>
 

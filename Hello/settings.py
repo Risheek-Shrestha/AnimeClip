@@ -84,6 +84,10 @@ DATABASES = {
         'PASSWORD': os.getenv('DB_PASSWORD'),
         'HOST': os.getenv('DB_HOST'),
         'PORT': os.getenv('DB_PORT'),
+        # FIX: Reuse DB connections instead of opening a new one every request.
+        # Without this, Django opens a fresh TCP connection to Supabase on every
+        # single request, which adds 100-300ms of latency each time.
+        'CONN_MAX_AGE': 60,  # Keep connections alive for 60 seconds
     }
 }
 
