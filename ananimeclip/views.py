@@ -14,6 +14,27 @@ context = {
 }
 
 
+def attach_episode_info(anime_list):
+    """
+    For each anime in the list, attach .first_episode and .first_season
+    directly onto the object by walking the already-prefetched cache.
+    This prevents the template from calling .seasons.first.episodes.first
+    which fires 2 new DB queries per anime per call — completely bypassing
+    the prefetch_related cache.
+    """
+    for anime in anime_list:
+        seasons = list(anime.seasons.all())
+        first_season = seasons[0] if seasons else None
+        if first_season:
+            episodes = list(first_season.episodes.all())
+            first_episode = episodes[0] if episodes else None
+        else:
+            first_episode = None
+        anime.first_season = first_season
+        anime.first_episode = first_episode
+    return anime_list
+
+
 def index(request):
     today = timezone.now().date()
     start_of_week = today - timedelta(days=today.weekday())
@@ -28,13 +49,18 @@ def index(request):
             'is_today': d == today,
         })
 
+    day_names = [d['day'] for d in week_days]
+
     # Featured
-    featured_animes = Anime.objects.filter(
-        is_featured=True
-    ).prefetch_related(
-        'media_images',
-        'seasons__episodes__sources'
+    featured_animes = list(
+        Anime.objects.filter(
+            is_featured=True
+        ).prefetch_related(
+            'media_images',
+            'seasons__episodes__sources',
+        )
     )
+    attach_episode_info(featured_animes)
 
     # Recently updated
     recent_animes = list(
@@ -42,62 +68,84 @@ def index(request):
             latest_update=Max('seasons__episodes__updated_at')
         ).order_by('-latest_update')[:8].prefetch_related(
             'media_images',
-            'seasons__episodes__sources'
+            'seasons__episodes__sources',
         )
     )
+    attach_episode_info(recent_animes)
 
-    # comint_out_in
+    # Coming soon
     coming_soon_season = Season.objects.filter(
         status='upcoming',
         release_date__isnull=False
     ).select_related('anime').prefetch_related(
         'anime__media_images',
         'anime__genres',
-        'episodes__sources'
+        'episodes__sources',
     ).order_by('release_date').first()
 
     # Popular animes
-    popular_animes = Anime.objects.filter(
-        is_popular=True
-    ).prefetch_related(
-        'media_images',
-        'seasons__episodes__sources'
-    )
-
-    # Weekly schedule — group animes by their season's release_day
-    for day in week_days:
-        day_name = day['day']
-
-        day_animes = Anime.objects.filter(
-            seasons__release_day=day_name
+    popular_animes = list(
+        Anime.objects.filter(
+            is_popular=True
         ).prefetch_related(
             'media_images',
-            'seasons__episodes__sources'
-        ).distinct()
+            'seasons__episodes__sources',
+        )
+    )
+    attach_episode_info(popular_animes)
 
-        day['animes'] = day_animes
+    # Weekly schedule — single query, grouped in Python
+    scheduled_animes = list(
+        Anime.objects.filter(
+            seasons__release_day__in=day_names
+        ).prefetch_related(
+            'media_images',
+            'seasons__episodes__sources',
+        ).distinct()
+    )
+    attach_episode_info(scheduled_animes)
+
+    schedule_map = {}
+    for anime in scheduled_animes:
+        for season in anime.seasons.all():
+            if season.release_day in day_names:
+                schedule_map.setdefault(season.release_day, [])
+                if anime not in schedule_map[season.release_day]:
+                    schedule_map[season.release_day].append(anime)
+
+    for day in week_days:
+        day['animes'] = schedule_map.get(day['day'], [])
 
     # Top rated
-    top_animes = Anime.objects.order_by('-rating')[:5].prefetch_related(
-        'media_images',
-        'seasons__episodes__sources'
+    top_animes = list(
+        Anime.objects.order_by('-rating')[:5].prefetch_related(
+            'media_images',
+            'seasons__episodes',
+        )
     )
+    attach_episode_info(top_animes)
 
-    # New — most recently added seasons
-    new_animes = Anime.objects.annotate(
-        latest_update=Max('seasons__episodes__updated_at')
-    ).order_by('-latest_update')[:5].prefetch_related(
-        'media_images',
-        'seasons__episodes__sources'
+    # New — most recently added
+    new_animes = list(
+        Anime.objects.annotate(
+            latest_update=Max('seasons__episodes__updated_at')
+        ).order_by('-latest_update')[:5].prefetch_related(
+            'media_images',
+            'seasons__episodes',
+        )
     )
+    attach_episode_info(new_animes)
 
     # Recently completed
-    completed_animes = Anime.objects.filter(
-        seasons__status='completed'
-    ).prefetch_related(
-        'media_images',
-        'seasons__episodes__sources'
-    ).distinct()[:5]
+    completed_animes = list(
+        Anime.objects.filter(
+            seasons__status='completed'
+        ).prefetch_related(
+            'media_images',
+            'seasons__episodes',
+        ).distinct()[:5]
+    )
+    attach_episode_info(completed_animes)
 
     context = {
         'title': 'ananimeclip',
@@ -148,6 +196,7 @@ def movies(request):
     top_rated_movies = Movie.objects.order_by('-rating')[:6].prefetch_related(
         'media_images',
         'sources',
+        'genres',
     )
 
     # Popular movies
@@ -301,9 +350,9 @@ def live_search(request):
             Q(title__icontains=query)
         )[:5]
 
-        anime = Anime.objects.filter(
+        anime_qs = Anime.objects.filter(
             Q(title__icontains=query)
-        )[:5]
+        ).prefetch_related('seasons__episodes')[:5]
 
         for movie in movies:
             results.append({
@@ -312,8 +361,13 @@ def live_search(request):
                 'type': 'movie'
             })
 
-        for a in anime:
-            first_episode = a.seasons.first().episodes.first() if a.seasons.exists() else None
+        for a in anime_qs:
+            seasons = list(a.seasons.all())
+            if seasons:
+                episodes = list(seasons[0].episodes.all())
+                first_episode = episodes[0] if episodes else None
+            else:
+                first_episode = None
 
             if first_episode:
                 results.append({
@@ -324,9 +378,10 @@ def live_search(request):
 
     return JsonResponse({'results': results})
 
+
 def category_page(request, genre):
-    movies = Movie.objects.filter(genres__name__iexact=genre)
-    anime = Anime.objects.filter(genres__name__iexact=genre)
+    movies = Movie.objects.filter(genres__name__iexact=genre).prefetch_related('media_images')
+    anime = Anime.objects.filter(genres__name__iexact=genre).prefetch_related('media_images')
 
     return render(request, 'category.html', {
         'genre': genre,

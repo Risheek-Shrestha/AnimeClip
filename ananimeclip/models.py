@@ -46,7 +46,13 @@ class Anime(models.Model):
         return self.title
 
     def get_image(self, img_type):
-        return self.media_images.filter(type=img_type).first()
+        # FIX: Iterate over the prefetch cache instead of hitting the DB again.
+        # The old .filter() call bypassed prefetch_related and fired a new SQL
+        # query for every single image lookup on every card rendered on the page.
+        for img in self.media_images.all():
+            if img.type == img_type:
+                return img
+        return None
 
     @property
     def banner_img(self):
@@ -63,6 +69,10 @@ class Anime(models.Model):
     @property
     def card_img(self):
         return self.get_image('card')
+
+    @property
+    def logo_img(self):
+        return self.get_image('logo')
 
 
 class Movie(models.Model):
@@ -99,7 +109,11 @@ class Movie(models.Model):
         return self.title
 
     def get_image(self, img_type):
-        return self.media_images.filter(type=img_type).first()
+        # FIX: Same as Anime.get_image — use prefetch cache, not a new DB query.
+        for img in self.media_images.all():
+            if img.type == img_type:
+                return img
+        return None
 
     @property
     def banner_img(self):
@@ -224,7 +238,6 @@ class Comment(models.Model):
             raise ValidationError("Comment must be linked to either Episode or Movie")
         if self.episode and self.movie:
             raise ValidationError("Comment cannot be linked to both Episode and Movie")
-
 
 
 class CommentLike(models.Model):
