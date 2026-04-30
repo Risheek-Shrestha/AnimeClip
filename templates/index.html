@@ -306,11 +306,8 @@
                                 <div class="col-xl-8 col-lg-8 col-md-7 col-sm-10 col-12">
                                     <div class="row align-items-center">
                                         <div class="col-xl-1 col-lg-2 col-md-2 col-sm-2 col-3 ps-0 pe-0 text-end">
-                                            {% if anime.thumb_img %}
-                                            <img src="{{ anime.thumb_img.image.url }}" alt="{{ anime.title }}">
-                                            {% else %}
-                                            <img src="{% static 'assets/media/anime-sm-img/anime-img-1.png' %}"
-                                                 alt="{{ anime.title }}">
+                                            {% if anime.logo_img %}
+                                            <img src="{{ anime.logo_img.image.url }}" alt="{{ anime.title }}">
                                             {% endif %}
                                         </div>
                                         <div class="col-xl-8 col-lg-8 col-md-7 col-sm-7 col-9">
