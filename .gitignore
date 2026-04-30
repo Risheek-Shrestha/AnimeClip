@@ -1,4 +1,3 @@
-
 # Python cache
 __pycache__/
 *.pyc
@@ -6,14 +5,12 @@ __pycache__/
 # Database
 db.sqlite3
 
-# Videos
-*.mp4
-media/videos/
-    
+# Media files
+media/
+
 # Environment files
 .env
 
 # IDE files
 .idea/
 .vscode/
-
