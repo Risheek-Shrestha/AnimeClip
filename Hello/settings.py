@@ -40,11 +40,16 @@ INSTALLED_APPS = [
     'ananimeclip',
     'cloudinary',
     'cloudinary_storage',
-
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    # FIX: WhiteNoise must be second — immediately after SecurityMiddleware
+    # and before everything else. It intercepts static file requests before
+    # they ever reach Django's Python code, serving them directly with
+    # proper cache headers so browsers don't re-download jQuery/Bootstrap
+    # on every page visit.
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -85,9 +90,7 @@ DATABASES = {
         'HOST': os.getenv('DB_HOST'),
         'PORT': os.getenv('DB_PORT'),
         # FIX: Reuse DB connections instead of opening a new one every request.
-        # Without this, Django opens a fresh TCP connection to Supabase on every
-        # single request, which adds 100-300ms of latency each time.
-        'CONN_MAX_AGE': 60,  # Keep connections alive for 60 seconds
+        'CONN_MAX_AGE': 60,
     }
 }
 
@@ -125,10 +128,23 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
+# FIX: STATIC_ROOT is where collectstatic gathers all files so WhiteNoise
+# can serve them. Without this, WhiteNoise has nowhere to look.
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
 # Added manually
 STATICFILES_DIRS = [
     BASE_DIR / "static",
 ]
+
+# FIX: CompressedManifestStaticFilesStorage does two things:
+# 1. Compresses all CSS/JS files with gzip (and brotli if available),
+#    reducing download size by ~70% — jQuery goes from 133KB to ~40KB.
+# 2. Adds a content hash to each filename (e.g. jquery.abc123.min.js)
+#    so browsers can cache files forever. Once cached, the browser never
+#    downloads that file again until its content actually changes.
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
