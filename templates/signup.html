@@ -2,81 +2,87 @@
 {% load static %}
 
 {% block body %}
-    <section class="login signup text-center">
-        <div class="container">
-            <div class="login-block">
-                <div class="login-content">
-                    <img src="{% static 'assets/media/icon/user.png' %}" alt="" class="user-icon">
-                    <h3>Sign up</h3>
-                    <form method="POST" action="{% url 'signup' %}" class="form-validator" novalidate="novalidate">
-                        {% csrf_token %}
-                        {% if error %}
-                            <p style="color:red;">{{ error }}</p>
-                        {% endif %}
+<section class="login signup text-center">
+    <div class="container-fluid p-0">
+        <div class="login-block">
+            <div class="login-content">
+                <img src="{% static 'assets/media/icon/user.png' %}" alt="User" class="user-icon">
+                <h3>Create Account</h3>
 
-                        <div class="form-group">
-                            <input class="form-control" type="text" name="name" required="" placeholder="full name">
+                <form method="POST" action="{% url 'signup' %}" class="form-validator" novalidate="novalidate">
+                    {% csrf_token %}
+                    {% if error %}
+                        <div class="mb-4" style="background: rgba(255,77,77,0.1); border: 1px solid rgba(255,77,77,0.3); border-radius: 8px; padding: 12px 16px;">
+                            <p style="color: #ff4d4d; margin: 0; font-size: 14px;"><i class="fas fa-exclamation-circle me-2"></i>{{ error }}</p>
                         </div>
-                        <div class="form-group">
-                            <input class="form-control" type="number" name="age" min="1" max="120" required=""
-                                   placeholder="age">
-                        </div>
-                        <div class="form-group">
-                            <input class="form-control" type="email" name="email" required=""
-                                   placeholder="email address">
-                        </div>
-                        <div class="form-group password-type-field mb-0">
-                            <input class="form-control" type="password" id="password-field" name="password" required=""
-                                   placeholder="enter password">
-                            <span class="text-end toggle-password" toggle="#password-field"> <i
-                                    class="fas fa-eye-slash field-icon toggle-password"></i></span>
-                        </div>
-                        <div class="form-group password-type-field mb-0">
-                            <input class="form-control" type="password" id="confirm-password" name="confirm_password"
-                                   required="" placeholder="confirm password">
-                            <span class="text-end toggle-password" toggle="#confirm-password"> <i
-                                    class="fas fa-eye-slash field-icon toggle-password"></i></span>
-                        </div>
-                        <div class="custom-control custom-checkbox">
-                            <input type="checkbox" class="custom-control-input" id="check">
-                            <label class="custom-control-label" for="check">I wish to receive news and promotions from
-                                ANIMELOOP Company by email.</label>
-                        </div>
-                        <p class="policy">By continuing, you agree to ANIMELOOP Terms of Use and Privacy Policy.</p>
+                    {% endif %}
 
-                        <button type="submit" class="anime-btn btn-dark border-change">
-                            SIGN UP
-                        </button>
-                    </form>
-                    <p class="guide">Already have an account? <a href="{% url 'login' %}">Log in</a></p>
-                </div>
+                    <div class="form-group mb-4">
+                        <input class="form-control" type="text" name="name" required placeholder="Full name" autocomplete="name">
+                    </div>
+
+                    <div class="form-group mb-4">
+                        <input class="form-control" type="number" name="age" min="1" max="120" required placeholder="Age">
+                    </div>
+
+                    <div class="form-group mb-4">
+                        <input class="form-control" type="email" name="email" required placeholder="Email address" autocomplete="email">
+                    </div>
+
+                    <div class="form-group password-type-field mb-4">
+                        <input class="form-control" type="password" id="password-field" name="password" required placeholder="Create password" autocomplete="new-password">
+                        <span class="toggle-password" toggle="#password-field">
+                            <i class="fas fa-eye-slash field-icon toggle-password"></i>
+                        </span>
+                    </div>
+
+                    <div class="form-group password-type-field mb-4">
+                        <input class="form-control" type="password" id="confirm-password" name="confirm_password" required placeholder="Confirm password" autocomplete="new-password">
+                        <span class="toggle-password" toggle="#confirm-password">
+                            <i class="fas fa-eye-slash field-icon toggle-password"></i>
+                        </span>
+                    </div>
+
+                    <div class="custom-control custom-checkbox mb-3" style="text-align: left;">
+                        <input type="checkbox" class="custom-control-input" id="check">
+                        <label class="custom-control-label" for="check" style="font-size: 13px; color: var(--color-dark-grey);">
+                            I wish to receive news and promotions from Animeloop by email.
+                        </label>
+                    </div>
+
+                    <p class="policy" style="font-size: 12px; color: var(--color-dark-grey); margin-bottom: 20px;">
+                        By continuing, you agree to Animeloop <a href="#" style="color: var(--color-grey-light); display:inline;">Terms of Use</a> and <a href="#" style="color: var(--color-grey-light); display:inline;">Privacy Policy</a>.
+                    </p>
+
+                    <button type="submit" class="anime-btn btn-dark border-change w-100">
+                        Create Account
+                    </button>
+                </form>
+
+                <p class="guide mt-4">Already have an account? <a href="{% url 'login' %}">Log In</a></p>
             </div>
         </div>
-    </section>
+    </div>
+</section>
 {% endblock %}
 
 {% block signup-script %}
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            const toggles = document.querySelectorAll(".toggle-password");
-
-            toggles.forEach(function (toggle) {
-                toggle.addEventListener("click", function () {
-                    const input = document.querySelector(this.getAttribute("toggle"));
-                    const icon = this.querySelector("i");
-
-                    if (input.type === "password") {
-                        input.type = "text";
-                        icon.classList.remove("fa-eye-slash");
-                        icon.classList.add("fa-eye");
-                    } else {
-                        input.type = "password";
-                        icon.classList.remove("fa-eye");
-                        icon.classList.add("fa-eye-slash");
-                    }
-                });
-            });
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll(".toggle-password").forEach(function (toggle) {
+        toggle.addEventListener("click", function () {
+            const input = document.querySelector(this.getAttribute("toggle"));
+            const icon = this.querySelector("i");
+            if (!input) return;
+            if (input.type === "password") {
+                input.type = "text";
+                icon.classList.replace("fa-eye-slash", "fa-eye");
+            } else {
+                input.type = "password";
+                icon.classList.replace("fa-eye", "fa-eye-slash");
+            }
         });
-    </script>
-
+    });
+});
+</script>
 {% endblock signup-script %}
