@@ -63,7 +63,7 @@
             <h2>Recently Updated</h2>
         </div>
         <div class="row">
-            {% for anime in Recent_animes %}
+            {% for anime in Recent_animes|slice:":4" %}
             <div class="col-xl-3 col-lg-4 col-sm-6 col-12">
                 <div class="anime-blog">
                     <div class="img-block">
@@ -186,7 +186,7 @@
             <h2>Popular Animes</h2>
         </div>
         <div class="row">
-            {% for anime in Popular_animes %}
+            {% for anime in Popular_animes|slice:":4"%}
             <div class="col-xl-3 col-lg-4 col-sm-6 col-12">
                 <div class="anime-blog">
                     <div class="img-block">
@@ -362,30 +362,37 @@
                 {% for anime in top_animes %}
                 <div class="anime-box bg-color-black">
                     <a href="{% if anime.first_episode %}{% url 'streaming' anime.first_episode.id %}{% else %}#{% endif %}">
-                        <div class="row m-0">
-                            <div class="p-0 col-2">
-                                <span class="light-text text-center
-                                    {% if forloop.counter == 1 %}color-primary
-                                    {% elif forloop.counter == 2 %}color-purple
-                                    {% elif forloop.counter == 3 %}color-grey
-                                    {% endif %}">
-                                    {{ forloop.counter }}
-                                </span>
-                            </div>
-                            <div class="p-0 col-2">
-                                {% if anime.logo_img %}
-                                <img src="{{ anime.logo_img.image.url }}" alt="{{ anime.title }}">
-                                {% endif %}
-                            </div>
-                            <div class="p-0 col-7">
-                                <div class="anime-blog">
-                                    <p>{{ anime.title }}</p>
-                                    {% if anime.age_rating == 'r' %}
-                                    <p class="text-box active">18+</p>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
+                        <div class="row m-0 align-items-center">
+
+    <div class="p-0 col-2 text-center">
+        <span class="light-text
+            {% if forloop.counter == 1 %}color-primary
+            {% elif forloop.counter == 2 %}color-purple
+            {% elif forloop.counter == 3 %}color-grey
+            {% endif %}">
+            {{ forloop.counter }}
+        </span>
+    </div>
+
+    <div class="p-0 col-2">
+        {% if anime.logo_img %}
+        <img src="{{ anime.logo_img.image.url }}"
+             alt="{{ anime.title }}"
+             class="img-fluid">
+        {% endif %}
+    </div>
+
+    <div class="p-0 col-8">
+        <div class="anime-blog d-flex align-items-center gap-2">
+            <p class="mb-0">{{ anime.title }}</p>
+
+            {% if anime.age_rating == 'r' %}
+            <span class="text-box active">18+</span>
+            {% endif %}
+        </div>
+    </div>
+
+</div>
                     </a>
                 </div>
                 {% endfor %}

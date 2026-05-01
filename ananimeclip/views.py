@@ -326,6 +326,20 @@ def add_comment(request, episode_id):
 
 @login_required
 @require_POST
+def add_movie_comment(request, movie_id):
+    movie = get_object_or_404(Movie, id=movie_id)
+    body = request.POST.get('body', '').strip()
+    parent_id = request.POST.get('parent_id')
+    if body:
+        comment = Comment(movie=movie, user=request.user, body=body)
+        if parent_id:
+            comment.parent = get_object_or_404(Comment, id=parent_id)
+        comment.save()
+    return redirect(request.META.get('HTTP_REFERER', '/'))
+
+
+@login_required
+@require_POST
 def like_comment(request, comment_id):
     comment = get_object_or_404(Comment, id=comment_id)
     like, created = CommentLike.objects.get_or_create(user=request.user, comment=comment)

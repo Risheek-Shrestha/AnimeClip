@@ -197,7 +197,7 @@ class VideoSource(models.Model):
     episode = models.ForeignKey(Episode, on_delete=models.CASCADE, related_name='sources')
     label = models.CharField(max_length=50)
     type = models.CharField(max_length=50, choices=TYPE_CHOICES)
-    video = models.FileField(upload_to='videos/', null=True, blank=True)
+    video_url = models.URLField(max_length=500, null=True, blank=True)  # changed
     poster = models.ImageField(upload_to='posters/', null=True, blank=True)
 
     def __str__(self):
@@ -209,12 +209,11 @@ class MovieSource(models.Model):
     movie = models.ForeignKey(Movie, on_delete=models.CASCADE, related_name='sources')
     label = models.CharField(max_length=50)
     type = models.CharField(max_length=50, choices=TYPE_CHOICES)
-    video = models.FileField(upload_to='videos/', null=True, blank=True)
+    video_url = models.URLField(max_length=500, null=True, blank=True)  # changed
     poster = models.ImageField(upload_to='posters/', null=True, blank=True)
 
     def __str__(self):
         return f"{self.movie.title} - {self.label} ({self.type})"
-
 
 class Comment(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
