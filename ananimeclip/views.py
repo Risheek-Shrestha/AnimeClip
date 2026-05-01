@@ -306,7 +306,20 @@ def streaming(request, episode_id):
     return render(request, 'streaming.html', context)
 
 
-def streaming_movie(request):
+def streaming_movie(request, movie_id):
+    movie = get_object_or_404(
+        Movie.objects.prefetch_related('media_images', 'sources', 'genres'),
+        id=movie_id
+    )
+    comments = movie.comments.filter(parent=None).prefetch_related(
+        'replies__user', 'likes', 'replies__likes'
+    ).select_related('user')
+
+    context = {
+        'title': movie.title,
+        'movie': movie,
+        'comments': comments,
+    }
     return render(request, 'streaming_movie.html', context)
 
 
@@ -394,11 +407,17 @@ def live_search(request):
 
 
 def category_page(request, genre):
-    movies = Movie.objects.filter(genres__name__iexact=genre).prefetch_related('media_images')
-    anime = Anime.objects.filter(genres__name__iexact=genre).prefetch_related('media_images')
+    movies = Movie.objects.filter(genres__name__iexact=genre).prefetch_related('media_images', 'sources')
+    anime_list = list(
+        Anime.objects.filter(genres__name__iexact=genre).prefetch_related(
+            'media_images',
+            'seasons__episodes__sources',
+        )
+    )
+    attach_episode_info(anime_list)
 
     return render(request, 'category.html', {
         'genre': genre,
         'movies': movies,
-        'anime': anime,
+        'anime': anime_list,
     })
