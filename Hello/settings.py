@@ -89,8 +89,10 @@ DATABASES = {
         'PASSWORD': os.getenv('DB_PASSWORD'),
         'HOST': os.getenv('DB_HOST'),
         'PORT': os.getenv('DB_PORT'),
-        # FIX: Reuse DB connections instead of opening a new one every request.
         'CONN_MAX_AGE': 60,
+        'OPTIONS': {
+            'options': '-c AddressFamily=inet',
+        },
     }
 }
 
