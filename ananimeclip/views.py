@@ -665,4 +665,3 @@ def get_user_playlists(request):
         Playlist.objects.filter(user=request.user).values('id', 'name')
     )
     return JsonResponse({'playlists': playlists_data})
->>>>>>> 6c5281a (Add watch later, continue watching, corrected live search and movie tab)
