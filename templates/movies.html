@@ -125,9 +125,6 @@
 
                     <div class="d-flex right-nav">
                         {% if user.is_authenticated %}
-                        <a href="{% url 'continue_watching' %}" class="anime-btn2 light me-2">Continue</a>
-                        <a href="{% url 'watch_later' %}" class="anime-btn2 light me-2">Watch Later</a>
-                        <a href="{% url 'playlists' %}" class="anime-btn2 light me-3">Playlists</a>
                         <a href="{% url 'profile' %}" class="anime-btn2 light me-3">{{ user.first_name }}</a>
                         <a href="{% url 'logout' %}" class="anime-btn2 dark">LOG OUT</a>
                         {% else %}
@@ -168,9 +165,13 @@
     <!-- ===== RECENTLY UPDATED ===== -->
     <section class="recent sec-mar">
         <div class="container">
-            <div class="heading style-1">
+            <div class="heading style-1 d-flex justify-content-between align-items-center">
                 <h2>Recently Updated</h2>
+                <a href="{% url 'all_recent_movies' %}" class="anime-btn2 dark">
+                    View All <i class="fas fa-arrow-right"></i>
+                </a>
             </div>
+
             <div class="row">
                 {% for movie in recent_movies %}
                 <div class="col-xl-3 col-lg-4 col-sm-6 col-12">
@@ -241,11 +242,119 @@
         </div>
     </section>
 
+
+    {% if user.is_authenticated %}
+
+    {% if user_history %}
+    <section class="recent sec-mar">
+        <div class="container">
+            <div class="heading style-1 d-flex justify-content-between align-items-center">
+                <h2>Continue Watching</h2>
+                <a href="{% url 'continue_watching' %}" class="anime-btn2 dark">
+                    View All <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+            <div class="row">
+                {% for entry in user_history %}
+                {% if entry.movie %}
+                <div class="col-xl-3 col-lg-4 col-sm-6 col-12">
+                    <div class="anime-blog">
+                        <div class="img-block position-relative">
+                            <a href="{% url 'streaming_movie' entry.movie.id %}">
+                                {% if entry.movie.poster_img %}
+                                <img src="{{ entry.movie.poster_img.image.url }}" alt="{{ entry.movie.title }}">
+                                {% elif entry.movie.thumb_img %}
+                                <img src="{{ entry.movie.thumb_img.image.url }}" alt="{{ entry.movie.title }}">
+                                {% endif %}
+                            </a>
+                            <div style="position:absolute;bottom:0;left:0;right:0;height:4px;background:#444;">
+                                <div style="height:100%;background:var(--color-primary,#e74c3c);width:50%;"></div>
+                            </div>
+                            <div class="action-overlay">
+                                <a href="{% url 'streaming_movie' entry.movie.id %}">
+                                    <i class="fas fa-play-circle"></i> Resume
+                                </a>
+                            </div>
+                        </div>
+                        <div class="detail">
+                            <div class="tags"><p class="text">Movie</p></div>
+                        </div>
+                        <a href="{% url 'streaming_movie' entry.movie.id %}">
+                            <p>{{ entry.movie.title }}</p>
+                        </a>
+                        <p class="light-text" style="font-size:0.75rem;padding:0 10px;">
+                            {{ entry.updated_at|timesince }} ago
+                        </p>
+                    </div>
+                </div>
+                {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+    {% endif %}
+
+    {% if user_watch_later %}
+    <section class="recent sec-mar">
+        <div class="container">
+            <div class="heading style-1 d-flex justify-content-between align-items-center">
+                <h2>Watch Later</h2>
+                <a href="{% url 'watch_later' %}" class="anime-btn2 dark">
+                    View All <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+            <div class="row">
+                {% for item in user_watch_later %}
+                {% if item.movie %}
+                <div class="col-xl-3 col-lg-4 col-sm-6 col-12">
+                    <div class="anime-blog">
+                        <div class="img-block">
+                            <a href="{% url 'streaming_movie' item.movie.id %}">
+                                {% if item.movie.poster_img %}
+                                <img src="{{ item.movie.poster_img.image.url }}" alt="{{ item.movie.title }}">
+                                {% elif item.movie.thumb_img %}
+                                <img src="{{ item.movie.thumb_img.image.url }}" alt="{{ item.movie.title }}">
+                                {% endif %}
+                            </a>
+                            <div class="action-overlay">
+                                <a href="{% url 'streaming_movie' item.movie.id %}">
+                                    <i class="fas fa-play-circle"></i> Play Now
+                                </a>
+                            </div>
+                        </div>
+                        <div class="detail">
+                            <div class="tags"><p class="text">Movie</p></div>
+                            <form method="POST" action="{% url 'toggle_watch_later' %}" class="d-inline">
+                                {% csrf_token %}
+                                <input type="hidden" name="movie_id" value="{{ item.movie.id }}">
+                                <button type="submit" class="dropdown-toggle border-0 bg-transparent"
+                                        title="Remove">
+                                    <i class="fas fa-times" style="color:#999;"></i>
+                                </button>
+                            </form>
+                        </div>
+                        <a href="{% url 'streaming_movie' item.movie.id %}">
+                            <p>{{ item.movie.title }}</p>
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+    {% endif %}
+
+    {% endif %}
+
     <!-- ===== RECOMMENDATION ===== -->
     <section class="recommendation sec-mar">
         <div class="container">
-            <div class="heading style-1">
+            <div class="heading style-1 d-flex justify-content-between align-items-center">
                 <h2>Recommendation</h2>
+                <a href="{% url 'all_popular_movies' %}" class="anime-btn2 dark">
+                    View All <i class="fas fa-arrow-right"></i>
+                </a>
             </div>
             <div class="row">
                 {% for movie in popular_movies %}
@@ -317,105 +426,6 @@
         </div>
     </section>
 
-    {% if user.is_authenticated %}
-
-{% if user_history %}
-<section class="recent sec-mar">
-    <div class="container">
-        <div class="heading style-1 d-flex justify-content-between align-items-center">
-            <h2>Continue Watching</h2>
-            <a href="{% url 'continue_watching' %}" class="comment-btn">View All</a>
-        </div>
-        <div class="row">
-            {% for entry in user_history %}
-            {% if entry.movie %}
-            <div class="col-xl-3 col-lg-4 col-sm-6 col-12">
-                <div class="anime-blog">
-                    <div class="img-block position-relative">
-                        <a href="{% url 'streaming_movie' entry.movie.id %}">
-                            {% if entry.movie.poster_img %}
-                            <img src="{{ entry.movie.poster_img.image.url }}" alt="{{ entry.movie.title }}">
-                            {% elif entry.movie.thumb_img %}
-                            <img src="{{ entry.movie.thumb_img.image.url }}" alt="{{ entry.movie.title }}">
-                            {% endif %}
-                        </a>
-                        <div style="position:absolute;bottom:0;left:0;right:0;height:4px;background:#444;">
-                            <div style="height:100%;background:var(--color-primary,#e74c3c);width:50%;"></div>
-                        </div>
-                        <div class="action-overlay">
-                            <a href="{% url 'streaming_movie' entry.movie.id %}">
-                                <i class="fas fa-play-circle"></i> Resume
-                            </a>
-                        </div>
-                    </div>
-                    <div class="detail">
-                        <div class="tags"><p class="text">Movie</p></div>
-                    </div>
-                    <a href="{% url 'streaming_movie' entry.movie.id %}">
-                        <p>{{ entry.movie.title }}</p>
-                    </a>
-                    <p class="light-text" style="font-size:0.75rem;padding:0 10px;">
-                        {{ entry.updated_at|timesince }} ago
-                    </p>
-                </div>
-            </div>
-            {% endif %}
-            {% endfor %}
-        </div>
-    </div>
-</section>
-{% endif %}
-
-{% if user_watch_later %}
-<section class="recent sec-mar">
-    <div class="container">
-        <div class="heading style-1 d-flex justify-content-between align-items-center">
-            <h2>Watch Later</h2>
-            <a href="{% url 'watch_later' %}" class="comment-btn">View All</a>
-        </div>
-        <div class="row">
-            {% for item in user_watch_later %}
-            {% if item.movie %}
-            <div class="col-xl-3 col-lg-4 col-sm-6 col-12">
-                <div class="anime-blog">
-                    <div class="img-block">
-                        <a href="{% url 'streaming_movie' item.movie.id %}">
-                            {% if item.movie.poster_img %}
-                            <img src="{{ item.movie.poster_img.image.url }}" alt="{{ item.movie.title }}">
-                            {% elif item.movie.thumb_img %}
-                            <img src="{{ item.movie.thumb_img.image.url }}" alt="{{ item.movie.title }}">
-                            {% endif %}
-                        </a>
-                        <div class="action-overlay">
-                            <a href="{% url 'streaming_movie' item.movie.id %}">
-                                <i class="fas fa-play-circle"></i> Play Now
-                            </a>
-                        </div>
-                    </div>
-                    <div class="detail">
-                        <div class="tags"><p class="text">Movie</p></div>
-                        <form method="POST" action="{% url 'toggle_watch_later' %}" class="d-inline">
-                            {% csrf_token %}
-                            <input type="hidden" name="movie_id" value="{{ item.movie.id }}">
-                            <button type="submit" class="dropdown-toggle border-0 bg-transparent"
-                                    title="Remove">
-                                <i class="fas fa-times" style="color:#999;"></i>
-                            </button>
-                        </form>
-                    </div>
-                    <a href="{% url 'streaming_movie' item.movie.id %}">
-                        <p>{{ item.movie.title }}</p>
-                    </a>
-                </div>
-            </div>
-            {% endif %}
-            {% endfor %}
-        </div>
-    </div>
-</section>
-{% endif %}
-
-{% endif %}
 
     <!-- ===== COMING SOON ===== -->
     {% if coming_soon_movie %}

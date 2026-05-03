@@ -665,3 +665,54 @@ def get_user_playlists(request):
         Playlist.objects.filter(user=request.user).values('id', 'name')
     )
     return JsonResponse({'playlists': playlists_data})
+
+# Movies - Recently Updated
+def all_recent_movies(request):
+    movies = Movie.objects.filter(
+        release_date__isnull=False
+    ).prefetch_related('media_images', 'sources', 'genres').order_by('-release_date')
+    return render(request, 'all_recent_movies.html', {
+        'title': 'Recently Updated Movies',
+        'movies': movies,
+    })
+
+# Movies - Popular/Recommended
+def all_popular_movies(request):
+    movies = Movie.objects.filter(
+        is_popular=True
+    ).prefetch_related('media_images', 'sources', 'genres')
+    return render(request, 'all_popular_movies.html', {
+        'title': 'Popular Movies',
+        'movies': movies,
+    })
+
+# Anime - Recently Updated
+def all_recent_anime(request):
+    from django.db.models import Max
+    anime_list = list(
+        Anime.objects.annotate(
+            latest_update=Max('seasons__episodes__updated_at')
+        ).order_by('-latest_update').prefetch_related(
+            'media_images', 'seasons__episodes__sources',
+        )
+    )
+    attach_episode_info(anime_list)
+    return render(request, 'all_recent_anime.html', {
+        'title': 'Recently Updated Anime',
+        'anime_list': anime_list,
+    })
+
+# Anime - Popular/Recommended
+def all_popular_anime(request):
+    anime_list = list(
+        Anime.objects.filter(
+            is_popular=True
+        ).prefetch_related(
+            'media_images', 'seasons__episodes__sources',
+        )
+    )
+    attach_episode_info(anime_list)
+    return render(request, 'all_popular_anime.html', {
+        'title': 'Popular Anime',
+        'anime_list': anime_list,
+    })
