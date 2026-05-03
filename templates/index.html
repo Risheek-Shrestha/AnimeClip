@@ -19,7 +19,8 @@
                         <p class="text">SEASON {{ anime.first_season.number }}</p>
                         {% endif %}
 
-                        <a href="{% if anime.first_episode %}{% url 'streaming' anime.first_episode.id %}{% else %}#{% endif %}" class="text-box active">
+                        <a href="{% if anime.first_episode %}{% url 'streaming' anime.first_episode.id %}{% else %}#{% endif %}"
+                           class="text-box active">
                             {{ anime.get_age_rating_display }}
                         </a>
                         {% if anime.first_episode %}
@@ -35,7 +36,8 @@
                         <p>{{ anime.description|truncatewords:30 }}</p>
 
                         {% if anime.first_episode %}
-                        <a class="play-butn" href="{% url 'streaming' anime.first_episode.id %}"><span>PLAY NOW</span></a>
+                        <a class="play-butn"
+                           href="{% url 'streaming' anime.first_episode.id %}"><span>PLAY NOW</span></a>
                         {% else %}
                         <a class="play-butn" href="#"><span>COMING SOON</span></a>
                         {% endif %}
@@ -113,8 +115,27 @@
                                 </svg>
                             </button>
                             <ul class="dropdown-menu bg-color-black pt-3 pb-3 ps-3 pe-3">
-                                <li><a href="" class="none"><i class="fa fa-check"></i> Watch Later</a></li>
-                                <li><a href=""><i class="fas fa-plus"></i> Add to Playlist</a></li>
+                                {% if user.is_authenticated %}
+                                {% if anime.first_episode %}
+                                <li>
+                                    <a href="#" class="none watch-later-btn"
+                                       data-episode-id="{{ anime.first_episode.id }}">
+                                        <i class="fa fa-clock"></i> Watch Later
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="#" class="add-to-playlist-btn"
+                                       data-episode-id="{{ anime.first_episode.id }}"
+                                       data-bs-toggle="modal"
+                                       data-bs-target="#playlistModal">
+                                        <i class="fas fa-plus"></i> Add to Playlist
+                                    </a>
+                                </li>
+                                {% endif %}
+                                {% else %}
+                                <li><a href="{% url 'login' %}"><i class="fa fa-clock"></i> Watch Later</a></li>
+                                <li><a href="{% url 'login' %}"><i class="fas fa-plus"></i> Add to Playlist</a></li>
+                                {% endif %}
                             </ul>
                         </div>
                     </div>
@@ -178,6 +199,188 @@
 {% endwith %}
 {% endif %}
 
+{% if user.is_authenticated %}
+
+<!-- ===== CONTINUE WATCHING ===== -->
+{% if user_history %}
+<section class="recent sec-mar">
+    <div class="container">
+        <div class="heading style-1 d-flex justify-content-between align-items-center">
+            <h2>Continue Watching</h2>
+            <a href="{% url 'continue_watching' %}" class="comment-btn">View All</a>
+        </div>
+        <div class="row">
+            {% for entry in user_history %}
+
+            {% if entry.episode %}
+            {% with anime=entry.episode.season.anime %}
+            <div class="col-xl-3 col-lg-4 col-sm-6 col-12">
+                <div class="anime-blog">
+                    <div class="img-block position-relative">
+                        <a href="{% url 'streaming' entry.episode.id %}">
+                            {% if anime.poster_img %}
+                            <img src="{{ anime.poster_img.image.url }}" alt="{{ anime.title }}">
+                            {% elif anime.thumb_img %}
+                            <img src="{{ anime.thumb_img.image.url }}" alt="{{ anime.title }}">
+                            {% endif %}
+                        </a>
+                        <!-- Progress bar -->
+                        <div style="position:absolute;bottom:0;left:0;right:0;height:4px;background:#444;">
+                            <div style="height:100%;background:var(--color-primary,#e74c3c);width:50%;"></div>
+                        </div>
+                        <div class="action-overlay">
+                            <a href="{% url 'streaming' entry.episode.id %}">
+                                <i class="fas fa-play-circle"></i> Resume
+                            </a>
+                        </div>
+                    </div>
+                    <div class="detail">
+                        <div class="tags">
+                            <p class="text">Ep {{ entry.episode.number }}</p>
+                        </div>
+                    </div>
+                    <a href="{% url 'streaming' entry.episode.id %}">
+                        <p>{{ anime.title }}</p>
+                    </a>
+                    <p class="light-text" style="font-size:0.75rem;padding:0 10px;">
+                        {{ entry.updated_at|timesince }} ago
+                    </p>
+                </div>
+            </div>
+            {% endwith %}
+
+            {% elif entry.movie %}
+            <div class="col-xl-3 col-lg-4 col-sm-6 col-12">
+                <div class="anime-blog">
+                    <div class="img-block position-relative">
+                        <a href="{% url 'streaming_movie' entry.movie.id %}">
+                            {% if entry.movie.poster_img %}
+                            <img src="{{ entry.movie.poster_img.image.url }}" alt="{{ entry.movie.title }}">
+                            {% elif entry.movie.thumb_img %}
+                            <img src="{{ entry.movie.thumb_img.image.url }}" alt="{{ entry.movie.title }}">
+                            {% endif %}
+                        </a>
+                        <div style="position:absolute;bottom:0;left:0;right:0;height:4px;background:#444;">
+                            <div style="height:100%;background:var(--color-primary,#e74c3c);width:50%;"></div>
+                        </div>
+                        <div class="action-overlay">
+                            <a href="{% url 'streaming_movie' entry.movie.id %}">
+                                <i class="fas fa-play-circle"></i> Resume
+                            </a>
+                        </div>
+                    </div>
+                    <div class="detail">
+                        <div class="tags"><p class="text">Movie</p></div>
+                    </div>
+                    <a href="{% url 'streaming_movie' entry.movie.id %}">
+                        <p>{{ entry.movie.title }}</p>
+                    </a>
+                    <p class="light-text" style="font-size:0.75rem;padding:0 10px;">
+                        {{ entry.updated_at|timesince }} ago
+                    </p>
+                </div>
+            </div>
+            {% endif %}
+
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- ===== WATCH LATER ===== -->
+{% if user_watch_later %}
+<section class="recent sec-mar">
+    <div class="container">
+        <div class="heading style-1 d-flex justify-content-between align-items-center">
+            <h2>Watch Later</h2>
+            <a href="{% url 'watch_later' %}" class="comment-btn">View All</a>
+        </div>
+        <div class="row">
+            {% for item in user_watch_later %}
+
+            {% if item.episode %}
+            {% with anime=item.episode.season.anime %}
+            <div class="col-xl-3 col-lg-4 col-sm-6 col-12">
+                <div class="anime-blog">
+                    <div class="img-block">
+                        <a href="{% url 'streaming' item.episode.id %}">
+                            {% if anime.poster_img %}
+                            <img src="{{ anime.poster_img.image.url }}" alt="{{ anime.title }}">
+                            {% elif anime.thumb_img %}
+                            <img src="{{ anime.thumb_img.image.url }}" alt="{{ anime.title }}">
+                            {% endif %}
+                        </a>
+                        <div class="action-overlay">
+                            <a href="{% url 'streaming' item.episode.id %}">
+                                <i class="fas fa-play-circle"></i> Play Now
+                            </a>
+                        </div>
+                    </div>
+                    <div class="detail">
+                        <div class="tags">
+                            <p class="text">Ep {{ item.episode.number }}</p>
+                        </div>
+                        <!-- Remove from watch later -->
+                        <form method="POST" action="{% url 'toggle_watch_later' %}" class="d-inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="episode_id" value="{{ item.episode.id }}">
+                            <button type="submit" class="dropdown-toggle border-0 bg-transparent"
+                                    title="Remove from Watch Later">
+                                <i class="fas fa-times" style="color:#999;"></i>
+                            </button>
+                        </form>
+                    </div>
+                    <a href="{% url 'streaming' item.episode.id %}">
+                        <p>{{ anime.title }}</p>
+                    </a>
+                </div>
+            </div>
+            {% endwith %}
+
+            {% elif item.movie %}
+            <div class="col-xl-3 col-lg-4 col-sm-6 col-12">
+                <div class="anime-blog">
+                    <div class="img-block">
+                        <a href="{% url 'streaming_movie' item.movie.id %}">
+                            {% if item.movie.poster_img %}
+                            <img src="{{ item.movie.poster_img.image.url }}" alt="{{ item.movie.title }}">
+                            {% elif item.movie.thumb_img %}
+                            <img src="{{ item.movie.thumb_img.image.url }}" alt="{{ item.movie.title }}">
+                            {% endif %}
+                        </a>
+                        <div class="action-overlay">
+                            <a href="{% url 'streaming_movie' item.movie.id %}">
+                                <i class="fas fa-play-circle"></i> Play Now
+                            </a>
+                        </div>
+                    </div>
+                    <div class="detail">
+                        <div class="tags"><p class="text">Movie</p></div>
+                        <form method="POST" action="{% url 'toggle_watch_later' %}" class="d-inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="movie_id" value="{{ item.movie.id }}">
+                            <button type="submit" class="dropdown-toggle border-0 bg-transparent"
+                                    title="Remove from Watch Later">
+                                <i class="fas fa-times" style="color:#999;"></i>
+                            </button>
+                        </form>
+                    </div>
+                    <a href="{% url 'streaming_movie' item.movie.id %}">
+                        <p>{{ item.movie.title }}</p>
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+{% endif %}{# end user.is_authenticated #}
+
 <!-- ================= POPULAR SECTION ================= -->
 
 <section class="popular sec-mar">
@@ -236,8 +439,27 @@
                                 </svg>
                             </button>
                             <ul class="dropdown-menu bg-color-black pt-3 pb-3 ps-3 pe-3">
-                                <li><a href="" class="none"><i class="fa fa-check"></i> Watch Later</a></li>
-                                <li><a href=""><i class="fas fa-plus"></i> Add to Playlist</a></li>
+                                {% if user.is_authenticated %}
+                                {% if anime.first_episode %}
+                                <li>
+                                    <a href="#" class="none watch-later-btn"
+                                       data-episode-id="{{ anime.first_episode.id }}">
+                                        <i class="fa fa-clock"></i> Watch Later
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="#" class="add-to-playlist-btn"
+                                       data-episode-id="{{ anime.first_episode.id }}"
+                                       data-bs-toggle="modal"
+                                       data-bs-target="#playlistModal">
+                                        <i class="fas fa-plus"></i> Add to Playlist
+                                    </a>
+                                </li>
+                                {% endif %}
+                                {% else %}
+                                <li><a href="{% url 'login' %}"><i class="fa fa-clock"></i> Watch Later</a></li>
+                                <li><a href="{% url 'login' %}"><i class="fas fa-plus"></i> Add to Playlist</a></li>
+                                {% endif %}
                             </ul>
                         </div>
                     </div>
@@ -364,7 +586,7 @@
                     <a href="{% if anime.first_episode %}{% url 'streaming' anime.first_episode.id %}{% else %}#{% endif %}">
                         <div class="row m-0 align-items-center">
 
-    <div class="p-0 col-2 text-center">
+                            <div class="p-0 col-2 text-center">
         <span class="light-text
             {% if forloop.counter == 1 %}color-primary
             {% elif forloop.counter == 2 %}color-purple
@@ -372,27 +594,27 @@
             {% endif %}">
             {{ forloop.counter }}
         </span>
-    </div>
+                            </div>
 
-    <div class="p-0 col-2">
-        {% if anime.logo_img %}
-        <img src="{{ anime.logo_img.image.url }}"
-             alt="{{ anime.title }}"
-             class="img-fluid">
-        {% endif %}
-    </div>
+                            <div class="p-0 col-2">
+                                {% if anime.logo_img %}
+                                <img src="{{ anime.logo_img.image.url }}"
+                                     alt="{{ anime.title }}"
+                                     class="img-fluid">
+                                {% endif %}
+                            </div>
 
-    <div class="p-0 col-8">
-        <div class="anime-blog d-flex align-items-center gap-2">
-            <p class="mb-0">{{ anime.title }}</p>
+                            <div class="p-0 col-8">
+                                <div class="anime-blog d-flex align-items-center gap-2">
+                                    <p class="mb-0">{{ anime.title }}</p>
 
-            {% if anime.age_rating == 'r' %}
-            <span class="text-box active">18+</span>
-            {% endif %}
-        </div>
-    </div>
+                                    {% if anime.age_rating == 'r' %}
+                                    <span class="text-box active">18+</span>
+                                    {% endif %}
+                                </div>
+                            </div>
 
-</div>
+                        </div>
                     </a>
                 </div>
                 {% endfor %}
@@ -454,4 +676,74 @@
     </div>
 </section>
 
+{% if user.is_authenticated %}
+<div class="modal fade" id="playlistModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content bg-color-black">
+            <div class="modal-header border-0">
+                <h5 class="modal-title">Add to Playlist</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="playlist-list"><p>Loading...</p></div>
+            <div class="modal-footer border-0">
+                <a href="{% url 'playlists' %}" class="comment-btn">Manage Playlists</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function getCSRF() {
+        return document.cookie.split('; ').find(r => r.startsWith('csrftoken'))?.split('=')[1];
+    }
+
+    document.querySelectorAll('.watch-later-btn').forEach(btn => {
+        btn.addEventListener('click', function (e) {
+            e.preventDefault();
+            const body = new URLSearchParams();
+            if (this.dataset.episodeId) body.append('episode_id', this.dataset.episodeId);
+            if (this.dataset.movieId) body.append('movie_id', this.dataset.movieId);
+            fetch('/watch-later/toggle/', {
+                method: 'POST',
+                headers: {'X-CSRFToken': getCSRF()},
+                body: body
+            })
+                .then(r => r.json())
+                .then(data => {
+                    this.innerHTML = data.status === 'added'
+                        ? '<i class="fa fa-clock"></i> Added'
+                        : '<i class="fa fa-clock"></i> Watch Later';
+                });
+        });
+    });
+
+    document.getElementById('playlistModal')?.addEventListener('show.bs.modal', function (e) {
+        const trigger = e.relatedTarget;
+        const episodeId = trigger?.dataset.episodeId || '';
+        const movieId = trigger?.dataset.movieId || '';
+
+        fetch('/playlists/json/')
+            .then(r => r.json())
+            .then(data => {
+                const container = document.getElementById('playlist-list');
+                if (!data.playlists.length) {
+                    container.innerHTML = '<p>No playlists. <a href="/playlists/">Create one</a>.</p>';
+                    return;
+                }
+                container.innerHTML = data.playlists.map(p => `
+                <form method="POST" action="/playlists/add-item/" style="margin-bottom:8px;">
+                    <input type="hidden" name="csrfmiddlewaretoken" value="${getCSRF()}">
+                    <input type="hidden" name="playlist_id" value="${p.id}">
+                    ${episodeId ? `<input type="hidden" name="episode_id" value="${episodeId}">` : ''}
+                    ${movieId ? `<input type="hidden" name="movie_id"   value="${movieId}">` : ''}
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>${p.name}</span>
+                        <button type="submit" class="comment-btn active">Add</button>
+                    </div>
+                </form>
+            `).join('');
+            });
+    });
+</script>
+{% endif %}
 {% endblock body %}

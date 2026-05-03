@@ -1,1 +1,82 @@
 {% extends 'base.html' %}
+{% load static %}
+{% block body %}
+
+<section class="breadcrumb sec-mar">
+    <div class="container">
+        <div class="breadcrumb-content">
+            <ul>
+                <li><a href="{% url 'index' %}">Home</a></li>
+                <li><a class="active">Playlists</a></li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<section class="recent sec-mar">
+    <div class="container">
+        <div class="heading style-1 d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <h2>My Playlists</h2>
+            <button class="anime-btn2 dark" data-bs-toggle="modal" data-bs-target="#createPlaylistModal">
+                + New Playlist
+            </button>
+        </div>
+
+        <div class="row mt-4">
+            {% for playlist in playlists %}
+            <div class="col-xl-3 col-lg-4 col-sm-6 col-12 mb-4">
+                <div class="anime-blog p-3" style="border:1px solid #333;border-radius:8px;">
+                    <a href="{% url 'playlist_detail' playlist.id %}">
+                        <p style="font-size:1.1rem;font-weight:600;">{{ playlist.name }}</p>
+                    </a>
+                    <p class="text">{{ playlist.items.count }} item{{ playlist.items.count|pluralize }}</p>
+                    <p class="light-text" style="font-size:0.8rem;">
+                        Created {{ playlist.created_at|timesince }} ago
+                    </p>
+                    <div class="d-flex gap-2 mt-2">
+                        <a href="{% url 'playlist_detail' playlist.id %}" class="comment-btn active">
+                            <i class="fas fa-eye"></i> View
+                        </a>
+                        <form method="POST" action="{% url 'delete_playlist' playlist.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="comment-btn"
+                                    onclick="return confirm('Delete \'{{ playlist.name }}\'?')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12 text-center py-5">
+                <i class="fas fa-list" style="font-size:48px;color:var(--color-dark-grey);display:block;margin-bottom:16px;"></i>
+                <p style="color:var(--color-dark-grey);font-size:18px;">No playlists yet. Create your first one!</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Create Playlist Modal -->
+<div class="modal fade" id="createPlaylistModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content bg-color-black">
+            <div class="modal-header border-0">
+                <h5 class="modal-title">Create New Playlist</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form method="POST" action="{% url 'create_playlist' %}">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <input type="text" name="name" class="form-control"
+                               placeholder="Playlist name" required maxlength="100">
+                    </div>
+                    <button type="submit" class="anime-btn2 dark mt-3">Create</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock body %}

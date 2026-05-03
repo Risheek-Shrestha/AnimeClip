@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block body %}
+
+<section class="breadcrumb sec-mar">
+    <div class="container">
+        <div class="breadcrumb-content">
+            <ul>
+                <li><a href="{% url 'index' %}">Home</a></li>
+                <li><a href="{% url 'playlists' %}">Playlists</a></li>
+                <li><a class="active">{{ playlist.name }}</a></li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<section class="recent sec-mar">
+    <div class="container">
+        <div class="heading style-1 d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <h2>{{ playlist.name }}</h2>
+            <a href="{% url 'playlists' %}" class="comment-btn">
+                <i class="fas fa-arrow-left"></i> Back to Playlists
+            </a>
+        </div>
+
+        <div class="row mt-3">
+            {% for item in items %}
+
+            {% if item.episode %}
+            {% with anime=item.episode.season.anime %}
+            <div class="col-xl-3 col-lg-4 col-sm-6 col-12 mb-4">
+                <div class="anime-blog">
+                    <a href="{% url 'streaming' item.episode.id %}" class="img-block">
+                        {% if anime.poster_img %}
+                        <img src="{{ anime.poster_img.image.url }}" alt="{{ anime.title }}">
+                        {% elif anime.thumb_img %}
+                        <img src="{{ anime.thumb_img.image.url }}" alt="{{ anime.title }}">
+                        {% endif %}
+                    </a>
+                    <div class="detail">
+                        <div class="tags"><p class="text">Anime · Ep {{ item.episode.number }}</p></div>
+                    </div>
+                    <a href="{% url 'streaming' item.episode.id %}">
+                        <p>{{ anime.title }}</p>
+                    </a>
+                    <form method="POST" action="{% url 'remove_from_playlist' item.id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="comment-btn mt-1">
+                            <i class="fas fa-trash"></i> Remove
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endwith %}
+
+            {% elif item.movie %}
+            <div class="col-xl-3 col-lg-4 col-sm-6 col-12 mb-4">
+                <div class="anime-blog">
+                    <a href="{% url 'streaming_movie' item.movie.id %}" class="img-block">
+                        {% if item.movie.poster_img %}
+                        <img src="{{ item.movie.poster_img.image.url }}" alt="{{ item.movie.title }}">
+                        {% elif item.movie.thumb_img %}
+                        <img src="{{ item.movie.thumb_img.image.url }}" alt="{{ item.movie.title }}">
+                        {% endif %}
+                    </a>
+                    <div class="detail">
+                        <div class="tags"><p class="text">Movie</p></div>
+                    </div>
+                    <a href="{% url 'streaming_movie' item.movie.id %}">
+                        <p>{{ item.movie.title }}</p>
+                    </a>
+                    <form method="POST" action="{% url 'remove_from_playlist' item.id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="comment-btn mt-1">
+                            <i class="fas fa-trash"></i> Remove
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+
+            {% empty %}
+            <div class="col-12 text-center py-5">
+                <i class="fas fa-film" style="font-size:48px;color:var(--color-dark-grey);display:block;margin-bottom:16px;"></i>
+                <p style="color:var(--color-dark-grey);font-size:18px;">This playlist is empty.</p>
+                <a href="{% url 'index' %}" class="anime-btn2 dark mt-3">Browse Anime</a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+{% endblock body %}

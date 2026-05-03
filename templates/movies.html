@@ -9,37 +9,36 @@
 
     <link href="{% static 'assets/css/bootstrap.min.css' %}" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'assets/css/font-awesome.css' %}">
-    <link HREF="{% static 'assets/css/slick-theme.css' %}" rel="stylesheet">
+    <link href="{% static 'assets/css/slick-theme.css' %}" rel="stylesheet">
     <link href="{% static 'assets/css/slick.css' %}" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'assets/css/style.css' %}?v=1.3">
-
 </head>
-<body class="stick-header">
+<body class="sticky-header">
 
 <div class="main-wrapper" id="main-wrapper">
-    <!--=====================================-->
-    <!--=        Header Area Start       	=-->
-    <!--=====================================-->
+
+    <!-- ===== HEADER ===== -->
     <header class="header style-2">
         <div class="container">
-            <!-- Start Mainmanu Nav -->
             <nav class="navbar navbar-expand-lg">
-                <a class="navbar-brand" href="{% url 'index' %}"><img src="{%static 'assets/media/logo.png' %}" alt=""></a>
+                <a class="navbar-brand" href="{% url 'index' %}">
+                    <img src="{% static 'assets/media/logo.png' %}" alt="">
+                </a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mynavbar">
                     <i class="fas fa-bars"></i>
                 </button>
                 <div class="collapse navbar-collapse" id="mynavbar">
-                    <form onsubmit="return false;">
+                    <form onsubmit="window.location.href='/search/?q='+encodeURIComponent(document.getElementById('searchInput').value); return false;">
                         <div class="input-group form-group header-search-box position-relative">
                             <button class="input-group-text anime-btn" type="submit">
                                 <i class="fas fa-search"></i>
                             </button>
-
-                            <input class="form-control" type="text" id="searchInput" placeholder="Search" autocomplete="off">
-
+                            <input class="form-control" type="text" id="searchInput" placeholder="Search"
+                                   autocomplete="off">
                             <div id="searchResults" class="search-dropdown"></div>
                         </div>
                     </form>
+
                     <ul class="navbar-nav m-auto mainmenu">
                         <li class="menu-item-has-children">
                             <a href="{% url 'index' %}">Anime</a>
@@ -48,7 +47,7 @@
                             <a href="{% url 'movies' %}" class="active">Movie</a>
                         </li>
                         <li class="menu-item-has-children">
-                            <a href="./home-3.html">Manga</a>
+                            <a href="#">Manga</a>
                         </li>
                         <li class="menu-item-has-children dropdown">
                             <a href="#" class="dropdown-toggle" id="genre"
@@ -56,114 +55,98 @@
                                data-bs-auto-close="outside"
                                aria-expanded="false">
                                 Categories <i class="fas fa-angle-down"></i>
-
                             </a>
                             <ul class="dropdown-menu" aria-labelledby="genre"
                                 style="position: absolute; inset: 50px auto auto 0px; margin: 0px; transform: translate(0px, 40px);"
                                 data-popper-placement="bottom-start">
-
                                 <li>
                                     <div class="custom-control custom-checkbox">
-                                        <a href="/category/action/">
-                                            <i class="fas fa-bolt me-2"></i> Action
-                                        </a>
+                                        <a href="/category/action/"><i class="fas fa-bolt me-2"></i> Action</a>
                                     </div>
                                 </li>
-
                                 <li>
                                     <div class="custom-control custom-checkbox">
-                                        <a href="/category/adventure/">
-                                            <i class="fas fa-compass me-2"></i> Adventure
-                                        </a>
+                                        <a href="/category/adventure/"><i class="fas fa-compass me-2"></i> Adventure</a>
                                     </div>
                                 </li>
-
                                 <li>
                                     <div class="custom-control custom-checkbox">
-                                        <a href="/category/comedy/">
-                                            <i class="fas fa-laugh me-2"></i> Comedy
-                                        </a>
+                                        <a href="/category/comedy/"><i class="fas fa-laugh me-2"></i> Comedy</a>
                                     </div>
                                 </li>
-
                                 <li>
                                     <div class="custom-control custom-checkbox">
-                                        <a href="/category/drama/">
-                                            <i class="fas fa-theater-masks me-2"></i> Drama
-                                        </a>
+                                        <a href="/category/drama/"><i class="fas fa-theater-masks me-2"></i> Drama</a>
                                     </div>
                                 </li>
-
                                 <li>
                                     <div class="custom-control custom-checkbox">
-                                        <a href="/category/fantasy/">
-                                            <i class="fas fa-hat-wizard me-2"></i> Fantasy
-                                        </a>
+                                        <a href="/category/fantasy/"><i class="fas fa-hat-wizard me-2"></i> Fantasy</a>
                                     </div>
                                 </li>
-
                                 <li>
                                     <div class="custom-control custom-checkbox">
-                                        <a href="/category/horror/">
-                                            <i class="fas fa-skull me-2"></i> Horror
-                                        </a>
+                                        <a href="/category/horror/"><i class="fas fa-skull me-2"></i> Horror</a>
                                     </div>
                                 </li>
-
                                 <li>
                                     <div class="custom-control custom-checkbox">
-                                        <a href="/category/isekai/">
-                                            <i class="fas fa-door-open me-2"></i> Isekai
-                                        </a>
+                                        <a href="/category/isekai/"><i class="fas fa-door-open me-2"></i> Isekai</a>
                                     </div>
                                 </li>
-
                                 <li>
                                     <div class="custom-control custom-checkbox">
-                                        <a href="/category/romance/">
-                                            <i class="fas fa-heart me-2"></i> Romance
-                                        </a>
+                                        <a href="/category/romance/"><i class="fas fa-heart me-2"></i> Romance</a>
                                     </div>
                                 </li>
-
                                 <li>
                                     <div class="custom-control custom-checkbox">
-                                        <a href="/category/sci-fi/">
-                                            <i class="fas fa-rocket me-2"></i> Sci-Fi
-                                        </a>
+                                        <a href="/category/sci-fi/"><i class="fas fa-rocket me-2"></i> Sci-Fi</a>
                                     </div>
                                 </li>
-
                                 <li>
                                     <div class="custom-control custom-checkbox">
-                                        <a href="/category/slice-of-life/">
-                                            <i class="fas fa-leaf me-2"></i> Slice of Life
-                                        </a>
+                                        <a href="/category/slice-of-life/"><i class="fas fa-leaf me-2"></i> Slice of
+                                            Life</a>
+                                    </div>
+                                </li>
+                                <li>
+                                    <hr class="dropdown-divider">
+                                </li>
+                                <li>
+                                    <div class="custom-control custom-checkbox">
+                                        <a href="{% url 'all_categories' %}"><i class="fas fa-th me-2"></i> View All
+                                            Categories</a>
                                     </div>
                                 </li>
                             </ul>
-
                         </li>
                     </ul>
+
                     <div class="d-flex right-nav">
-                        <a href="{%url 'signup' %}" class="anime-btn2 light me-3">SIGN UP</a>
-                        <a href="{%url 'login' %}" class="anime-btn2 dark">LOG IN</a>
+                        {% if user.is_authenticated %}
+                        <a href="{% url 'continue_watching' %}" class="anime-btn2 light me-2">Continue</a>
+                        <a href="{% url 'watch_later' %}" class="anime-btn2 light me-2">Watch Later</a>
+                        <a href="{% url 'playlists' %}" class="anime-btn2 light me-3">Playlists</a>
+                        <a href="{% url 'profile' %}" class="anime-btn2 light me-3">{{ user.first_name }}</a>
+                        <a href="{% url 'logout' %}" class="anime-btn2 dark">LOG OUT</a>
+                        {% else %}
+                        <a href="{% url 'signup' %}" class="anime-btn2 light me-3">SIGN UP</a>
+                        <a href="{% url 'login' %}" class="anime-btn2 dark">LOG IN</a>
+                        {% endif %}
                     </div>
                 </div>
             </nav>
         </div>
     </header>
-    <!--=====================================-->
-    <!--=        Banner Area Start          =-->
-    <!--=====================================-->
-    <section class="banner style-2 banner-slider">
 
+    <!-- ===== BANNER SLIDER ===== -->
+    <section class="banner style-2 banner-slider">
         {% for movie in featured_movies %}
         <div class="banner-block overflow-hidden style-1"
-            {% if movie.thumb_img %}
-            style="background-image: url('{{ movie.thumb_img.image.url }}'); background-size: cover;
-            background-position: center;"
-            {% endif %}>
+             {% if movie.thumb_img %}
+             style="background-image: url('{{ movie.thumb_img.image.url }}'); background-size: cover; background-position: center;"
+             {% endif %}>
             <div class="container">
                 <h2 class="title">{{ movie.title|upper }}</h2>
                 <p class="text">
@@ -171,55 +154,86 @@
                     {{ genre.name }}{% if not forloop.last %}, {% endif %}
                     {% endfor %}
                 </p>
-
-                <p class="light-text">
-                    {{ movie.release_date }}
-                </p>
-
+                <p class="light-text">{{ movie.release_date }}</p>
                 <div class="banner-content">
                     <p class="light-text">MOVIE SUMMARY</p>
                     <p>{{ movie.description|truncatewords:30 }}</p>
-
-                    <!-- IMPORTANT -->
-                    <a class="play-butn" href="{% url 'streaming' movie.id %}">
-                        PLAY NOW
-                    </a>
+                    <a class="play-butn" href="{% url 'streaming_movie' movie.id %}">PLAY NOW</a>
                 </div>
             </div>
         </div>
         {% endfor %}
-
     </section>
 
-    <!--=====================================-->
-    <!--=        recent Area Start  =-->
-    <!--=====================================-->
-    <section class="recent  sec-mar">
+    <!-- ===== RECENTLY UPDATED ===== -->
+    <section class="recent sec-mar">
         <div class="container">
             <div class="heading style-1">
-                <h2>Recently Updated </h2>
+                <h2>Recently Updated</h2>
             </div>
             <div class="row">
                 {% for movie in recent_movies %}
                 <div class="col-xl-3 col-lg-4 col-sm-6 col-12">
                     <div class="anime-blog">
-
-                        <a href="{% url 'streaming' movie.id %}" class="img-block">
-                            {% if movie.card_img %}
-                            <img src="{{ movie.card_img.image.url }}" alt="">
-                            {% endif %}
-                        </a>
-
+                        <div class="img-block">
+                            <a href="{% url 'streaming_movie' movie.id %}" class="img-block">
+                                {% if movie.poster_img %}
+                                <img src="{{ movie.poster_img.image.url }}" alt="{{ movie.title }}">
+                                {% elif movie.thumb_img %}
+                                <img src="{{ movie.thumb_img.image.url }}" alt="{{ movie.title }}">
+                                {% endif %}
+                            </a>
+                            <div class="action-overlay">
+                                <a href="{% url 'streaming_movie' movie.id %}">
+                                    <i class="fas fa-play-circle"></i> Play Now
+                                </a>
+                            </div>
+                        </div>
                         <div class="detail">
                             <div class="tags">
                                 <p class="text">Movie</p>
                             </div>
+                            <div class="dropdown">
+                                <button type="button" class="dropdown-toggle" data-bs-toggle="dropdown">
+                                    <svg width="32" height="22" viewBox="0 0 32 22" fill="none"
+                                         xmlns="http://www.w3.org/2000/svg">
+                                        <rect x="0.145264" y="0.00012207" width="21.4395" height="2.68125" rx="1.34062"
+                                              fill="#999999"/>
+                                        <rect x="0.145264" y="7.41272" width="21.4395" height="2.68125" rx="1.34062"
+                                              fill="#999999"/>
+                                        <rect x="0.145264" y="14.8258" width="16.4914" height="2.68125" rx="1.34062"
+                                              fill="#999999"/>
+                                        <path d="M19.8784 16.0712C19.8784 15.4163 20.4093 14.8854 21.0642 14.8854H30.2463C30.9011 14.8854 31.432 15.4163 31.432 16.0712C31.432 16.7261 30.9011 17.257 30.2463 17.257H21.0642C20.4093 17.257 19.8784 16.7261 19.8784 16.0712Z"
+                                              fill="#999999"/>
+                                        <path d="M25.6552 22.0001C25.0171 22.0001 24.4999 21.4828 24.4999 20.8447V11.2977C24.4999 10.6596 25.0171 10.1423 25.6552 10.1423C26.2933 10.1423 26.8106 10.6596 26.8106 11.2977V20.8447C26.8106 21.4828 26.2933 22.0001 25.6552 22.0001Z"
+                                              fill="#999999"/>
+                                    </svg>
+                                </button>
+                                <ul class="dropdown-menu bg-color-black pt-3 pb-3 ps-3 pe-3">
+                                    {% if user.is_authenticated %}
+                                    <li>
+                                        <a href="#" class="none watch-later-btn" data-movie-id="{{ movie.id }}">
+                                            <i class="fa fa-clock"></i> Watch Later
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="#" class="add-to-playlist-btn"
+                                           data-movie-id="{{ movie.id }}"
+                                           data-bs-toggle="modal"
+                                           data-bs-target="#playlistModal">
+                                            <i class="fas fa-plus"></i> Add to Playlist
+                                        </a>
+                                    </li>
+                                    {% else %}
+                                    <li><a href="{% url 'login' %}"><i class="fa fa-clock"></i> Watch Later</a></li>
+                                    <li><a href="{% url 'login' %}"><i class="fas fa-plus"></i> Add to Playlist</a></li>
+                                    {% endif %}
+                                </ul>
+                            </div>
                         </div>
-
-                        <a href="{% url 'streaming' movie.id %}">
+                        <a href="{% url 'streaming_movie' movie.id %}">
                             <p>{{ movie.title }}</p>
                         </a>
-
                     </div>
                 </div>
                 {% endfor %}
@@ -227,9 +241,7 @@
         </div>
     </section>
 
-    <!--=====================================-->
-    <!--=        Recommendation Area Start  =-->
-    <!--=====================================-->
+    <!-- ===== RECOMMENDATION ===== -->
     <section class="recommendation sec-mar">
         <div class="container">
             <div class="heading style-1">
@@ -239,23 +251,65 @@
                 {% for movie in popular_movies %}
                 <div class="col-xl-3 col-lg-4 col-sm-6 col-12">
                     <div class="anime-blog">
-
-                        <a href="{% url 'streaming' movie.id %}" class="img-block">
-                            {% if movie.card_img %}
-                            <img src="{{ movie.card_img.image.url }}" alt="">
-                            {% endif %}
-                        </a>
-
+                        <div class="img-block">
+                            <a href="{% url 'streaming_movie' movie.id %}">
+                                {% if movie.card_img %}
+                                <img src="{{ movie.card_img.image.url }}" alt="{{ movie.title }}">
+                                {% elif movie.poster_img %}
+                                <img src="{{ movie.poster_img.image.url }}" alt="{{ movie.title }}">
+                                {% endif %}
+                            </a>
+                            <div class="action-overlay">
+                                <a href="{% url 'streaming_movie' movie.id %}">
+                                    <i class="fas fa-play-circle"></i> Play Now
+                                </a>
+                            </div>
+                        </div>
                         <div class="detail">
                             <div class="tags">
                                 <p class="text">Movie</p>
                             </div>
+                            <div class="dropdown">
+                                <button type="button" class="dropdown-toggle" data-bs-toggle="dropdown">
+                                    <svg width="32" height="22" viewBox="0 0 32 22" fill="none"
+                                         xmlns="http://www.w3.org/2000/svg">
+                                        <rect x="0.145264" y="0.00012207" width="21.4395" height="2.68125" rx="1.34062"
+                                              fill="#999999"/>
+                                        <rect x="0.145264" y="7.41272" width="21.4395" height="2.68125" rx="1.34062"
+                                              fill="#999999"/>
+                                        <rect x="0.145264" y="14.8258" width="16.4914" height="2.68125" rx="1.34062"
+                                              fill="#999999"/>
+                                        <path d="M19.8784 16.0712C19.8784 15.4163 20.4093 14.8854 21.0642 14.8854H30.2463C30.9011 14.8854 31.432 15.4163 31.432 16.0712C31.432 16.7261 30.9011 17.257 30.2463 17.257H21.0642C20.4093 17.257 19.8784 16.7261 19.8784 16.0712Z"
+                                              fill="#999999"/>
+                                        <path d="M25.6552 22.0001C25.0171 22.0001 24.4999 21.4828 24.4999 20.8447V11.2977C24.4999 10.6596 25.0171 10.1423 25.6552 10.1423C26.2933 10.1423 26.8106 10.6596 26.8106 11.2977V20.8447C26.8106 21.4828 26.2933 22.0001 25.6552 22.0001Z"
+                                              fill="#999999"/>
+                                    </svg>
+                                </button>
+                                <ul class="dropdown-menu bg-color-black pt-3 pb-3 ps-3 pe-3">
+                                    {% if user.is_authenticated %}
+                                    <li>
+                                        <a href="#" class="none watch-later-btn" data-movie-id="{{ movie.id }}">
+                                            <i class="fa fa-clock"></i> Watch Later
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="#" class="add-to-playlist-btn"
+                                           data-movie-id="{{ movie.id }}"
+                                           data-bs-toggle="modal"
+                                           data-bs-target="#playlistModal">
+                                            <i class="fas fa-plus"></i> Add to Playlist
+                                        </a>
+                                    </li>
+                                    {% else %}
+                                    <li><a href="{% url 'login' %}"><i class="fa fa-clock"></i> Watch Later</a></li>
+                                    <li><a href="{% url 'login' %}"><i class="fas fa-plus"></i> Add to Playlist</a></li>
+                                    {% endif %}
+                                </ul>
+                            </div>
                         </div>
-
-                        <a href="{% url 'streaming' movie.id %}">
+                        <a href="{% url 'streaming_movie' movie.id %}">
                             <p>{{ movie.title }}</p>
                         </a>
-
                     </div>
                 </div>
                 {% endfor %}
@@ -263,134 +317,258 @@
         </div>
     </section>
 
-    <!--=====================================-->
-    <!--=        Coming out Area Start     =-->
-    <!--=====================================-->
+    {% if user.is_authenticated %}
+
+{% if user_history %}
+<section class="recent sec-mar">
+    <div class="container">
+        <div class="heading style-1 d-flex justify-content-between align-items-center">
+            <h2>Continue Watching</h2>
+            <a href="{% url 'continue_watching' %}" class="comment-btn">View All</a>
+        </div>
+        <div class="row">
+            {% for entry in user_history %}
+            {% if entry.movie %}
+            <div class="col-xl-3 col-lg-4 col-sm-6 col-12">
+                <div class="anime-blog">
+                    <div class="img-block position-relative">
+                        <a href="{% url 'streaming_movie' entry.movie.id %}">
+                            {% if entry.movie.poster_img %}
+                            <img src="{{ entry.movie.poster_img.image.url }}" alt="{{ entry.movie.title }}">
+                            {% elif entry.movie.thumb_img %}
+                            <img src="{{ entry.movie.thumb_img.image.url }}" alt="{{ entry.movie.title }}">
+                            {% endif %}
+                        </a>
+                        <div style="position:absolute;bottom:0;left:0;right:0;height:4px;background:#444;">
+                            <div style="height:100%;background:var(--color-primary,#e74c3c);width:50%;"></div>
+                        </div>
+                        <div class="action-overlay">
+                            <a href="{% url 'streaming_movie' entry.movie.id %}">
+                                <i class="fas fa-play-circle"></i> Resume
+                            </a>
+                        </div>
+                    </div>
+                    <div class="detail">
+                        <div class="tags"><p class="text">Movie</p></div>
+                    </div>
+                    <a href="{% url 'streaming_movie' entry.movie.id %}">
+                        <p>{{ entry.movie.title }}</p>
+                    </a>
+                    <p class="light-text" style="font-size:0.75rem;padding:0 10px;">
+                        {{ entry.updated_at|timesince }} ago
+                    </p>
+                </div>
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+{% if user_watch_later %}
+<section class="recent sec-mar">
+    <div class="container">
+        <div class="heading style-1 d-flex justify-content-between align-items-center">
+            <h2>Watch Later</h2>
+            <a href="{% url 'watch_later' %}" class="comment-btn">View All</a>
+        </div>
+        <div class="row">
+            {% for item in user_watch_later %}
+            {% if item.movie %}
+            <div class="col-xl-3 col-lg-4 col-sm-6 col-12">
+                <div class="anime-blog">
+                    <div class="img-block">
+                        <a href="{% url 'streaming_movie' item.movie.id %}">
+                            {% if item.movie.poster_img %}
+                            <img src="{{ item.movie.poster_img.image.url }}" alt="{{ item.movie.title }}">
+                            {% elif item.movie.thumb_img %}
+                            <img src="{{ item.movie.thumb_img.image.url }}" alt="{{ item.movie.title }}">
+                            {% endif %}
+                        </a>
+                        <div class="action-overlay">
+                            <a href="{% url 'streaming_movie' item.movie.id %}">
+                                <i class="fas fa-play-circle"></i> Play Now
+                            </a>
+                        </div>
+                    </div>
+                    <div class="detail">
+                        <div class="tags"><p class="text">Movie</p></div>
+                        <form method="POST" action="{% url 'toggle_watch_later' %}" class="d-inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="movie_id" value="{{ item.movie.id }}">
+                            <button type="submit" class="dropdown-toggle border-0 bg-transparent"
+                                    title="Remove">
+                                <i class="fas fa-times" style="color:#999;"></i>
+                            </button>
+                        </form>
+                    </div>
+                    <a href="{% url 'streaming_movie' item.movie.id %}">
+                        <p>{{ item.movie.title }}</p>
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+{% endif %}
+
+    <!-- ===== COMING SOON ===== -->
     {% if coming_soon_movie %}
     <section class="coming-out style-2 sec-mar sec-pad">
         <div class="container">
             <div class="comingOut-content">
-
                 <h2 class="title">{{ coming_soon_movie.title }}</h2>
-
                 <p class="text">
                     {% for genre in coming_soon_movie.genres.all %}
                     {{ genre.name }}{% if not forloop.last %}, {% endif %}
                     {% endfor %}
                 </p>
-
                 <div class="tag-box">
-                    <a href="{% url 'streaming' coming_soon_movie.id %}" class="text-box active">Watch</a>
+                    <a href="{% url 'streaming_movie' coming_soon_movie.id %}" class="text-box active">Watch</a>
                 </div>
-
-                <p class="copyright-text">
-                    Releasing on {{ coming_soon_movie.release_date }}
-                </p>
-
+                <p class="copyright-text">Releasing on {{ coming_soon_movie.release_date }}</p>
             </div>
         </div>
     </section>
     {% endif %}
 
-    <!--=====================================-->
-    <!--=        Schedule Area Start        =-->
-    <!--=====================================-->
+    <!-- ===== TOP RATED ===== -->
     <section class="schedule style-2 sec-mar">
         <div class="container">
             <div class="heading style-1">
                 <h2>Top Rated</h2>
             </div>
-
             <div class="schedule-box">
                 <div class="card style-2">
-
-                    <!-- Tabs (still decorative, because backend = 1 dataset) -->
                     <div class="card-header">
                         <ul class="nav nav-tabs card-header-tabs" data-bs-tabs="tabs">
                             <li class="nav-item">
-                                <a class="nav-link active" data-bs-toggle="tab" href="#today">
-                                    <h2>Today</h2>
-                                </a>
+                                <a class="nav-link active" data-bs-toggle="tab" href="#today"><h2>Today</h2></a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" data-bs-toggle="tab" href="#week">
-                                    <h2>This Week</h2>
-                                </a>
+                                <a class="nav-link" data-bs-toggle="tab" href="#week"><h2>This Week</h2></a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" data-bs-toggle="tab" href="#month">
-                                    <h2>This Month</h2>
-                                </a>
+                                <a class="nav-link" data-bs-toggle="tab" href="#month"><h2>This Month</h2></a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" data-bs-toggle="tab" href="#year">
-                                    <h2>This Year</h2>
-                                </a>
+                                <a class="nav-link" data-bs-toggle="tab" href="#year"><h2>This Year</h2></a>
                             </li>
                         </ul>
                     </div>
-
-                    <!-- Tab Content -->
                     <div class="card-body tab-content">
 
-                        <!-- TODAY -->
+                        {% for tab_id, is_active in tab_data %}
+                        {% endfor %}
+
                         <div class="tab-pane fade show active" id="today">
                             {% for movie in top_rated_movies %}
-                            <a href="{% url 'streaming' movie.id %}">
+                            <a href="{% url 'streaming_movie' movie.id %}">
                                 <div class="row spacing align-items-center">
-
                                     <div class="col-xl-1 col-lg-1 col-md-2 col-sm-2 col-3">
                                         {% if movie.thumb_img %}
                                         <img src="{{ movie.thumb_img.image.url }}" alt="">
                                         {% endif %}
                                     </div>
-
                                     <div class="col-xl-10 col-lg-10 col-md-9 col-sm-8 col-7">
                                         <div class="schedule-content ps-0">
                                             <p class="small-title">{{ movie.title }}</p>
-
                                             {% for genre in movie.genres.all %}
                                             <p class="text-box">{{ genre.name }}</p>
                                             {% endfor %}
                                         </div>
                                     </div>
-
                                     <div class="col-xl-1 col-lg-1 col-md-1 col-sm-2 col-2 text-end">
                                         <p>{{ movie.rating }}</p>
                                     </div>
-
                                 </div>
                             </a>
                             <hr>
                             {% empty %}
-                            <p>No movies found</p>
+                            <p>No movies found.</p>
                             {% endfor %}
                         </div>
 
-                        <!-- WEEK -->
                         <div class="tab-pane fade" id="week">
                             {% for movie in top_rated_movies %}
-                            <a href="{% url 'streaming' movie.id %}">
-                                <p>{{ movie.title }} ({{ movie.rating }})</p>
+                            <a href="{% url 'streaming_movie' movie.id %}">
+                                <div class="row spacing align-items-center">
+                                    <div class="col-xl-1 col-lg-1 col-md-2 col-sm-2 col-3">
+                                        {% if movie.thumb_img %}
+                                        <img src="{{ movie.thumb_img.image.url }}" alt="">
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-xl-10 col-lg-10 col-md-9 col-sm-8 col-7">
+                                        <div class="schedule-content ps-0">
+                                            <p class="small-title">{{ movie.title }}</p>
+                                            {% for genre in movie.genres.all %}
+                                            <p class="text-box">{{ genre.name }}</p>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    <div class="col-xl-1 col-lg-1 col-md-1 col-sm-2 col-2 text-end">
+                                        <p>{{ movie.rating }}</p>
+                                    </div>
+                                </div>
                             </a>
+                            <hr>
                             {% endfor %}
                         </div>
 
-                        <!-- MONTH -->
                         <div class="tab-pane fade" id="month">
                             {% for movie in top_rated_movies %}
-                            <a href="{% url 'streaming' movie.id %}">
-                                <p>{{ movie.title }} ({{ movie.rating }})</p>
+                            <a href="{% url 'streaming_movie' movie.id %}">
+                                <div class="row spacing align-items-center">
+                                    <div class="col-xl-1 col-lg-1 col-md-2 col-sm-2 col-3">
+                                        {% if movie.thumb_img %}
+                                        <img src="{{ movie.thumb_img.image.url }}" alt="">
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-xl-10 col-lg-10 col-md-9 col-sm-8 col-7">
+                                        <div class="schedule-content ps-0">
+                                            <p class="small-title">{{ movie.title }}</p>
+                                            {% for genre in movie.genres.all %}
+                                            <p class="text-box">{{ genre.name }}</p>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    <div class="col-xl-1 col-lg-1 col-md-1 col-sm-2 col-2 text-end">
+                                        <p>{{ movie.rating }}</p>
+                                    </div>
+                                </div>
                             </a>
+                            <hr>
                             {% endfor %}
                         </div>
 
-                        <!-- YEAR -->
                         <div class="tab-pane fade" id="year">
                             {% for movie in top_rated_movies %}
-                            <a href="{% url 'streaming' movie.id %}">
-                                <p>{{ movie.title }} ({{ movie.rating }})</p>
+                            <a href="{% url 'streaming_movie' movie.id %}">
+                                <div class="row spacing align-items-center">
+                                    <div class="col-xl-1 col-lg-1 col-md-2 col-sm-2 col-3">
+                                        {% if movie.thumb_img %}
+                                        <img src="{{ movie.thumb_img.image.url }}" alt="">
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-xl-10 col-lg-10 col-md-9 col-sm-8 col-7">
+                                        <div class="schedule-content ps-0">
+                                            <p class="small-title">{{ movie.title }}</p>
+                                            {% for genre in movie.genres.all %}
+                                            <p class="text-box">{{ genre.name }}</p>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    <div class="col-xl-1 col-lg-1 col-md-1 col-sm-2 col-2 text-end">
+                                        <p>{{ movie.rating }}</p>
+                                    </div>
+                                </div>
                             </a>
+                            <hr>
                             {% endfor %}
                         </div>
 
@@ -400,28 +578,25 @@
         </div>
     </section>
 
-    <!--=====================================-->
-    <!--=           Footer Area Start       =-->
-    <!--=====================================-->
-    <footer class="footer ">
+    <!-- ===== FOOTER ===== -->
+    <footer class="footer">
         <div class="footer-main style-2">
             <div class="container">
                 <div class="footer-widget text-center">
-                    <a href="./home.html"><img alt="" src="{%static 'assets/media/logo.png' %}"></a>
+                    <a href="{% url 'index' %}"><img alt="" src="{% static 'assets/media/logo.png' %}"></a>
                     <p class="mt-5 mb-5">Lorem ipsum dolor sit, amet consectetur <br> adipisicing elit. Eum modi,
                         possimus <br> dolore saepe nobis itaque cupiditate <br> veniam nostrum, provident quam, <br>
                         nequeab dicta velit debitis cum unde <br> recusandae. Fuga, consectetur.</p>
                     <h6 class="m-0">GET NOTIFIED</h6>
                     <p class="light-text">Get emails for latest news about anime, and more.</p>
-                    <form action="./home-2.html">
+                    <form>
                         <div class="input-group form-group footer-email-box">
-                            <input class="form-control" type="email" required="" name="email"
+                            <input class="form-control" type="email" required name="email"
                                    placeholder="info@example.com">
                             <button class="input-group-text anime-btn" type="submit">Subscribe</button>
                         </div>
                     </form>
                     <p class="text">By subscribing you agree to our terms and conditions</p>
-
                 </div>
             </div>
         </div>
@@ -430,23 +605,27 @@
                 <div class="row align-items-center">
                     <div class="col-lg-4 col-12">
                         <div class="footer-copyright">
-                            <span class="copyright-text">© 2025 All rights reserved by <a href="#">Animeloop</a>.</span>
+                            <span class="copyright-text">&copy; 2025 All rights reserved by <a
+                                    href="#">Animeloop</a>.</span>
                         </div>
                     </div>
                     <div class="col-lg-4 col-12">
                         <div class="footer-widget text-center p-lg-0 pt-2 pb-2">
                             <ul class="social-icons">
-                                <li><a href=""><img alt="" src="./assets/media/footer/reddit.png' %}"></a></li>
-                                <li><a href=""><img alt="" src="./assets/media/footer/discord.png' %}"></a></li>
-                                <li><a href=""><img alt="" src="./assets/media/footer/instagram.png' %}"></a></li>
-                                <li><a href=""><img alt="" src="./assets/media/footer/twitter.png' %}"></a></li>
+                                <li><a href=""><img alt="" src="{% static 'assets/media/footer/reddit.png' %}"></a></li>
+                                <li><a href=""><img alt="" src="{% static 'assets/media/footer/discord.png' %}"></a>
+                                </li>
+                                <li><a href=""><img alt="" src="{% static 'assets/media/footer/instagram.png' %}"></a>
+                                </li>
+                                <li><a href=""><img alt="" src="{% static 'assets/media/footer/twitter.png' %}"></a>
+                                </li>
                             </ul>
                         </div>
                     </div>
                     <div class="col-lg-4 col-12">
                         <div class="footer-bottom-link text-end">
-                            <a href="./privacy.html">Privacy Policy</a>
-                            <a href="./comments.html" class="ps-2">Comments Policy</a>
+                            <a href="#">Privacy Policy</a>
+                            <a href="#" class="ps-2">Comments Policy</a>
                         </div>
                     </div>
                 </div>
@@ -454,25 +633,36 @@
         </div>
     </footer>
 
+</div><!-- end main-wrapper -->
+
+{% if user.is_authenticated %}
+<!-- Playlist Modal -->
+<div class="modal fade" id="playlistModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content bg-color-black">
+            <div class="modal-header border-0">
+                <h5 class="modal-title">Add to Playlist</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="playlist-list"><p>Loading...</p></div>
+            <div class="modal-footer border-0">
+                <a href="{% url 'playlists' %}" class="comment-btn">Manage Playlists</a>
+            </div>
+        </div>
+    </div>
 </div>
+{% endif %}
 
-<!-- 1️⃣ jQuery -->
+<!-- Scripts -->
 <script src="{% static 'assets/js/jquery-min.js' %}"></script>
-
-<!-- 2️⃣ jQuery -->
 <script src="{% static 'assets/js/slick.min.js' %}"></script>
 <script src="{% static 'assets/js/images-loaded.js' %}"></script>
 <script src="{% static 'assets/js/jquery-validator.js' %}"></script>
 <script src="{% static 'assets/js/jquery-appear.js' %}"></script>
 <script src="{% static 'assets/js/jquery-countdown.js' %}"></script>
-
-<!-- 3️⃣ Other Libraries -->
 <script src="{% static 'assets/js/sal.js' %}"></script>
-
-<!-- 4️⃣ Bootstrap  -->
 <script src="{% static 'assets/js/bootstrap.bundle.min.js' %}"></script>
 
-<!-- 5️⃣  Custom Script  -->
 <script>
     $(document).ready(function () {
         $('.banner-slider').slick({
@@ -485,48 +675,103 @@
         });
     });
 </script>
-<script>
-    $(document).ready(function () {
 
-        $('.countdown').countdown('2026/02/12 00:00:00', function (event) {
-            $(this).html(
-                '<li>' + event.offset.totalDays + '<small>d</small></li>' +
-                '<li>' + event.offset.hours + '<small>h</small></li>' +
-                '<li>' + event.offset.minutes + '<small>m</small></li>' +
-                '<li>' + event.offset.seconds + '<small>s</small></li>'
-            );
+<script>
+    function getCSRF() {
+        return document.cookie.split('; ').find(r => r.startsWith('csrftoken'))?.split('=')[1];
+    }
+
+    // Watch Later
+    document.querySelectorAll('.watch-later-btn').forEach(btn => {
+        btn.addEventListener('click', function (e) {
+            e.preventDefault();
+            const body = new URLSearchParams();
+            if (this.dataset.movieId) body.append('movie_id', this.dataset.movieId);
+
+            fetch('/watch-later/toggle/', {
+                method: 'POST',
+                headers: {'X-CSRFToken': getCSRF()},
+                body: body
+            })
+                .then(r => r.json())
+                .then(data => {
+                    this.innerHTML = data.status === 'added'
+                        ? '<i class="fa fa-clock"></i> Added'
+                        : '<i class="fa fa-clock"></i> Watch Later';
+                });
         });
-
     });
-</script>
-<script>
+
+    // Playlist Modal
+    document.getElementById('playlistModal')?.addEventListener('show.bs.modal', function (e) {
+        const trigger = e.relatedTarget;
+        const movieId = trigger?.dataset.movieId || '';
+
+        fetch('/playlists/json/')
+            .then(r => r.json())
+            .then(data => {
+                const container = document.getElementById('playlist-list');
+                if (!data.playlists.length) {
+                    container.innerHTML = '<p>No playlists yet. <a href="/playlists/">Create one</a>.</p>';
+                    return;
+                }
+                container.innerHTML = data.playlists.map(p => `
+                <form method="POST" action="/playlists/add-item/" style="margin-bottom:8px;">
+                    <input type="hidden" name="csrfmiddlewaretoken" value="${getCSRF()}">
+                    <input type="hidden" name="playlist_id" value="${p.id}">
+                    ${movieId ? `<input type="hidden" name="movie_id" value="${movieId}">` : ''}
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>${p.name}</span>
+                        <button type="submit" class="comment-btn active">Add</button>
+                    </div>
+                </form>
+            `).join('');
+            });
+    });
+
+    // Live Search
     const input = document.getElementById("searchInput");
     const resultsBox = document.getElementById("searchResults");
 
-    input.addEventListener("keyup", function () {
-        let query = this.value;
+    input.addEventListener("keyup", function (e) {
+        let query = this.value.trim();
 
-        if (query.length === 0) {
-            resultsBox.innerHTML = "";
+        if (e.key === "Enter" && query.length > 0) {
+            window.location.href = `/search/?q=${encodeURIComponent(query)}`;
             return;
         }
 
-        fetch(`/live-search/?q=${query}`)
+        if (query.length === 0) {
+            resultsBox.innerHTML = "";
+            resultsBox.style.display = "none";
+            return;
+        }
+
+        fetch(`/live-search/?q=${encodeURIComponent(query)}`)
             .then(res => res.json())
             .then(data => {
                 let html = "";
-
                 data.results.forEach(item => {
                     html += `
-        <div class="search-item" onclick="goToItem(${item.id}, '${item.type}')">
-            ${item.title} <small>(${item.type})</small>
-        </div>
-    `;
+                    <div class="search-item" onclick="goToItem(${item.id}, '${item.type}')">
+                        ${item.title} <small>(${item.type})</small>
+                    </div>`;
                 });
-
+                if (data.results.length > 0) {
+                    html += `<div class="search-item see-all"
+                              onclick="window.location.href='/search/?q=${encodeURIComponent(query)}'">
+                             <i class="fas fa-search me-2"></i> See all results for "${query}"
+                         </div>`;
+                }
                 resultsBox.innerHTML = html;
                 resultsBox.style.display = html ? "block" : "none";
             });
+    });
+
+    document.addEventListener("click", function (e) {
+        if (!e.target.closest(".header-search-box")) {
+            resultsBox.style.display = "none";
+        }
     });
 
     function goToItem(id, type) {
@@ -537,5 +782,6 @@
         }
     }
 </script>
+
 </body>
 </html>

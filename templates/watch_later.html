@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block body %}
+
+<section class="breadcrumb sec-mar">
+    <div class="container">
+        <div class="breadcrumb-content">
+            <ul>
+                <li><a href="{% url 'index' %}">Home</a></li>
+                <li><a class="active">Watch Later</a></li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<section class="recent sec-mar">
+    <div class="container">
+        <div class="heading style-1">
+            <h2>Watch Later</h2>
+        </div>
+        <div class="row">
+            {% for item in items %}
+
+            {% if item.episode %}
+            {% with anime=item.episode.season.anime %}
+            <div class="col-xl-3 col-lg-4 col-sm-6 col-12 mb-4">
+                <div class="anime-blog">
+                    <a href="{% url 'streaming' item.episode.id %}" class="img-block">
+                        {% if anime.poster_img %}
+                        <img src="{{ anime.poster_img.image.url }}" alt="{{ anime.title }}">
+                        {% elif anime.thumb_img %}
+                        <img src="{{ anime.thumb_img.image.url }}" alt="{{ anime.title }}">
+                        {% endif %}
+                    </a>
+                    <div class="detail">
+                        <div class="tags"><p class="text">Anime · Ep {{ item.episode.number }}</p></div>
+                    </div>
+                    <a href="{% url 'streaming' item.episode.id %}">
+                        <p>{{ anime.title }}</p>
+                    </a>
+                    <form method="POST" action="{% url 'toggle_watch_later' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="episode_id" value="{{ item.episode.id }}">
+                        <button type="submit" class="comment-btn mt-1">
+                            <i class="fas fa-trash"></i> Remove
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endwith %}
+
+            {% elif item.movie %}
+            <div class="col-xl-3 col-lg-4 col-sm-6 col-12 mb-4">
+                <div class="anime-blog">
+                    <a href="{% url 'streaming_movie' item.movie.id %}" class="img-block">
+                        {% if item.movie.poster_img %}
+                        <img src="{{ item.movie.poster_img.image.url }}" alt="{{ item.movie.title }}">
+                        {% elif item.movie.thumb_img %}
+                        <img src="{{ item.movie.thumb_img.image.url }}" alt="{{ item.movie.title }}">
+                        {% endif %}
+                    </a>
+                    <div class="detail">
+                        <div class="tags"><p class="text">Movie</p></div>
+                    </div>
+                    <a href="{% url 'streaming_movie' item.movie.id %}">
+                        <p>{{ item.movie.title }}</p>
+                    </a>
+                    <form method="POST" action="{% url 'toggle_watch_later' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="movie_id" value="{{ item.movie.id }}">
+                        <button type="submit" class="comment-btn mt-1">
+                            <i class="fas fa-trash"></i> Remove
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+
+            {% empty %}
+            <div class="col-12 text-center py-5">
+                <i class="fas fa-clock" style="font-size:48px;color:var(--color-dark-grey);display:block;margin-bottom:16px;"></i>
+                <p style="color:var(--color-dark-grey);font-size:18px;">Your watch later list is empty.</p>
+                <a href="{% url 'index' %}" class="anime-btn2 dark mt-3">Browse Anime</a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+{% endblock body %}

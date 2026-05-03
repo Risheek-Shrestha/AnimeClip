@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block body %}
+<section class="recent sec-mar">
+    <div class="container">
+        <div class="heading style-1">
+            <h2>Search results for: "{{ query }}"</h2>
+        </div>
+
+        {% if movies %}
+        <div class="section-title mt-5 mb-3">
+            <h4>🎬 Movies</h4>
+        </div>
+        <div class="row">
+            {% for movie in movies %}
+            <div class="col-xl-3 col-lg-4 col-sm-6 col-12">
+                <div class="anime-blog">
+                    <div class="img-block">
+
+                        {% if movie.poster_img %}
+                        <img src="{{ movie.poster_img.image.url }}" alt="{{ movie.title }}">
+                        {% else %}
+                        <img src="{% static 'assets/media/anime-sm-img/anime-img-1.png' %}" alt="{{ movie.title }}">
+                        {% endif %}
+
+                        <div class="action-overlay">
+                            <a href="{% url 'streaming_movie' movie.id %}">
+                                <i class="fas fa-play-circle"></i> Play Now
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="detail">
+
+                        <div class="dropdown">
+
+                            <ul class="dropdown-menu bg-color-black pt-3 pb-3 ps-3 pe-3">
+                                <li><a href="" class="none"><i class="fa fa-check"></i> Watch Later</a></li>
+                                <li><a href=""><i class="fas fa-plus"></i> Add to Playlist</a></li>
+                            </ul>
+                            <button type="button" class="dropdown-toggle" data-bs-toggle="dropdown">
+                                ⋮
+                            </button>
+                        </div>
+                    </div>
+
+                    <a href="{% url 'streaming_movie' movie.id %}">
+                        <p>{{ movie.title }}</p>
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+
+        {% if anime_list %}
+        <div class="section-title mt-5 mb-3">
+            <h4>📺 Anime</h4>
+        </div>
+        <div class="row">
+            {% for anime in anime_list %}
+            <div class="col-xl-3 col-lg-4 col-sm-6 col-12">
+                <div class="anime-blog">
+                    <div class="img-block">
+
+                        {% if anime.age_rating == 'r' %}
+                        <div class="label-tag">18+</div>
+                        {% endif %}
+
+                        {% if anime.poster_img %}
+                        <img src="{{ anime.poster_img.image.url }}" alt="{{ anime.title }}">
+                        {% elif anime.thumb_img %}
+                        <img src="{{ anime.thumb_img.image.url }}" alt="{{ anime.title }}">
+                        {% else %}
+                        <img src="{% static 'assets/media/anime-sm-img/anime-img-1.png' %}" alt="{{ anime.title }}">
+                        {% endif %}
+
+                        <div class="action-overlay">
+                            <a href="{% if anime.first_episode %}{% url 'streaming' anime.first_episode.id %}{% else %}#{% endif %}">
+                                <i class="fas fa-play-circle"></i> Play Now
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="detail">
+                        <div class="tags">
+                            {% if anime.first_episode %}
+                            {% for source in anime.first_episode.sources.all %}
+                            <a href="{% url 'streaming' anime.first_episode.id %}" class="text-box">
+                                {{ source.type }}
+                            </a>
+                            {% endfor %}
+                            {% endif %}
+                        </div>
+
+                        <div class="dropdown">
+                            <button type="button" class="dropdown-toggle" data-bs-toggle="dropdown">
+                                ⋮
+                            </button>
+                            <ul class="dropdown-menu bg-color-black pt-3 pb-3 ps-3 pe-3">
+                                <li><a href="" class="none"><i class="fa fa-check"></i> Watch Later</a></li>
+                                <li><a href=""><i class="fas fa-plus"></i> Add to Playlist</a></li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <a href="{% if anime.first_episode %}{% url 'streaming' anime.first_episode.id %}{% else %}#{% endif %}">
+                        <p>{{ anime.title }}</p>
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if not movies and not anime_list %}
+        <p class="mt-4">No results found for "{{ query }}".</p>
+        {% endif %}
+
+    </div>
+</section>
+{% endblock body %}

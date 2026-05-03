@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block body %}
+<section class="breadcrumb sec-mar">
+    <div class="container">
+        <div class="breadcrumb-content">
+            <ul>
+                <li><a href="{% url 'index' %}">Home</a></li>
+                <li><a class="active">Categories</a></li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<section class="recent sec-mar">
+    <div class="container">
+        <div class="heading style-1">
+            <h2>All Categories</h2>
+        </div>
+        <div class="row">
+            {% for genre in genres %}
+            <div class="col-xl-2 col-lg-3 col-sm-4 col-6 mb-4">
+                <a href="/category/{{ genre.name|lower|urlencode }}/" class="text-decoration-none">
+                    <div class="anime-blog text-center p-3" style="border: 1px solid #333; border-radius: 8px; transition: all 0.3s;">
+                        <p class="text mb-0" style="font-size: 1rem; font-weight: 600;">{{ genre.name }}</p>
+                    </div>
+                </a>
+            </div>
+            {% empty %}
+            <p>No categories found.</p>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endblock body %}

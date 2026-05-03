@@ -4611,3 +4611,23 @@ input:focus,
 .search-item:hover {
     background: #333;
 }
+
+.section-title h4 {
+    font-size: 22px;
+    font-weight: 600;
+    color: #fff;
+    position: relative;
+    padding-left: 14px;
+}
+
+.section-title h4::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 4px;
+    height: 18px;
+    background: #ff3d00;
+    border-radius: 2px;
+}

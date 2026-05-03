@@ -20,7 +20,6 @@ class Genre(models.Model):
 
 
 class Anime(models.Model):
-
     AGE_CHOICES = [
         ('pg', 'PG'),
         ('pg13', 'PG-13'),
@@ -76,7 +75,6 @@ class Anime(models.Model):
 
 
 class Movie(models.Model):
-
     DAY_CHOICES = [
         ('Sunday', 'Sunday'),
         ('Monday', 'Monday'),
@@ -133,7 +131,6 @@ class Movie(models.Model):
 
 
 class Season(models.Model):
-
     STATUS_CHOICES = [
         ('ongoing', 'Ongoing'),
         ('completed', 'Completed'),
@@ -166,7 +163,6 @@ class Season(models.Model):
 
 
 class Episode(models.Model):
-
     DAY_CHOICES = [
         ('Sunday', 'Sunday'),
         ('Monday', 'Monday'),
@@ -215,6 +211,7 @@ class MovieSource(models.Model):
     def __str__(self):
         return f"{self.movie.title} - {self.label} ({self.type})"
 
+
 class Comment(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     episode = models.ForeignKey(Episode, null=True, blank=True, on_delete=models.CASCADE, related_name='comments')
@@ -248,7 +245,6 @@ class CommentLike(models.Model):
 
 
 class MediaImage(models.Model):
-
     IMAGE_TYPE_CHOICES = [
         ('thumbnail', 'Thumbnail'),
         ('banner', 'Banner'),
@@ -287,3 +283,53 @@ class MediaImage(models.Model):
             raise ValidationError("Image must be linked to either Anime or Movie")
         if self.anime and self.movie:
             raise ValidationError("Image cannot be linked to both Anime and Movie")
+
+class WatchHistory(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='watch_history')
+    episode = models.ForeignKey(Episode, null=True, blank=True, on_delete=models.CASCADE)
+    movie = models.ForeignKey(Movie, null=True, blank=True, on_delete=models.CASCADE)
+    progress_seconds = models.PositiveIntegerField(default=0)  # how far they watched
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-updated_at']
+        unique_together = [['user', 'episode'], ['user', 'movie']]
+
+    def __str__(self):
+        return f"{self.user.username} - {self.episode or self.movie}"
+
+
+class WatchLater(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='watch_later')
+    episode = models.ForeignKey(Episode, null=True, blank=True, on_delete=models.CASCADE)
+    movie = models.ForeignKey(Movie, null=True, blank=True, on_delete=models.CASCADE)
+    added_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-added_at']
+        unique_together = [['user', 'episode'], ['user', 'movie']]
+
+    def __str__(self):
+        return f"{self.user.username} - {self.episode or self.movie}"
+
+
+class Playlist(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='playlists')
+    name = models.CharField(max_length=100)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.name}"
+
+
+class PlaylistItem(models.Model):
+    playlist = models.ForeignKey(Playlist, on_delete=models.CASCADE, related_name='items')
+    episode = models.ForeignKey(Episode, null=True, blank=True, on_delete=models.CASCADE)
+    movie = models.ForeignKey(Movie, null=True, blank=True, on_delete=models.CASCADE)
+    added_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['added_at']
+
+    def __str__(self):
+        return f"{self.playlist.name} - {self.episode or self.movie}"
