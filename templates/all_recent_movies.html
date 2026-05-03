@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block body %}
+
+<section class="breadcrumb">
+    <div class="container">
+        <div class="breadcrumb-content">
+            <ul>
+                <li><a href="{% url 'movies' %}">Movies</a></li>
+                <li><a class="active">Recently Updated</a></li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<section class="recent sec-mar">
+    <div class="container">
+        <div class="heading style-1">
+            <h2>Recently Updated Movies
+                <span>{{ movies|length }} Title{{ movies|length|pluralize }}</span>
+            </h2>
+        </div>
+        <div class="row g-4">
+            {% for movie in movies %}
+            <div class="col-xl-3 col-lg-4 col-sm-6 col-12">
+                <div class="anime-blog">
+                    <div class="img-block">
+                        {% if movie.poster_img %}
+                        <img src="{{ movie.poster_img.image.url }}" alt="{{ movie.title }}">
+                        {% elif movie.thumb_img %}
+                        <img src="{{ movie.thumb_img.image.url }}" alt="{{ movie.title }}">
+                        {% else %}
+                        <img src="{% static 'assets/media/anime-sm-img/anime-img-1.png' %}" alt="{{ movie.title }}">
+                        {% endif %}
+                        <div class="action-overlay">
+                            <a href="{% url 'streaming_movie' movie.id %}">
+                                <i class="fas fa-play-circle"></i> Play Now
+                            </a>
+                        </div>
+                    </div>
+                    <div class="detail">
+                        <div class="tags"><p class="text">Movie</p></div>
+                    </div>
+                    <a href="{% url 'streaming_movie' movie.id %}">
+                        <p>{{ movie.title }}</p>
+                    </a>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12 text-center py-5">
+                <i class="fas fa-film" style="font-size:48px;color:var(--color-dark-grey);margin-bottom:16px;display:block;"></i>
+                <p style="color:var(--color-dark-grey);font-size:18px;">No movies found.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+{% endblock body %}

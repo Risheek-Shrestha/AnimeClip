@@ -61,9 +61,13 @@
 <!-- ================= RECENTLY UPDATED ================= -->
 <section class="recent sec-mar">
     <div class="container">
-        <div class="heading style-1">
+        <div class="heading style-1 d-flex justify-content-between align-items-center">
             <h2>Recently Updated</h2>
+            <a href="{% url 'all_recent_anime' %}" class="anime-btn2 dark">
+                View All <i class="fas fa-arrow-right"></i>
+            </a>
         </div>
+
         <div class="row">
             {% for anime in Recent_animes|slice:":4" %}
             <div class="col-xl-3 col-lg-4 col-sm-6 col-12">
@@ -207,7 +211,9 @@
     <div class="container">
         <div class="heading style-1 d-flex justify-content-between align-items-center">
             <h2>Continue Watching</h2>
-            <a href="{% url 'continue_watching' %}" class="comment-btn">View All</a>
+            <a href="{% url 'continue_watching' %}" class="anime-btn2 dark">
+                View All <i class="fas fa-arrow-right"></i>
+            </a>
         </div>
         <div class="row">
             {% for entry in user_history %}
@@ -294,7 +300,9 @@
     <div class="container">
         <div class="heading style-1 d-flex justify-content-between align-items-center">
             <h2>Watch Later</h2>
-            <a href="{% url 'watch_later' %}" class="comment-btn">View All</a>
+            <a href="{% url 'watch_later' %}" class="anime-btn2 dark">
+                View All <i class="fas fa-arrow-right"></i>
+            </a>
         </div>
         <div class="row">
             {% for item in user_watch_later %}
@@ -385,8 +393,11 @@
 
 <section class="popular sec-mar">
     <div class="container">
-        <div class="heading style-1">
-            <h2>Popular Animes</h2>
+        <div class="heading style-1 d-flex justify-content-between align-items-center">
+            <h2>Recommendation</h2>
+            <a href="{% url 'all_popular_anime' %}" class="anime-btn2 dark">
+                View All <i class="fas fa-arrow-right"></i>
+            </a>
         </div>
         <div class="row">
             {% for anime in Popular_animes|slice:":4"%}

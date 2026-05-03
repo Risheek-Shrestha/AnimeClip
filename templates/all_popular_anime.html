@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block body %}
+
+<section class="breadcrumb">
+    <div class="container">
+        <div class="breadcrumb-content">
+            <ul>
+                <li><a href="{% url 'index' %}">Anime</a></li>
+                <li><a class="active">Popular</a></li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<section class="recent sec-mar">
+    <div class="container">
+        <div class="heading style-1">
+            <h2>Popular Anime
+                <span>{{ anime_list|length }} Title{{ anime_list|length|pluralize }}</span>
+            </h2>
+        </div>
+        <div class="row g-4">
+            {% for a in anime_list %}
+            <div class="col-xl-3 col-lg-4 col-sm-6 col-12">
+                <div class="anime-blog">
+                    <div class="img-block">
+                        {% if a.age_rating == 'r' %}
+                        <div class="label-tag">18+</div>
+                        {% endif %}
+                        {% if a.poster_img %}
+                        <img src="{{ a.poster_img.image.url }}" alt="{{ a.title }}">
+                        {% elif a.thumb_img %}
+                        <img src="{{ a.thumb_img.image.url }}" alt="{{ a.title }}">
+                        {% else %}
+                        <img src="{% static 'assets/media/anime-sm-img/anime-img-1.png' %}" alt="{{ a.title }}">
+                        {% endif %}
+                        <div class="action-overlay">
+                            <a href="{% if a.first_episode %}{% url 'streaming' a.first_episode.id %}{% else %}#{% endif %}">
+                                <i class="fas fa-play-circle"></i> Play Now
+                            </a>
+                        </div>
+                    </div>
+                    <div class="detail">
+                        <div class="tags">
+                            {% if a.first_episode %}
+                            {% for source in a.first_episode.sources.all %}
+                            <a href="{% url 'streaming' a.first_episode.id %}" class="text-box">
+                                {{ source.type }}
+                            </a>
+                            {% endfor %}
+                            {% endif %}
+                        </div>
+                    </div>
+                    <a href="{% if a.first_episode %}{% url 'streaming' a.first_episode.id %}{% else %}#{% endif %}">
+                        <p>{{ a.title }}</p>
+                    </a>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12 text-center py-5">
+                <i class="fas fa-film" style="font-size:48px;color:var(--color-dark-grey);margin-bottom:16px;display:block;"></i>
+                <p style="color:var(--color-dark-grey);font-size:18px;">No popular anime yet.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+{% endblock body %}

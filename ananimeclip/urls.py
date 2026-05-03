@@ -65,4 +65,8 @@ urlpatterns = [
     path('playlists/remove-item/<int:item_id>/', views.remove_from_playlist, name='remove_from_playlist'),
     path('playlists/json/', views.get_user_playlists, name='get_user_playlists'),
 
+    path('movies/recent/', views.all_recent_movies, name='all_recent_movies'),
+    path('movies/popular/', views.all_popular_movies, name='all_popular_movies'),
+    path('anime/recent/', views.all_recent_anime, name='all_recent_anime'),
+    path('anime/popular/', views.all_popular_anime, name='all_popular_anime'),
 ]
