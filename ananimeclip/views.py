@@ -4,7 +4,7 @@ from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
 from django.http import JsonResponse
-from .models import Profile, Anime, Episode, Comment, CommentLike, Season, MediaImage, Movie
+from .models import Profile, Anime, Episode, Comment, CommentLike, Season, MediaImage, Movie, Genre, WatchHistory, WatchLater, Playlist, PlaylistItem
 from django.db.models import Max, Prefetch, Q
 from django.utils import timezone
 from datetime import timedelta, datetime
@@ -15,13 +15,7 @@ context = {
 
 
 def attach_episode_info(anime_list):
-    """
-    For each anime in the list, attach .first_episode and .first_season
-    directly onto the object by walking the already-prefetched cache.
-    This prevents the template from calling .seasons.first.episodes.first
-    which fires 2 new DB queries per anime per call — completely bypassing
-    the prefetch_related cache.
-    """
+
     for anime in anime_list:
         seasons = list(anime.seasons.all())
         first_season = seasons[0] if seasons else None
@@ -147,6 +141,31 @@ def index(request):
     )
     attach_episode_info(completed_animes)
 
+    # User-specific data
+    user_history = []
+    user_watch_later = []
+    if request.user.is_authenticated:
+        user_history = list(
+            WatchHistory.objects.filter(
+                user=request.user
+            ).select_related(
+                'episode__season__anime', 'movie'
+            ).prefetch_related(
+                'episode__season__anime__media_images',
+                'movie__media_images',
+            ).order_by('-updated_at')[:8]
+        )
+        user_watch_later = list(
+            WatchLater.objects.filter(
+                user=request.user
+            ).select_related(
+                'episode__season__anime', 'movie'
+            ).prefetch_related(
+                'episode__season__anime__media_images',
+                'movie__media_images',
+            ).order_by('-added_at')[:8]
+        )
+
     context = {
         'title': 'ananimeclip',
         'today': today,
@@ -158,6 +177,8 @@ def index(request):
         'top_animes': top_animes,
         'new_animes': new_animes,
         'completed_animes': completed_animes,
+        'user_history': user_history,
+        'user_watch_later': user_watch_later,
     }
     return render(request, 'index.html', context)
 
@@ -208,6 +229,26 @@ def movies(request):
         'genres',
     )
 
+    user_history = []
+    user_watch_later = []
+    if request.user.is_authenticated:
+        user_history = list(
+            WatchHistory.objects.filter(
+                user=request.user,
+                movie__isnull=False  # only movies on the movies page
+            ).select_related('movie').prefetch_related(
+                'movie__media_images',
+            ).order_by('-updated_at')[:8]
+        )
+        user_watch_later = list(
+            WatchLater.objects.filter(
+                user=request.user,
+                movie__isnull=False
+            ).select_related('movie').prefetch_related(
+                'movie__media_images',
+            ).order_by('-added_at')[:8]
+        )
+
     context = {
         'title': 'ananimeclip - Movies',
         'featured_movies': featured_movies,
@@ -215,14 +256,32 @@ def movies(request):
         'coming_soon_movie': coming_soon_movie,
         'top_rated_movies': top_rated_movies,
         'popular_movies': popular_movies,
+        'user_history': user_history,
+        'user_watch_later': user_watch_later,
     }
     return render(request, 'movies.html', context)
 
 
 @login_required
 def profile(request):
-    return render(request, "profile.html", context)
+    history = WatchHistory.objects.filter(
+        user=request.user
+    ).select_related(
+        'episode__season__anime', 'movie'
+    ).prefetch_related(
+        'episode__season__anime__media_images',
+        'movie__media_images',
+    ).order_by('-updated_at')[:20]
 
+    watch_later_count = WatchLater.objects.filter(user=request.user).count()
+    playlists = Playlist.objects.filter(user=request.user).prefetch_related('items')
+
+    return render(request, 'profile.html', {
+        'title': f'{request.user.first_name} - Profile',
+        'history': history,
+        'watch_later_count': watch_later_count,
+        'playlists': playlists,
+    })
 
 @login_required
 def edit_profile(request):
@@ -421,3 +480,189 @@ def category_page(request, genre):
         'movies': movies,
         'anime': anime_list,
     })
+
+
+def search_results(request):
+    query = request.GET.get('q', '').strip()
+    movies = []
+    anime_list = []
+
+    if query:
+        movies = Movie.objects.filter(
+            title__icontains=query
+        ).prefetch_related('media_images')
+
+        anime_list = Anime.objects.filter(
+            title__icontains=query
+        ).prefetch_related('media_images', 'seasons__episodes')
+        attach_episode_info(list(anime_list))
+
+    return render(request, 'search_results.html', {
+        'query': query,
+        'movies': movies,
+        'anime_list': anime_list,
+    })
+
+def all_categories(request):
+    genres = Genre.objects.all()
+    return render(request, 'all_categories.html', {'genres': genres})
+
+# ---------- Watch History (Continue Watching) ----------
+
+@login_required
+@require_POST
+def update_watch_history(request):
+    """Called via JS every few seconds with current video progress."""
+    episode_id = request.POST.get('episode_id')
+    movie_id = request.POST.get('movie_id')
+    progress = int(request.POST.get('progress_seconds', 0))
+
+    if episode_id:
+        episode = get_object_or_404(Episode, id=episode_id)
+        obj, _ = WatchHistory.objects.update_or_create(
+            user=request.user, episode=episode,
+            defaults={'progress_seconds': progress, 'movie': None}
+        )
+    elif movie_id:
+        movie = get_object_or_404(Movie, id=movie_id)
+        obj, _ = WatchHistory.objects.update_or_create(
+            user=request.user, movie=movie,
+            defaults={'progress_seconds': progress, 'episode': None}
+        )
+    else:
+        return JsonResponse({'error': 'No episode or movie id'}, status=400)
+
+    return JsonResponse({'saved': True, 'progress': progress})
+
+
+@login_required
+def continue_watching(request):
+    history = WatchHistory.objects.filter(
+        user=request.user
+    ).select_related(
+        'episode__season__anime', 'movie'
+    ).prefetch_related(
+        'episode__season__anime__media_images',
+        'movie__media_images',
+    )[:20]
+
+    return render(request, 'continue_watching.html', {'history': history})
+
+
+# ---------- Watch Later ----------
+
+@login_required
+@require_POST
+def toggle_watch_later(request):
+    episode_id = request.POST.get('episode_id')
+    movie_id = request.POST.get('movie_id')
+
+    if episode_id:
+        episode = get_object_or_404(Episode, id=episode_id)
+        obj, created = WatchLater.objects.get_or_create(
+            user=request.user, episode=episode
+        )
+    elif movie_id:
+        movie = get_object_or_404(Movie, id=movie_id)
+        obj, created = WatchLater.objects.get_or_create(
+            user=request.user, movie=movie
+        )
+    else:
+        return JsonResponse({'error': 'No id provided'}, status=400)
+
+    if not created:
+        obj.delete()
+        return JsonResponse({'status': 'removed'})
+    return JsonResponse({'status': 'added'})
+
+
+@login_required
+def watch_later(request):
+    items = WatchLater.objects.filter(
+        user=request.user
+    ).select_related(
+        'episode__season__anime', 'movie'
+    ).prefetch_related(
+        'episode__season__anime__media_images',
+        'movie__media_images',
+    )
+    return render(request, 'watch_later.html', {'items': items})
+
+
+# ---------- Playlists ----------
+
+@login_required
+def playlists(request):
+    user_playlists = Playlist.objects.filter(
+        user=request.user
+    ).prefetch_related('items')
+    return render(request, 'playlists.html', {'playlists': user_playlists})
+
+
+@login_required
+@require_POST
+def create_playlist(request):
+    name = request.POST.get('name', '').strip()
+    if name:
+        Playlist.objects.create(user=request.user, name=name)
+    return redirect('playlists')
+
+
+@login_required
+def playlist_detail(request, playlist_id):
+    playlist = get_object_or_404(Playlist, id=playlist_id, user=request.user)
+    items = playlist.items.select_related(
+        'episode__season__anime', 'movie'
+    ).prefetch_related(
+        'episode__season__anime__media_images',
+        'movie__media_images',
+    )
+    return render(request, 'playlist_detail.html', {
+        'playlist': playlist,
+        'items': items,
+    })
+
+
+@login_required
+@require_POST
+def add_to_playlist(request):
+    playlist_id = request.POST.get('playlist_id')
+    episode_id = request.POST.get('episode_id')
+    movie_id = request.POST.get('movie_id')
+
+    playlist = get_object_or_404(Playlist, id=playlist_id, user=request.user)
+
+    if episode_id:
+        episode = get_object_or_404(Episode, id=episode_id)
+        PlaylistItem.objects.get_or_create(playlist=playlist, episode=episode)
+    elif movie_id:
+        movie = get_object_or_404(Movie, id=movie_id)
+        PlaylistItem.objects.get_or_create(playlist=playlist, movie=movie)
+
+    return JsonResponse({'status': 'added', 'playlist': playlist.name})
+
+
+@login_required
+@require_POST
+def remove_from_playlist(request, item_id):
+    item = get_object_or_404(PlaylistItem, id=item_id, playlist__user=request.user)
+    item.delete()
+    return redirect(request.META.get('HTTP_REFERER', '/'))
+
+
+@login_required
+@require_POST
+def delete_playlist(request, playlist_id):
+    playlist = get_object_or_404(Playlist, id=playlist_id, user=request.user)
+    playlist.delete()
+    return redirect('playlists')
+
+
+@login_required
+def get_user_playlists(request):
+    """Returns user's playlists as JSON for the add-to-playlist modal."""
+    playlists_data = list(
+        Playlist.objects.filter(user=request.user).values('id', 'name')
+    )
+    return JsonResponse({'playlists': playlists_data})
+>>>>>>> 6c5281a (Add watch later, continue watching, corrected live search and movie tab)

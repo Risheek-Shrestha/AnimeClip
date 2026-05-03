@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block body %}
+
+<section class="breadcrumb sec-mar">
+    <div class="container">
+        <div class="breadcrumb-content">
+            <ul>
+                <li><a href="{% url 'index' %}">Home</a></li>
+                <li><a class="active">Continue Watching</a></li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<section class="recent sec-mar">
+    <div class="container">
+        <div class="heading style-1">
+            <h2>Continue Watching</h2>
+        </div>
+        <div class="row">
+            {% for entry in history %}
+
+            {% if entry.episode %}
+            {% with anime=entry.episode.season.anime %}
+            <div class="col-xl-3 col-lg-4 col-sm-6 col-12 mb-4">
+                <div class="anime-blog">
+                    <a href="{% url 'streaming' entry.episode.id %}" class="img-block position-relative">
+                        {% if anime.poster_img %}
+                        <img src="{{ anime.poster_img.image.url }}" alt="{{ anime.title }}">
+                        {% elif anime.thumb_img %}
+                        <img src="{{ anime.thumb_img.image.url }}" alt="{{ anime.title }}">
+                        {% endif %}
+                        <!-- Progress bar -->
+                        <div style="position:absolute;bottom:0;left:0;right:0;height:4px;background:#333;">
+                            <div style="height:100%;background:var(--color-primary,#e74c3c);width:50%;"></div>
+                        </div>
+                    </a>
+                    <div class="detail">
+                        <div class="tags"><p class="text">Ep {{ entry.episode.number }}</p></div>
+                    </div>
+                    <a href="{% url 'streaming' entry.episode.id %}">
+                        <p>{{ anime.title }}</p>
+                    </a>
+                </div>
+            </div>
+            {% endwith %}
+
+            {% elif entry.movie %}
+            <div class="col-xl-3 col-lg-4 col-sm-6 col-12 mb-4">
+                <div class="anime-blog">
+                    <a href="{% url 'streaming_movie' entry.movie.id %}" class="img-block position-relative">
+                        {% if entry.movie.poster_img %}
+                        <img src="{{ entry.movie.poster_img.image.url }}" alt="{{ entry.movie.title }}">
+                        {% elif entry.movie.thumb_img %}
+                        <img src="{{ entry.movie.thumb_img.image.url }}" alt="{{ entry.movie.title }}">
+                        {% endif %}
+                        <div style="position:absolute;bottom:0;left:0;right:0;height:4px;background:#333;">
+                            <div style="height:100%;background:var(--color-primary,#e74c3c);width:50%;"></div>
+                        </div>
+                    </a>
+                    <div class="detail">
+                        <div class="tags"><p class="text">Movie</p></div>
+                    </div>
+                    <a href="{% url 'streaming_movie' entry.movie.id %}">
+                        <p>{{ entry.movie.title }}</p>
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+
+            {% empty %}
+            <div class="col-12 text-center py-5">
+                <i class="fas fa-play-circle" style="font-size:48px;color:var(--color-dark-grey);display:block;margin-bottom:16px;"></i>
+                <p style="color:var(--color-dark-grey);font-size:18px;">Nothing here yet. Start watching something!</p>
+                <a href="{% url 'index' %}" class="anime-btn2 dark mt-3">Browse Anime</a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+{% endblock body %}

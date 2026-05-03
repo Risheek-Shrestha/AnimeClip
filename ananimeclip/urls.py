@@ -46,4 +46,23 @@ urlpatterns = [
     path('live-search/', views.live_search, name='live_search'),
     path('category/<str:genre>/', views.category_page, name='category_page'),
 
+    path('search/', views.search_results, name='search_results'),
+    path('categories/', views.all_categories, name='all_categories'),
+    # Watch history
+    path('watch-history/update/', views.update_watch_history, name='update_watch_history'),
+    path('continue-watching/', views.continue_watching, name='continue_watching'),
+
+    # Watch later
+    path('watch-later/', views.watch_later, name='watch_later'),
+    path('watch-later/toggle/', views.toggle_watch_later, name='toggle_watch_later'),
+
+    # Playlists
+    path('playlists/', views.playlists, name='playlists'),
+    path('playlists/create/', views.create_playlist, name='create_playlist'),
+    path('playlists/<int:playlist_id>/', views.playlist_detail, name='playlist_detail'),
+    path('playlists/<int:playlist_id>/delete/', views.delete_playlist, name='delete_playlist'),
+    path('playlists/add-item/', views.add_to_playlist, name='add_to_playlist'),
+    path('playlists/remove-item/<int:item_id>/', views.remove_from_playlist, name='remove_from_playlist'),
+    path('playlists/json/', views.get_user_playlists, name='get_user_playlists'),
+
 ]
