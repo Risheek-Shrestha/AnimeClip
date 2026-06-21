@@ -13,8 +13,8 @@
                     <form method="POST" action="{% url 'login' %}" class="form-validator" novalidate="novalidate">
                         {% csrf_token %}
                         {% if error %}
-                            <div class="alert-error mb-4" style="background: rgba(255,77,77,0.1); border: 1px solid rgba(255,77,77,0.3); border-radius: 8px; padding: 12px 16px;">
-                                <p style="color: #ff4d4d; margin: 0; font-size: 14px;"><i class="fas fa-exclamation-circle me-2"></i>{{ error }}</p>
+                            <div class="alert-error mb-4">
+                                <p><i class="fas fa-exclamation-circle me-2"></i>{{ error }}</p>
                             </div>
                         {% endif %}
 
@@ -32,7 +32,7 @@
                         </div>
 
                         <div class="text-end mb-4">
-                            <a href="{% url 'password_reset' %}" style="font-size:13px; color: var(--color-dark-grey);">Forgot Password?</a>
+                            <a href="{% url 'password_reset' %}" class="forgot-link">Forgot Password?</a>
                         </div>
 
                         <button type="submit" class="anime-btn btn-dark border-change w-100">
@@ -41,15 +41,15 @@
                     </form>
                 </div>
 
-                <div class="custom-control custom-checkbox mb-3" style="text-align: left;">
+                <div class="custom-control custom-checkbox mb-3 text-start">
                     <input type="checkbox" class="custom-control-input" id="check">
-                    <label class="custom-control-label" for="check" style="font-size: 13px; color: var(--color-dark-grey);">
+                    <label class="custom-control-label checkbox-label" for="check">
                         I wish to receive news and promotions from Animeloop by email.
                     </label>
                 </div>
 
-                <p class="policy" style="font-size: 12px; color: var(--color-dark-grey); margin-bottom: 24px;">
-                    By continuing, you agree to Animeloop <a href="#" style="color: var(--color-grey-light); display:inline;">Terms of Use</a> and <a href="#" style="color: var(--color-grey-light); display:inline;">Privacy Policy</a>.
+                <p class="policy">
+                    By continuing, you agree to Animeloop <a href="#">Terms of Use</a> and <a href="#">Privacy Policy</a>.
                 </p>
 
                 <p class="guide">Don't have an account? <a href="{% url 'signup' %}">Sign Up</a></p>
@@ -79,4 +79,4 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 });
 </script>
-{% endblock signup-script %}
+{% endblock %}

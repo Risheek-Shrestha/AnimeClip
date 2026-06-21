@@ -283,12 +283,50 @@ def profile(request):
 
 @login_required
 def edit_profile(request):
+    if request.method == 'POST':
+        first_name       = request.POST.get('first_name', '').strip()
+        last_name        = request.POST.get('last_name', '').strip()
+        age              = request.POST.get('age', '').strip()
+        new_password     = request.POST.get('new_password', '')
+        confirm_password = request.POST.get('confirm_password', '')
+
+        if new_password and new_password != confirm_password:
+            return render(request, 'edit_profile.html', {
+                'title': 'Edit Profile',
+                'error': 'Passwords do not match.',
+            })
+
+        if age:
+            try:
+                age_int = int(age)
+                if not (10 <= age_int <= 80):
+                    raise ValueError
+            except ValueError:
+                return render(request, 'edit_profile.html', {
+                    'title': 'Edit Profile',
+                    'error': 'Age must be a number between 10 and 80.',
+                })
+            request.user.profile.age = age_int
+            request.user.profile.save()
+
+        request.user.first_name = first_name
+        request.user.last_name = last_name
+        if new_password:
+            request.user.set_password(new_password)
+        request.user.save()
+
+        if new_password:
+            # Re-authenticate so the session isn't invalidated after password change
+            from django.contrib.auth import update_session_auth_hash
+            update_session_auth_hash(request, request.user)
+
+        return render(request, 'edit_profile.html', {
+            'title': 'Edit Profile',
+            'success': True,
+        })
+
     return render(request, 'edit_profile.html', {'title': 'Edit Profile'})
 
-
-@login_required
-def playlist(request):
-    return render(request, 'playlist.html', {'title': 'Playlist'})
 
 
 # ============================================================

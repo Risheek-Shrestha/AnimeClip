@@ -18,7 +18,6 @@ urlpatterns = [
     path('logout/', auth_views.LogoutView.as_view(next_page='index'), name='logout'),
     path('profile/', views.profile, name='profile'),
     path('editprofile/', views.edit_profile, name='edit_profile'),
-    path('playlist/', views.playlist, name='playlist'),
     path('movies/', views.movies, name='movies'),
 
     # password reset flow

@@ -36,10 +36,10 @@
                         <div class="footer-widget p-0 mt-3">
                             <p class="mb-1">Join Us on</p>
                             <ul class="social-icons">
-                                <li><a href=""><img alt="" src="{% static 'assets/media/footer/reddit.png' %}"></a></li>
-                                <li><a href=""><img alt="" src="{% static 'assets/media/footer/discord.png' %}"></a></li>
-                                <li><a href=""><img alt="" src="{% static 'assets/media/footer/instagram.png' %}"></a></li>
-                                <li><a href=""><img alt="" src="{% static 'assets/media/footer/twitter.png' %}"></a></li>
+                                <li><a href="#"><img alt="Reddit" src="{% static 'assets/media/footer/reddit.png' %}"></a></li>
+                                <li><a href="#"><img alt="Discord" src="{% static 'assets/media/footer/discord.png' %}"></a></li>
+                                <li><a href="#"><img alt="Instagram" src="{% static 'assets/media/footer/instagram.png' %}"></a></li>
+                                <li><a href="#"><img alt="Twitter" src="{% static 'assets/media/footer/twitter.png' %}"></a></li>
                             </ul>
                         </div>
                     </div>
@@ -65,7 +65,7 @@
                         <span class="text-box ms-1">{{ playlist.items.count }}</span>
                     </a>
                     {% empty %}
-                    <p class="light-text" style="font-size:0.85rem;">No playlists yet.</p>
+                    <p class="light-text small-timestamp">No playlists yet.</p>
                     {% endfor %}
                     <a href="{% url 'playlists' %}" class="comment-btn mt-2 d-inline-block">
                         Manage Playlists
@@ -77,7 +77,7 @@
     </div>
 </section>
 
-<!-- ===== WATCH HISTORY ===== -->
+<!-- WATCH HISTORY -->
 <section class="schedule style-3 sec-mar">
     <div class="container">
         <div class="heading style-1">
@@ -130,7 +130,7 @@
                                 <p class="d-inline">
                                     Ep {{ entry.episode.number|stringformat:"02d" }}
                                 </p>
-                                <p class="light-text" style="font-size:0.8rem;">
+                                <p class="entry-timestamp">
                                     {{ entry.updated_at|timesince }} ago
                                 </p>
                             </div>
@@ -160,7 +160,7 @@
                             </div>
                             <div class="col-xl-5 col-lg-4 col-md-5 col-sm-4 col-0 text-end">
                                 <p class="d-inline">Movie</p>
-                                <p class="light-text" style="font-size:0.8rem;">
+                                <p class="entry-timestamp">
                                     {{ entry.updated_at|timesince }} ago
                                 </p>
                             </div>
@@ -171,9 +171,9 @@
                     {% if not forloop.last %}<hr>{% endif %}
 
                     {% empty %}
-                    <div class="text-center py-5">
-                        <i class="fas fa-history" style="font-size:48px;color:var(--color-dark-grey);display:block;margin-bottom:16px;"></i>
-                        <p style="color:var(--color-dark-grey);font-size:18px;">No watch history yet.</p>
+                    <div class="empty-state">
+                        <i class="fas fa-history"></i>
+                        <p>No watch history yet.</p>
                         <a href="{% url 'index' %}" class="anime-btn2 dark mt-3">Start Watching</a>
                     </div>
                     {% endfor %}

@@ -19,24 +19,16 @@
     <div class="container">
         <div class="row">
 
-            <!-- LEFT VIDEO -->
+            <!-- VIDEO PLAYER -->
             <div class="col-lg-9 col-sm-8 col-12">
                 <div class="video-box">
                     {% with episode.sources.all|first as src %}
                     {% if src and src.video_url %}
-                    <video
-                            id="main-player"
-                            controls
-                            width="100%"
-                            preload="metadata"
-                            {% if src.poster %}
-                            poster="{{ src.poster.url }}"
-                            {% elif anime.thumb_img %}
-                            poster="{{ anime.thumb_img.image.url }}"
-                            {% elif anime.banner_img %}
-                            poster="{{ anime.banner_img.image.url }}"
-                            {% endif %}
-                    >
+                    <video id="main-player" controls width="100%" preload="metadata"
+                        {% if src.poster %}poster="{{ src.poster.url }}"
+                        {% elif anime.thumb_img %}poster="{{ anime.thumb_img.image.url }}"
+                        {% elif anime.banner_img %}poster="{{ anime.banner_img.image.url }}"
+                        {% endif %}>
                         <source src="{{ src.video_url }}" type="video/mp4">
                         Your browser does not support the video tag.
                     </video>
@@ -52,7 +44,7 @@
                 </div>
             </div>
 
-            <!-- SIDEBAR -->
+            <!-- EPISODE SIDEBAR -->
             <div class="col-lg-3 col-sm-4 col-12">
                 <ul class="video-sidebar overflow-auto">
                     {% for season in seasons %}
@@ -83,7 +75,7 @@
 
         </div>
 
-        <!-- INFO -->
+        <!-- INFO PANEL -->
         <div class="video-content bg-color-black">
             <div class="row">
 
@@ -130,16 +122,19 @@
                                     <p>Watch Trailer</p>
                                 </div>
                             </div>
+
                             <div class="modal fade" id="videoModal" tabindex="-1" role="dialog" aria-hidden="true">
                                 <div class="modal-dialog" role="document">
                                     <div class="modal-content">
                                         <div class="modal-body">
-                                            <iframe style="border:0;width:100%;height:350px;"
+                                            <div class="trailer-iframe-wrap">
+                                                <iframe
                                                     src="https://www.youtube.com/embed/V8eWxOLXLK8?si=qWfCochFxm8hvBlY&start=4"
                                                     title="YouTube video player" frameborder="0"
                                                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                                                     referrerpolicy="strict-origin-when-cross-origin"
                                                     allowfullscreen></iframe>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -157,15 +152,15 @@
                                         <svg width="32" height="22" viewBox="0 0 32 22" fill="none"
                                              xmlns="http://www.w3.org/2000/svg">
                                             <rect x="0.145264" y="0.00012207" width="21.4395" height="2.68125"
-                                                  rx="1.34062" fill="#999999"/>
-                                            <rect x="0.145264" y="7.41272" width="21.4395" height="2.68125" rx="1.34062"
-                                                  fill="#999999"/>
-                                            <rect x="0.145264" y="14.8258" width="16.4914" height="2.68125" rx="1.34062"
-                                                  fill="#999999"/>
+                                                  rx="1.34062" fill="currentColor" opacity="0.6"/>
+                                            <rect x="0.145264" y="7.41272" width="21.4395" height="2.68125"
+                                                  rx="1.34062" fill="currentColor" opacity="0.6"/>
+                                            <rect x="0.145264" y="14.8258" width="16.4914" height="2.68125"
+                                                  rx="1.34062" fill="currentColor" opacity="0.6"/>
                                             <path d="M19.8784 16.0712C19.8784 15.4163 20.4093 14.8854 21.0642 14.8854H30.2463C30.9011 14.8854 31.432 15.4163 31.432 16.0712C31.432 16.7261 30.9011 17.257 30.2463 17.257H21.0642C20.4093 17.257 19.8784 16.7261 19.8784 16.0712Z"
-                                                  fill="#999999"/>
+                                                  fill="currentColor" opacity="0.6"/>
                                             <path d="M25.6552 22.0001C25.0171 22.0001 24.4999 21.4828 24.4999 20.8447V11.2977C24.4999 10.6596 25.0171 10.1423 25.6552 10.1423C26.2933 10.1423 26.8106 10.6596 26.8106 11.2977V20.8447C26.8106 21.4828 26.2933 22.0001 25.6552 22.0001Z"
-                                                  fill="#999999"/>
+                                                  fill="currentColor" opacity="0.6"/>
                                         </svg>
                                     </button>
                                     <ul class="dropdown-menu bg-color-black pt-3 pb-3 ps-3 pe-3">
@@ -185,8 +180,7 @@
                                         </li>
                                         {% else %}
                                         <li><a href="{% url 'login' %}"><i class="fa fa-clock"></i> Watch Later</a></li>
-                                        <li><a href="{% url 'login' %}"><i class="fas fa-plus"></i> Add to Playlist</a>
-                                        </li>
+                                        <li><a href="{% url 'login' %}"><i class="fas fa-plus"></i> Add to Playlist</a></li>
                                         {% endif %}
                                     </ul>
                                 </div>
@@ -334,15 +328,15 @@
                         </div>
                     </div>
                     {% empty %}
-                    <p>No comments yet. Try being the first human.</p>
+                    <p>No comments yet. Try being the first!</p>
                     {% endfor %}
                 </div>
             </div>
 
-            <!-- SIMILAR SIDEBAR -->
+            <!-- SIMILAR -->
             <div class="col-lg-4 col-md-6 col-sm-8 offset-lg-0 offset-md-3 offset-sm-2 mt-lg-0 mt-3">
                 <h3 class="small-title">SIMILAR</h3>
-                <p class="text" style="color: var(--color-dark-grey);">Coming soon.</p>
+                <p class="coming-soon-text">Coming soon.</p>
             </div>
 
         </div>
@@ -374,6 +368,7 @@
             .catch(err => console.error(err));
     });
 </script>
+
 {% if user.is_authenticated %}
 <div class="modal fade" id="playlistModal" tabindex="-1">
     <div class="modal-dialog">
@@ -395,14 +390,12 @@
         return document.cookie.split('; ').find(r => r.startsWith('csrftoken'))?.split('=')[1];
     }
 
-    // Watch Later
     document.querySelectorAll('.watch-later-btn').forEach(btn => {
         btn.addEventListener('click', function (e) {
             e.preventDefault();
             const body = new URLSearchParams();
             if (this.dataset.episodeId) body.append('episode_id', this.dataset.episodeId);
             if (this.dataset.movieId) body.append('movie_id', this.dataset.movieId);
-
             fetch('/watch-later/toggle/', {
                 method: 'POST',
                 headers: {'X-CSRFToken': getCSRF()},
@@ -417,9 +410,7 @@
         });
     });
 
-    // Playlist modal - load playlists when opened
     document.getElementById('playlistModal')?.addEventListener('show.bs.modal', function (e) {
-        // Get IDs from whichever button triggered the modal
         const trigger = e.relatedTarget;
         const episodeId = trigger?.dataset.episodeId || '';
         const movieId = trigger?.dataset.movieId || '';
@@ -437,7 +428,7 @@
                     <input type="hidden" name="csrfmiddlewaretoken" value="${getCSRF()}">
                     <input type="hidden" name="playlist_id" value="${p.id}">
                     ${episodeId ? `<input type="hidden" name="episode_id" value="${episodeId}">` : ''}
-                    ${movieId ? `<input type="hidden" name="movie_id"   value="${movieId}">` : ''}
+                    ${movieId ? `<input type="hidden" name="movie_id" value="${movieId}">` : ''}
                     <div class="d-flex justify-content-between align-items-center">
                         <span>${p.name}</span>
                         <button type="submit" class="comment-btn active">Add</button>
@@ -447,11 +438,9 @@
             });
     });
 
-    // Progress tracking
     const player = document.getElementById('main-player');
     if (player) {
         const episodeId = '{{ episode.id }}';
-
         setInterval(() => {
             if (player.paused || player.ended) return;
             fetch('/watch-history/update/', {
