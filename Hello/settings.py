@@ -1,15 +1,16 @@
 from pathlib import Path
 from dotenv import load_dotenv
 import os
+
 load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.getenv('SECRET_KEY')
 
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost 127.0.0.1').split()
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -39,7 +40,7 @@ ROOT_URLCONF = 'Hello.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / "templates"],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -64,7 +65,8 @@ DATABASES = {
         'PORT': os.getenv('DB_PORT'),
         'CONN_MAX_AGE': 60,
         'OPTIONS': {
-            'options': '-c AddressFamily=inet',
+            'connect_timeout': 5,
+            'options': '-c statement_timeout=5000',
         },
     }
 }
@@ -81,16 +83,19 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
 
+# ============================================================
+# STATIC FILES
+# ============================================================
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-STATICFILES_DIRS = [BASE_DIR / "static"]
+STATICFILES_DIRS = [BASE_DIR / 'static']
 
 STORAGES = {
-    "default": {
-        "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
+    'default': {
+        'BACKEND': 'cloudinary_storage.storage.MediaCloudinaryStorage',
     },
-    "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
+    'staticfiles': {
+        'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
     },
 }
 
@@ -98,7 +103,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 PASSWORD_RESET_TIMEOUT = 300
-
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/'
 
@@ -110,3 +114,26 @@ CLOUDINARY_STORAGE = {
     'API_KEY': os.getenv('CLOUDINARY_API_KEY'),
     'API_SECRET': os.getenv('CLOUDINARY_API_SECRET'),
 }
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': os.getenv('REDIS_URL', 'redis://127.0.0.1:6379/1'),
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+            'IGNORE_EXCEPTIONS': True,
+            'SOCKET_CONNECT_TIMEOUT': 2,
+            'SOCKET_TIMEOUT': 2,
+        },
+        'TIMEOUT': 300,
+    }
+}
+
+if not DEBUG:
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    X_FRAME_OPTIONS = 'DENY'
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_SECURE = True
