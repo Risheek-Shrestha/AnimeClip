@@ -12,6 +12,7 @@
                 <div class="login-sec">
                     <form method="POST" action="{% url 'login' %}" class="form-validator" novalidate="novalidate">
                         {% csrf_token %}
+                        <input type="hidden" name="next" value="{{ request.GET.next }}">
                         {% if error %}
                             <div class="alert-error mb-4">
                                 <p><i class="fas fa-exclamation-circle me-2"></i>{{ error }}</p>

@@ -178,9 +178,19 @@
                                                 <i class="fas fa-plus"></i> Add to Playlist
                                             </a>
                                         </li>
+                                        <li>
+                                            <a href="#" class="none follow-btn"
+                                               id="follow-btn"
+                                               data-anime-id="{{ anime.id }}"
+                                               data-url="{% url 'toggle_follow' anime.id %}">
+                                                <i class="fa {% if is_following %}fa-heart{% else %}fa-heart-o{% endif %}"></i>
+                                                <span id="follow-label">{% if is_following %}Following{% else %}Follow{% endif %}</span>
+                                            </a>
+                                        </li>
                                         {% else %}
                                         <li><a href="{% url 'login' %}"><i class="fa fa-clock"></i> Watch Later</a></li>
                                         <li><a href="{% url 'login' %}"><i class="fas fa-plus"></i> Add to Playlist</a></li>
+                                        <li><a href="{% url 'login' %}"><i class="fa fa-heart-o"></i> Follow</a></li>
                                         {% endif %}
                                     </ul>
                                 </div>
@@ -194,13 +204,18 @@
                         <div class="col-md-4 col-sm-6 col-12">
                             <div class="rating-content">
                                 <h4>RATE THE SHOW</h4>
-                                <p>YOUR RATING: <b>_/10</b></p>
+                                <div class="star-rating" id="star-rating-anime" data-url="{% url 'rate_anime' anime.id %}" data-current="{{ user_rating.score|default:0 }}">
+                                    {% for i in "12345678910"|make_list %}
+                                    <span class="star {% if user_rating.score >= forloop.counter %}active{% endif %}" data-val="{{ forloop.counter }}">&#9733;</span>
+                                    {% endfor %}
+                                </div>
+                                <p id="your-rating-label">YOUR RATING: <b>{{ user_rating.score|default:"—" }}/10</b></p>
                             </div>
                         </div>
                         <div class="col-md-4 col-sm-6 col-12">
                             <div class="rating-content">
-                                <h4>RATING</h4>
-                                <p>RATING: <span>{{ anime.rating }}</span> <b>/10</b></p>
+                                <h4>COMMUNITY RATING</h4>
+                                <p>RATING: <span id="avg-rating">{{ anime.rating }}</span> <b>/10</b></p>
                             </div>
                         </div>
                         <div class="col-md-4 col-sm-6 col-12">
@@ -223,6 +238,7 @@
                             {% endfor %}
                         </p>
                         <p><span>Country:</span> {{ anime.country|default:"—" }}</p>
+                        <p><span>Followers:</span> <b id="follower-count">{{ follower_count }}</b></p>
                     </div>
                 </div>
             </div>
@@ -366,7 +382,77 @@
     });
 </script>
 
+
+<style>
+.star-rating { display: inline-flex; gap: 3px; cursor: pointer; margin-bottom: 4px; }
+.star-rating .star { font-size: 20px; color: #555; transition: color 0.15s; }
+.star-rating .star.active, .star-rating .star.hover { color: #f5c518; }
+</style>
+
+<script>
+(function () {
+    const wrap = document.getElementById('star-rating-anime');
+    if (!wrap) return;
+    const stars = wrap.querySelectorAll('.star');
+    const label = document.getElementById('your-rating-label');
+    const avgEl = document.getElementById('avg-rating');
+
+    stars.forEach(star => {
+        star.addEventListener('mouseenter', () => {
+            const val = +star.dataset.val;
+            stars.forEach(s => s.classList.toggle('hover', +s.dataset.val <= val));
+        });
+        star.addEventListener('mouseleave', () => {
+            stars.forEach(s => s.classList.remove('hover'));
+        });
+        star.addEventListener('click', () => {
+            const val = +star.dataset.val;
+            fetch(wrap.dataset.url, {
+                method: 'POST',
+                headers: {'X-CSRFToken': getCSRF(), 'Content-Type': 'application/x-www-form-urlencoded'},
+                body: 'score=' + val
+            })
+            .then(r => r.json())
+            .then(data => {
+                stars.forEach(s => s.classList.toggle('active', +s.dataset.val <= data.score));
+                label.innerHTML = 'YOUR RATING: <b>' + data.score + '/10</b>';
+                if (avgEl) avgEl.textContent = data.avg;
+            })
+            .catch(err => console.error(err));
+        });
+    });
+})();
+</script>
+
+<script>
+(function () {
+    const btn = document.getElementById('follow-btn');
+    if (!btn) return;
+    btn.addEventListener('click', function (e) {
+        e.preventDefault();
+        fetch(btn.dataset.url, {
+            method: 'POST',
+            headers: {'X-CSRFToken': getCSRF()},
+        })
+        .then(r => r.json())
+        .then(data => {
+            const icon = btn.querySelector('i');
+            const label = document.getElementById('follow-label');
+            const counter = document.getElementById('follower-count');
+            if (data.following) {
+                icon.className = 'fa fa-heart';
+                label.textContent = 'Following';
+            } else {
+                icon.className = 'fa fa-heart-o';
+                label.textContent = 'Follow';
+            }
+            if (counter) counter.textContent = data.follower_count;
+        })
+        .catch(err => console.error(err));
+    });
+})();
+</script>
+
 {% include "_playlist_modal.html" %}
-{% endif %}
 
 {% endblock body %}

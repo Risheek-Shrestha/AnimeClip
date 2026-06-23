@@ -9,7 +9,7 @@ from django.http import JsonResponse
 from .models import (
     Profile, Anime, Episode, Comment, CommentLike,
     Season, MediaImage, Movie, Genre,
-    WatchHistory, WatchLater, Playlist, PlaylistItem,
+    WatchHistory, WatchLater, Playlist, PlaylistItem, UserRating, Notification, Follow,
 )
 from .recommendation_service import get_recommendations
 from django.db.models import Max, Prefetch, Q
@@ -285,11 +285,13 @@ def profile(request):
         .order_by('-updated_at')[:20]
     )
     watch_later_count = WatchLater.objects.filter(user=request.user).count()
+    follow_count = Follow.objects.filter(user=request.user).count()
     playlists = Playlist.objects.filter(user=request.user).prefetch_related('items')
     return render(request, 'profile.html', {
         'title': f'{request.user.first_name} - Profile',
         'history': history,
         'watch_later_count': watch_later_count,
+        'follow_count': follow_count,
         'playlists': playlists,
     })
 
@@ -354,7 +356,8 @@ def login_view(request):
         user = authenticate(request, username=email, password=password)
         if user is not None:
             login(request, user)
-            return redirect('index')
+            next_url = request.POST.get('next') or request.GET.get('next') or 'index'
+            return redirect(next_url)
         return render(request, 'login.html', {
             'title': 'ananimeclip',
             'error': 'Invalid email or password',
@@ -403,6 +406,7 @@ def signup(request):
 # STREAMING
 # ============================================================
 
+@login_required
 def streaming(request, episode_id):
     CACHE_KEY = f'streaming:episode:{episode_id}'
     cached = safe_cache_get(CACHE_KEY)
@@ -440,15 +444,28 @@ def streaming(request, episode_id):
             'seasons': seasons, 'comments': comments,
         }, timeout=600)
 
+    user_rating = None
+    is_following = False
+    if request.user.is_authenticated:
+        try:
+            user_rating = UserRating.objects.get(user=request.user, anime=anime)
+        except UserRating.DoesNotExist:
+            pass
+        is_following = Follow.objects.filter(user=request.user, anime=anime).exists()
+
     return render(request, 'streaming.html', {
         'title': anime.title,
         'episode': episode,
         'anime': anime,
         'seasons': seasons,
         'comments': comments,
+        'user_rating': user_rating,
+        'is_following': is_following,
+        'follower_count': anime.followers.count(),
     })
 
 
+@login_required
 def streaming_movie(request, movie_id):
     CACHE_KEY = f'streaming:movie:{movie_id}'
     cached = safe_cache_get(CACHE_KEY)
@@ -470,11 +487,64 @@ def streaming_movie(request, movie_id):
             'movie': movie, 'comments': comments,
         }, timeout=600)
 
+    user_rating = None
+    if request.user.is_authenticated:
+        try:
+            user_rating = UserRating.objects.get(user=request.user, movie=movie)
+        except UserRating.DoesNotExist:
+            pass
+
     return render(request, 'streaming_movie.html', {
         'title': movie.title,
         'movie': movie,
         'comments': comments,
+        'user_rating': user_rating,
     })
+
+
+
+# ============================================================
+# RATINGS
+# ============================================================
+
+@login_required
+@require_POST
+def rate_anime(request, anime_id):
+    from django.db.models import Avg
+    anime = get_object_or_404(Anime, id=anime_id)
+    try:
+        score = int(request.POST.get('score', 0))
+        if not (1 <= score <= 10):
+            raise ValueError
+    except (TypeError, ValueError):
+        return JsonResponse({'error': 'Invalid score'}, status=400)
+
+    UserRating.objects.update_or_create(
+        user=request.user, anime=anime,
+        defaults={'score': score, 'movie': None},
+    )
+    avg = UserRating.objects.filter(anime=anime).aggregate(avg=Avg('score'))['avg'] or 0
+    return JsonResponse({'score': score, 'avg': round(avg, 1)})
+
+
+@login_required
+@require_POST
+def rate_movie(request, movie_id):
+    from django.db.models import Avg
+    movie = get_object_or_404(Movie, id=movie_id)
+    try:
+        score = int(request.POST.get('score', 0))
+        if not (1 <= score <= 10):
+            raise ValueError
+    except (TypeError, ValueError):
+        return JsonResponse({'error': 'Invalid score'}, status=400)
+
+    UserRating.objects.update_or_create(
+        user=request.user, movie=movie,
+        defaults={'score': score, 'anime': None},
+    )
+    avg = UserRating.objects.filter(movie=movie).aggregate(avg=Avg('score'))['avg'] or 0
+    return JsonResponse({'score': score, 'avg': round(avg, 1)})
 
 
 # ============================================================
@@ -522,6 +592,87 @@ def like_comment(request, comment_id):
     else:
         liked = True
     return JsonResponse({'liked': liked, 'total_likes': comment.total_likes()})
+
+
+
+
+# ============================================================
+# FOLLOW / FAVOURITES
+# ============================================================
+
+@login_required
+@require_POST
+def toggle_follow(request, anime_id):
+    anime = get_object_or_404(Anime, id=anime_id)
+    obj, created = Follow.objects.get_or_create(user=request.user, anime=anime)
+    if not created:
+        obj.delete()
+        following = False
+    else:
+        following = True
+    return JsonResponse({
+        'following': following,
+        'follower_count': anime.followers.count(),
+    })
+
+
+@login_required
+@never_cache
+def favourites(request):
+    follows = Follow.objects.filter(user=request.user).select_related('anime').prefetch_related(
+        'anime__media_images',
+        'anime__seasons__episodes',
+    )
+    anime_list = []
+    for f in follows:
+        anime = f.anime
+        seasons = list(anime.seasons.all())
+        anime.first_season = seasons[0] if seasons else None
+        anime.first_episode = seasons[0].episodes.first() if anime.first_season else None
+        anime_list.append(anime)
+    return render(request, 'favourites.html', {
+        'title': 'My Favourites',
+        'anime_list': anime_list,
+    })
+
+
+# ============================================================
+# NOTIFICATIONS
+# ============================================================
+
+def get_unread_count(user):
+    if not user.is_authenticated:
+        return 0
+    return Notification.objects.filter(user=user, is_read=False).count()
+
+
+@login_required
+@never_cache
+def notifications(request):
+    notifs = Notification.objects.filter(user=request.user).select_related(
+        'anime', 'episode', 'movie'
+    )[:50]
+    unread_count = notifs.filter(is_read=False).count()
+    # Mark all as read on page visit
+    Notification.objects.filter(user=request.user, is_read=False).update(is_read=True)
+    return render(request, 'notifications.html', {
+        'title': 'Notifications',
+        'notifications': notifs,
+        'unread_count': unread_count,
+    })
+
+
+@login_required
+@require_POST
+def mark_notification_read(request, notif_id):
+    Notification.objects.filter(id=notif_id, user=request.user).update(is_read=True)
+    return JsonResponse({'status': 'ok'})
+
+
+@login_required
+def unread_notification_count(request):
+    count = get_unread_count(request.user)
+    return JsonResponse({'count': count})
 
 
 # ============================================================

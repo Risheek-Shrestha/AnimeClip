@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block body %}
+
+<section class="breadcrumb sec-mar">
+    <div class="container">
+        <div class="breadcrumb-content">
+            <ul>
+                <li><a href="{% url 'index' %}">Home</a></li>
+                <li><a class="active">Notifications</a></li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<section class="recent sec-mar">
+    <div class="container">
+        <div class="heading style-1 d-flex justify-content-between align-items-center">
+            <h2>Notifications</h2>
+            {% if unread_count > 0 %}
+            <span class="notif-page-badge">{{ unread_count }} new</span>
+            {% endif %}
+        </div>
+
+        <div class="notif-list">
+            {% for notif in notifications %}
+            <div class="notif-item {% if not notif.is_read %}notif-unread{% endif %}">
+                <div class="notif-icon">
+                    {% if notif.notif_type == 'new_episode' %}
+                    <i class="fas fa-play-circle"></i>
+                    {% elif notif.notif_type == 'new_movie' %}
+                    <i class="fas fa-film"></i>
+                    {% else %}
+                    <i class="fas fa-bell"></i>
+                    {% endif %}
+                </div>
+                <div class="notif-body">
+                    <p class="notif-message">{{ notif.message }}</p>
+                    <span class="notif-time">{{ notif.created_at|timesince }} ago</span>
+                </div>
+                <div class="notif-action">
+                    {% if notif.episode %}
+                    <a href="{% url 'streaming' notif.episode.id %}" class="anime-btn2 dark notif-watch-btn">Watch</a>
+                    {% elif notif.movie %}
+                    <a href="{% url 'streaming_movie' notif.movie.id %}" class="anime-btn2 dark notif-watch-btn">Watch</a>
+                    {% endif %}
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12 empty-state text-center py-5">
+                <i class="fas fa-bell-slash fa-3x mb-3" style="color:#555;"></i>
+                <p>No notifications yet. Follow some anime to get updates!</p>
+                <a href="{% url 'index' %}" class="anime-btn2 dark mt-3">Browse Anime</a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<style>
+.notif-page-badge {
+    background: #e74c3c; color: #fff; font-size: 13px; font-weight: 600;
+    padding: 4px 12px; border-radius: 20px;
+}
+.notif-list { display: flex; flex-direction: column; gap: 2px; margin-top: 1rem; }
+.notif-item {
+    display: flex; align-items: center; gap: 16px;
+    padding: 16px 20px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 8px;
+    border-left: 3px solid transparent;
+    transition: background 0.2s;
+}
+.notif-item:hover { background: rgba(255,255,255,0.08); }
+.notif-unread { border-left-color: #f5c518; background: rgba(245,197,24,0.06); }
+.notif-icon { font-size: 22px; color: #f5c518; flex-shrink: 0; width: 32px; text-align: center; }
+.notif-body { flex: 1; }
+.notif-message { margin: 0 0 4px; font-size: 15px; color: #eee; }
+.notif-time { font-size: 12px; color: #888; }
+.notif-action { flex-shrink: 0; }
+.notif-watch-btn { font-size: 12px; padding: 6px 14px; }
+</style>
+
+{% endblock body %}

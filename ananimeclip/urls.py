@@ -64,6 +64,13 @@ urlpatterns = [
     path('playlists/remove-item/<int:item_id>/', views.remove_from_playlist, name='remove_from_playlist'),
     path('playlists/json/', views.get_user_playlists, name='get_user_playlists'),
 
+    path('anime/<int:anime_id>/follow/', views.toggle_follow, name='toggle_follow'),
+    path('favourites/', views.favourites, name='favourites'),
+    path('notifications/', views.notifications, name='notifications'),
+    path('notifications/<int:notif_id>/read/', views.mark_notification_read, name='mark_notification_read'),
+    path('notifications/count/', views.unread_notification_count, name='unread_notification_count'),
+    path('anime/<int:anime_id>/rate/', views.rate_anime, name='rate_anime'),
+    path('movie/<int:movie_id>/rate/', views.rate_movie, name='rate_movie'),
     path('movies/recent/', views.all_recent_movies, name='all_recent_movies'),
     path('movies/popular/', views.all_popular_movies, name='all_popular_movies'),
     path('anime/recent/', views.all_recent_anime, name='all_recent_anime'),

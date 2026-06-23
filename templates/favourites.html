@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block body %}
+
+<section class="breadcrumb sec-mar">
+    <div class="container">
+        <div class="breadcrumb-content">
+            <ul>
+                <li><a href="{% url 'index' %}">Home</a></li>
+                <li><a class="active">Favourites</a></li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<section class="recent sec-mar">
+    <div class="container">
+        <div class="heading style-1">
+            <h2>My Favourites</h2>
+        </div>
+        <div class="row">
+            {% for anime in anime_list %}
+            <div class="col-xl-3 col-lg-4 col-sm-6 col-12 mb-4">
+                <div class="anime-blog">
+                    {% if anime.first_episode %}
+                    <a href="{% url 'streaming' anime.first_episode.id %}" class="img-block">
+                    {% else %}
+                    <a href="#" class="img-block">
+                    {% endif %}
+                        {% if anime.poster_img %}
+                        <img src="{{ anime.poster_img.image.url }}" alt="{{ anime.title }}">
+                        {% elif anime.thumb_img %}
+                        <img src="{{ anime.thumb_img.image.url }}" alt="{{ anime.title }}">
+                        {% endif %}
+                    </a>
+                    <div class="detail">
+                        <div class="tags"><p class="text">Anime · {{ anime.rating }}/10</p></div>
+                    </div>
+                    {% if anime.first_episode %}
+                    <a href="{% url 'streaming' anime.first_episode.id %}"><p>{{ anime.title }}</p></a>
+                    {% else %}
+                    <p>{{ anime.title }}</p>
+                    {% endif %}
+                    <form method="POST" action="{% url 'toggle_follow' anime.id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="comment-btn mt-1">
+                            <i class="fa fa-heart-o"></i> Unfollow
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12 text-center py-5">
+                <i class="fas fa-heart fa-3x mb-3" style="color:#555;"></i>
+                <p>You haven't followed any anime yet.</p>
+                <p class="light-text">Hit the <i class="fa fa-heart-o"></i> Follow button while watching any anime to add it here.</p>
+                <a href="{% url 'index' %}" class="anime-btn2 dark mt-3">Browse Anime</a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+{% endblock body %}

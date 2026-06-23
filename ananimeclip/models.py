@@ -253,6 +253,39 @@ class CommentLike(models.Model):
         unique_together = ['user', 'comment']
 
 
+class UserRating(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='ratings')
+    anime = models.ForeignKey(Anime, null=True, blank=True, on_delete=models.CASCADE, related_name='user_ratings')
+    movie = models.ForeignKey(Movie, null=True, blank=True, on_delete=models.CASCADE, related_name='user_ratings')
+    score = models.PositiveSmallIntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(10)]
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = [["user", "anime"], ["user", "movie"]]
+        constraints = [
+            models.CheckConstraint(
+                check=(
+                    models.Q(anime__isnull=False, movie__isnull=True)
+                    | models.Q(anime__isnull=True, movie__isnull=False)
+                ),
+                name="userrating_exactly_one_of_anime_or_movie",
+            ),
+        ]
+
+    def __str__(self):
+        target = self.anime or self.movie
+        return f"{self.user.username} rated {target} -> {self.score}/10"
+
+    def clean(self):
+        if not self.anime and not self.movie:
+            raise ValidationError("Rating must be linked to either Anime or Movie")
+        if self.anime and self.movie:
+            raise ValidationError("Rating cannot be linked to both Anime and Movie")
+
+
 class MediaImage(models.Model):
     IMAGE_TYPE_CHOICES = [
         ('thumbnail', 'Thumbnail'),
@@ -386,3 +419,37 @@ class PlaylistItem(models.Model):
 
     def __str__(self):
         return f"{self.playlist.name} - {self.episode or self.movie}"
+
+class Notification(models.Model):
+    TYPE_CHOICES = [
+        ('new_episode', 'New Episode'),
+        ('new_movie', 'New Movie'),
+        ('watch_later_available', 'Watch Later Available'),
+    ]
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
+    notif_type = models.CharField(max_length=30, choices=TYPE_CHOICES)
+    anime = models.ForeignKey(Anime, null=True, blank=True, on_delete=models.CASCADE)
+    episode = models.ForeignKey(Episode, null=True, blank=True, on_delete=models.CASCADE)
+    movie = models.ForeignKey(Movie, null=True, blank=True, on_delete=models.CASCADE)
+    message = models.CharField(max_length=255)
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.user.username} — {self.message}"
+
+class Follow(models.Model):
+    """User following/favouriting an Anime. Drives notifications and shows a Favourites list."""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='follows')
+    anime = models.ForeignKey(Anime, on_delete=models.CASCADE, related_name='followers')
+    added_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = [['user', 'anime']]
+        ordering = ['-added_at']
+
+    def __str__(self):
+        return f'{self.user.username} follows {self.anime.title}'
