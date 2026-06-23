@@ -286,13 +286,15 @@ class RecommendationEngine:
     # ------------------------------------------------------------------
 
     def recommend(self, limit: int = 20) -> dict:
-        anime_ranked = self._recommend_for("anime", limit)   # [(pk, score), ...]
+        anime_ranked = self._recommend_for("anime", limit)   # [(pk, score, reason), ...]
         movie_ranked = self._recommend_for("movie", limit)
 
-        anime_ids = [pk for pk, _ in anime_ranked]
-        movie_ids = [pk for pk, _ in movie_ranked]
-        anime_scores = dict(anime_ranked)
-        movie_scores = dict(movie_ranked)
+        anime_ids = [pk for pk, _, _ in anime_ranked]
+        movie_ids = [pk for pk, _, _ in movie_ranked]
+        anime_scores  = {pk: s for pk, s, _ in anime_ranked}
+        movie_scores  = {pk: s for pk, s, _ in movie_ranked}
+        anime_reasons = {pk: r for pk, _, r in anime_ranked}
+        movie_reasons = {pk: r for pk, _, r in movie_ranked}
 
         animes = (
             Anime.objects
@@ -317,13 +319,15 @@ class RecommendationEngine:
             "movies": movies,
             "anime_scores": anime_scores,
             "movie_scores": movie_scores,
+            "anime_reasons": anime_reasons,
+            "movie_reasons": movie_reasons,
         }
 
     # ------------------------------------------------------------------
     # Internal
     # ------------------------------------------------------------------
 
-    def _recommend_for(self, media_type: str, limit: int) -> list[tuple[int, float]]:
+    def _recommend_for(self, media_type: str, limit: int) -> list[tuple[int, float, str]]:
         assert media_type in ("anime", "movie")
         model_cls = Anime if media_type == "anime" else Movie
 
@@ -383,21 +387,26 @@ class RecommendationEngine:
                 + POPULAR_WEIGHT * pop
             )
 
-        # 7. Genre affinity boost (+15% for genres user loves)
+        # 7. Genre affinity boost (+15% for genres user loves) + reason tagging
+        reasons: dict[int, str] = {}
         if genre_ids:
             for item in all_items:
                 if item.pk in combined:
-                    item_genre_ids = {g.pk for g in item.genres.all()}
-                    if item_genre_ids & genre_ids:
+                    item_genres = list(item.genres.all())
+                    overlap_genres = [g for g in item_genres if g.pk in genre_ids]
+                    if overlap_genres:
                         combined[item.pk] *= 1.15
+                        names = [g.name for g in overlap_genres[:2]]
+                        reasons[item.pk] = f"Because you watch {', '.join(names)}"
 
         # 8. Global popularity fallback for cold-start users
         if not watched_ids:
             for pk in candidates:
                 combined[pk] = pop_scores.get(pk, 0.0)
+                reasons.setdefault(pk, "Popular right now")
 
         ranked = sorted(combined, key=combined.__getitem__, reverse=True)[:limit]
-        return [(pk, combined[pk]) for pk in ranked]
+        return [(pk, combined[pk], reasons.get(pk, "Recommended for you")) for pk in ranked]
 
     def _get_user_signals(self, media_type: str) -> tuple[list[int], set[int]]:
         """

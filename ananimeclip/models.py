@@ -31,6 +31,10 @@ class Anime(models.Model):
     genres = models.ManyToManyField('Genre', blank=True)
     studio = models.CharField(max_length=100, blank=True)
     country = models.CharField(max_length=100, blank=True)
+    mal_id = models.PositiveIntegerField(
+        null=True, blank=True, unique=True,
+        help_text="MyAnimeList ID — set when this row was imported from an external API, used to avoid duplicate imports."
+    )
     rating = models.DecimalField(
         max_digits=3,
         decimal_places=1,
@@ -90,6 +94,10 @@ class Movie(models.Model):
     genres = models.ManyToManyField('Genre', blank=True)
     studio = models.CharField(max_length=100, blank=True)
     country = models.CharField(max_length=100, blank=True)
+    mal_id = models.PositiveIntegerField(
+        null=True, blank=True, unique=True,
+        help_text="MyAnimeList ID — set when this row was imported from an external API, used to avoid duplicate imports."
+    )
     release_date = models.DateField(null=True, blank=True)
     release_day = models.CharField(max_length=10, choices=DAY_CHOICES, blank=True)
     release_time = models.TimeField(null=True, blank=True)
@@ -326,6 +334,7 @@ class Recommendation(models.Model):
     movie = models.ForeignKey(Movie, null=True, blank=True, on_delete=models.CASCADE, related_name='recommended_to')
     score = models.FloatField(default=0.0)  # blended content + collaborative + popularity score
     rank = models.PositiveIntegerField(default=0)  # 1 = strongest recommendation for this user
+    reason = models.CharField(max_length=255, blank=True, default='')  # e.g. "Because you watch Action, Fantasy"
     generated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
@@ -333,6 +342,18 @@ class Recommendation(models.Model):
         unique_together = [['user', 'anime'], ['user', 'movie']]
         indexes = [
             models.Index(fields=['user', 'rank']),
+        ]
+        constraints = [
+            # bulk_create() (used by save_recommendations) skips Model.clean(),
+            # so the "exactly one of anime/movie" rule needs a real DB constraint
+            # too, or it's only enforced when something calls full_clean().
+            models.CheckConstraint(
+                check=(
+                    models.Q(anime__isnull=False, movie__isnull=True)
+                    | models.Q(anime__isnull=True, movie__isnull=False)
+                ),
+                name='recommendation_exactly_one_of_anime_or_movie',
+            ),
         ]
 
     def __str__(self):
