@@ -11,6 +11,7 @@ from .models import (
     Season, MediaImage, Movie, Genre,
     WatchHistory, WatchLater, Playlist, PlaylistItem,
 )
+from .recommendation_service import get_recommendations
 from django.db.models import Max, Prefetch, Q
 from django.utils import timezone
 from datetime import timedelta
@@ -195,39 +196,12 @@ def index(request):
             .order_by('-added_at')[:8]
         )
 
-        # Collect genre IDs from the user's watch history (both anime episodes and movies)
-        watched_anime_ids = set()
-        watched_movie_ids = set()
-        genre_ids = set()
-
-        for entry in WatchHistory.objects.filter(user=request.user).select_related(
-            'episode__season__anime', 'movie'
-        ).prefetch_related(
-            'episode__season__anime__genres', 'movie__genres'
-        ):
-            if entry.episode and entry.episode.season and entry.episode.season.anime:
-                anime = entry.episode.season.anime
-                watched_anime_ids.add(anime.id)
-                genre_ids.update(anime.genres.values_list('id', flat=True))
-            if entry.movie:
-                watched_movie_ids.add(entry.movie.id)
-                genre_ids.update(entry.movie.genres.values_list('id', flat=True))
-
-        if genre_ids:
-            recommended_animes = attach_episode_info(list(
-                Anime.objects.filter(genres__id__in=genre_ids)
-                .exclude(id__in=watched_anime_ids)
-                .prefetch_related('media_images', 'genres', 'seasons__episodes')
-                .distinct()
-                .order_by('-rating')[:8]
-            ))
-            recommended_movies = list(
-                Movie.objects.filter(genres__id__in=genre_ids)
-                .exclude(id__in=watched_movie_ids)
-                .prefetch_related('media_images', 'genres')
-                .distinct()
-                .order_by('-rating')[:8]
-            )
+        # Recommendations now come from the persisted Recommendation table
+        # (filled by `warm_recommendations` / RecommendationEngine), with an
+        # on-the-fly compute-and-persist fallback for never-warmed users.
+        recs = get_recommendations(request.user, limit=8)
+        recommended_animes = attach_episode_info(list(recs['animes']))
+        recommended_movies = recs['movies']
 
     return render(request, 'index.html', {
         'title': 'Animeloop',

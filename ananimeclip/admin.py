@@ -2,7 +2,8 @@ from django.contrib import admin
 from django import forms
 from .models import (
     Profile, Anime, Movie, Genre, Season, Episode,
-    VideoSource, MovieSource, Comment, CommentLike, MediaImage
+    VideoSource, MovieSource, Comment, CommentLike, MediaImage,
+    Recommendation
 )
 from .widgets import CloudinaryVideoWidget
 import os
@@ -46,6 +47,22 @@ class MovieSourceForm(forms.ModelForm):
 @admin.register(MovieSource)
 class MovieSourceAdmin(admin.ModelAdmin):
     form = MovieSourceForm
+
+
+# ── Recommendation (machine-generated — view only, don't hand-edit) ───────────
+
+@admin.register(Recommendation)
+class RecommendationAdmin(admin.ModelAdmin):
+    list_display = ('user', 'anime', 'movie', 'score', 'rank', 'generated_at')
+    list_filter = ('generated_at',)
+    search_fields = ('user__username', 'anime__title', 'movie__title')
+    ordering = ('user', 'rank')
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
 
 
 # ── Everything else ────────────────────────────────────────────────────────────
