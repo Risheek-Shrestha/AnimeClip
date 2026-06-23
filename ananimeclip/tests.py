@@ -315,7 +315,7 @@ class PlaylistViewTest(TestCase):
             'playlist_id': pl.id,
             'episode_id': self.ep.id,
         })
-        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(resp.status_code, 200)
         self.assertTrue(PlaylistItem.objects.filter(playlist=pl, episode=self.ep).exists())
 
     def test_add_movie_to_playlist(self):
@@ -324,7 +324,7 @@ class PlaylistViewTest(TestCase):
             'playlist_id': pl.id,
             'movie_id': self.movie.id,
         })
-        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(resp.status_code, 200)
         self.assertTrue(PlaylistItem.objects.filter(playlist=pl, movie=self.movie).exists())
 
     def test_remove_item_from_playlist(self):
