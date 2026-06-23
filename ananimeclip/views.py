@@ -178,6 +178,9 @@ def index(request):
 
     user_history = []
     user_watch_later = []
+    recommended_animes = []
+    recommended_movies = []
+
     if request.user.is_authenticated:
         user_history = list(
             WatchHistory.objects.filter(user=request.user)
@@ -192,11 +195,47 @@ def index(request):
             .order_by('-added_at')[:8]
         )
 
+        # Collect genre IDs from the user's watch history (both anime episodes and movies)
+        watched_anime_ids = set()
+        watched_movie_ids = set()
+        genre_ids = set()
+
+        for entry in WatchHistory.objects.filter(user=request.user).select_related(
+            'episode__season__anime', 'movie'
+        ).prefetch_related(
+            'episode__season__anime__genres', 'movie__genres'
+        ):
+            if entry.episode and entry.episode.season and entry.episode.season.anime:
+                anime = entry.episode.season.anime
+                watched_anime_ids.add(anime.id)
+                genre_ids.update(anime.genres.values_list('id', flat=True))
+            if entry.movie:
+                watched_movie_ids.add(entry.movie.id)
+                genre_ids.update(entry.movie.genres.values_list('id', flat=True))
+
+        if genre_ids:
+            recommended_animes = attach_episode_info(list(
+                Anime.objects.filter(genres__id__in=genre_ids)
+                .exclude(id__in=watched_anime_ids)
+                .prefetch_related('media_images', 'genres', 'seasons__episodes')
+                .distinct()
+                .order_by('-rating')[:8]
+            ))
+            recommended_movies = list(
+                Movie.objects.filter(genres__id__in=genre_ids)
+                .exclude(id__in=watched_movie_ids)
+                .prefetch_related('media_images', 'genres')
+                .distinct()
+                .order_by('-rating')[:8]
+            )
+
     return render(request, 'index.html', {
         'title': 'Animeloop',
         **ctx,
         'user_history': user_history,
         'user_watch_later': user_watch_later,
+        'recommended_animes': recommended_animes,
+        'recommended_movies': recommended_movies,
     })
 
 
@@ -367,10 +406,19 @@ def signup(request):
                 'title': 'ananimeclip', 'error': 'Email already registered'
             })
 
+        try:
+            age_int = int(age)
+            if not (10 <= age_int <= 80):
+                raise ValueError
+        except (TypeError, ValueError):
+            return render(request, 'signup.html', {
+                'title': 'ananimeclip', 'error': 'Age must be a number between 10 and 80.'
+            })
+
         user = User.objects.create_user(
             username=email, email=email, password=password, first_name=name,
         )
-        Profile.objects.create(user=user, age=age)
+        Profile.objects.create(user=user, age=age_int)
         login(request, user)
         return redirect('index')
 
@@ -602,7 +650,10 @@ def all_categories(request):
 def update_watch_history(request):
     episode_id = request.POST.get('episode_id')
     movie_id   = request.POST.get('movie_id')
-    progress   = int(request.POST.get('progress_seconds', 0))
+    try:
+        progress = int(request.POST.get('progress_seconds', 0))
+    except (TypeError, ValueError):
+        return JsonResponse({'error': 'Invalid progress_seconds value'}, status=400)
 
     if episode_id:
         episode = get_object_or_404(Episode, id=episode_id)
@@ -624,12 +675,21 @@ def update_watch_history(request):
 @login_required
 @never_cache
 def continue_watching(request):
-    history = (
+    history = list(
         WatchHistory.objects.filter(user=request.user)
         .select_related('episode__season__anime', 'movie')
         .prefetch_related('episode__season__anime__media_images', 'movie__media_images')
         [:20]
     )
+    for entry in history:
+        if entry.episode and entry.episode.duration_mins:
+            total_secs = entry.episode.duration_mins * 60
+            entry.progress_pct = min(round(entry.progress_seconds / total_secs * 100), 100)
+        elif entry.movie and entry.movie.duration_mins:
+            total_secs = entry.movie.duration_mins * 60
+            entry.progress_pct = min(round(entry.progress_seconds / total_secs * 100), 100)
+        else:
+            entry.progress_pct = 0
     return render(request, 'continue_watching.html', {'history': history})
 
 

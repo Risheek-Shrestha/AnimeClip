@@ -650,6 +650,24 @@ ul.pagination li a:hover, ul.pagination li a.current {
   z-index: 2;
   width: 100%;
 }
+
+/* Lock the carousel height at the top so Slick can't size each slide
+   independently off its own text content (which is what was causing
+   different slides to cut off at different heights) */
+.banner-slider {
+  height: calc(100vh - 90px);
+}
+.banner-slider.slick-initialized .slick-list,
+.banner-slider.slick-initialized .slick-track,
+.banner-slider.slick-initialized .slick-slide,
+.banner-slider.slick-initialized .slick-slide > div {
+  height: 100%;
+}
+.banner-slider.slick-initialized .banner-block {
+  height: 100%;
+  min-height: 100%;
+}
+
 .banner-block::before {
   content: '';
   position: absolute; inset: 0;
@@ -755,12 +773,14 @@ ul.pagination li a:hover, ul.pagination li a.current {
   .banner.style-1 .banner-content { min-height: calc(100vh - 70px); }
   .banner.style-1 .col-lg-7 img { display: none; }
   .banner-block h2.title { font-size: 44px; }
+  .banner-slider { height: calc(100vh - 70px); }
 }
 @media (max-width:576px) {
   .banner-block { min-height: calc(100vh - 70px); }
   .banner.style-1 .banner-content { min-height: calc(100vh - 70px); }
   .banner-block h2.title { font-size: 32px; }
   .banner-block p.text { font-size: 16px; }
+  .banner-slider { height: calc(100vh - 70px); }
 }
 
 /* ?? ANIME BLOG CARDS ??????????????????????????????????????????? */

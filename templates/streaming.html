@@ -344,11 +344,8 @@
 </section>
 
 <script>
-    function getCSRFToken() {
-        return document.cookie.split('; ')
-            .find(row => row.startsWith('csrftoken'))
-            ?.split('=')[1];
-    }
+    // getCSRF() is defined globally in animeclip.js
+    const getCSRFToken = getCSRF;
 
     document.addEventListener("click", function (e) {
         const btn = e.target.closest(".like-btn");
@@ -369,97 +366,7 @@
     });
 </script>
 
-{% if user.is_authenticated %}
-<div class="modal fade" id="playlistModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content bg-color-black">
-            <div class="modal-header border-0">
-                <h5 class="modal-title">Add to Playlist</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body" id="playlist-list"><p>Loading...</p></div>
-            <div class="modal-footer border-0">
-                <a href="{% url 'playlists' %}" class="comment-btn">Manage Playlists</a>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script>
-    function getCSRF() {
-        return document.cookie.split('; ').find(r => r.startsWith('csrftoken'))?.split('=')[1];
-    }
-
-    document.querySelectorAll('.watch-later-btn').forEach(btn => {
-        btn.addEventListener('click', function (e) {
-            e.preventDefault();
-            const body = new URLSearchParams();
-            if (this.dataset.episodeId) body.append('episode_id', this.dataset.episodeId);
-            if (this.dataset.movieId) body.append('movie_id', this.dataset.movieId);
-            fetch('/watch-later/toggle/', {
-                method: 'POST',
-                headers: {'X-CSRFToken': getCSRF()},
-                body: body
-            })
-                .then(r => r.json())
-                .then(data => {
-                    this.innerHTML = data.status === 'added'
-                        ? '<i class="fa fa-clock"></i> Added to Watch Later'
-                        : '<i class="fa fa-clock"></i> Watch Later';
-                });
-        });
-    });
-
-    document.getElementById('playlistModal')?.addEventListener('show.bs.modal', function (e) {
-        const trigger = e.relatedTarget;
-        const episodeId = trigger?.dataset.episodeId || '';
-        const movieId = trigger?.dataset.movieId || '';
-
-        fetch('/playlists/json/')
-            .then(r => r.json())
-            .then(data => {
-                const container = document.getElementById('playlist-list');
-                if (!data.playlists.length) {
-                    container.innerHTML = '<p>No playlists yet. <a href="/playlists/">Create one</a>.</p>';
-                    return;
-                }
-                container.innerHTML = data.playlists.map(p => `
-                <form method="POST" action="/playlists/add-item/" style="margin-bottom:8px;">
-                    <input type="hidden" name="csrfmiddlewaretoken" value="${getCSRF()}">
-                    <input type="hidden" name="playlist_id" value="${p.id}">
-                    ${episodeId ? `<input type="hidden" name="episode_id" value="${episodeId}">` : ''}
-                    ${movieId ? `<input type="hidden" name="movie_id" value="${movieId}">` : ''}
-                    <div class="d-flex justify-content-between align-items-center">
-                        <span>${p.name}</span>
-                        <button type="submit" class="comment-btn active">Add</button>
-                    </div>
-                </form>
-            `).join('');
-            });
-    });
-
-    const player = document.getElementById('main-player');
-    if (player) {
-        const episodeId = '{{ episode.id }}';
-        setInterval(() => {
-            if (player.paused || player.ended) return;
-            fetch('/watch-history/update/', {
-                method: 'POST',
-                headers: {'X-CSRFToken': getCSRF()},
-                body: new URLSearchParams({episode_id: episodeId, progress_seconds: Math.floor(player.currentTime)})
-            });
-        }, 10000);
-
-        ['pause', 'ended'].forEach(evt => {
-            player.addEventListener(evt, () => {
-                navigator.sendBeacon('/watch-history/update/',
-                    new Blob([`episode_id=${episodeId}&progress_seconds=${Math.floor(player.currentTime)}`],
-                        {type: 'application/x-www-form-urlencoded'})
-                );
-            });
-        });
-    }
-</script>
+{% include "_playlist_modal.html" %}
 {% endif %}
 
 {% endblock body %}

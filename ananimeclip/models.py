@@ -179,6 +179,7 @@ class Episode(models.Model):
     release_date = models.DateField(null=True, blank=True)
     release_day = models.CharField(max_length=10, choices=DAY_CHOICES, blank=True)
     release_time = models.TimeField(null=True, blank=True)
+    duration_mins = models.PositiveIntegerField(default=0)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:

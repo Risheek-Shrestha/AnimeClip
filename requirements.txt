@@ -1,0 +1,17 @@
+# Core
+Django>=4.2,<5.0
+python-dotenv>=1.0.0
+
+# Database
+psycopg2-binary>=2.9.9
+
+# Media / Static
+cloudinary>=1.36.0
+django-cloudinary-storage>=0.3.0
+whitenoise>=6.6.0
+
+# Cache
+django-redis>=5.4.0
+
+# Production server
+gunicorn>=21.2.0

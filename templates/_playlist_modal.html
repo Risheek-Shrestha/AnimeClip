@@ -1,0 +1,16 @@
+{% if user.is_authenticated %}
+<div class="modal fade" id="playlistModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content bg-color-black">
+      <div class="modal-header border-0">
+        <h5 class="modal-title">Add to Playlist</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="playlist-list"><p>Loading…</p></div>
+      <div class="modal-footer border-0">
+        <a href="{% url 'playlists' %}" class="comment-btn">Manage Playlists</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}

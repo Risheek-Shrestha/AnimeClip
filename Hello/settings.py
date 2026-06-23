@@ -6,7 +6,17 @@ load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-dev-fallback-key-change-before-deploying')
+_secret_key = os.getenv('SECRET_KEY')
+if not _secret_key:
+    if os.getenv('DEBUG', 'False') == 'True':
+        # Local dev only — never reaches production because DEBUG is False there
+        _secret_key = 'django-insecure-local-dev-only-do-not-use-in-production'
+    else:
+        raise RuntimeError(
+            'SECRET_KEY environment variable is not set. '
+            'Set it before starting the server in production.'
+        )
+SECRET_KEY = _secret_key
 
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
@@ -101,7 +111,18 @@ STORAGES = {
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# Email — set EMAIL_HOST / EMAIL_HOST_USER / EMAIL_HOST_PASSWORD in production
+if os.getenv('EMAIL_HOST'):
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_HOST = os.getenv('EMAIL_HOST')
+    EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
+    EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True') == 'True'
+    EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
+    EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
+    DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', EMAIL_HOST_USER)
+else:
+    # Fallback: prints to console — only for local dev
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 PASSWORD_RESET_TIMEOUT = 300
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/'
