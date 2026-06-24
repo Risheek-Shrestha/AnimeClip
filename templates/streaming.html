@@ -453,6 +453,65 @@
 })();
 </script>
 
+
+<script>
+(function () {
+    const player = document.getElementById('main-player');
+    if (!player) return;
+
+    const resumeAt = {{ resume_seconds }};
+    const episodeId = {{ episode.id }};
+    const saveUrl = '{% url "update_watch_history" %}';
+
+    // Seek to saved position once metadata is ready
+    if (resumeAt > 0) {
+        player.addEventListener('loadedmetadata', function () {
+            // Only resume if not near the very end (last 10 s)
+            if (resumeAt < player.duration - 10) {
+                player.currentTime = resumeAt;
+            }
+        }, { once: true });
+    }
+
+    // Save progress every 10 seconds while playing
+    let saveTimer = null;
+    function saveProgress() {
+        const secs = Math.floor(player.currentTime);
+        if (secs < 1) return;
+        fetch(saveUrl, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCSRF(),
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: 'episode_id=' + episodeId + '&progress_seconds=' + secs,
+        }).catch(() => {});
+    }
+
+    player.addEventListener('play', function () {
+        if (!saveTimer) saveTimer = setInterval(saveProgress, 10000);
+    });
+    player.addEventListener('pause', function () {
+        clearInterval(saveTimer);
+        saveTimer = null;
+        saveProgress();
+    });
+    player.addEventListener('ended', function () {
+        clearInterval(saveTimer);
+        saveTimer = null;
+        // Save 0 so "resume" doesn't re-trigger on next visit
+        fetch(saveUrl, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCSRF(),
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: 'episode_id=' + episodeId + '&progress_seconds=0',
+        }).catch(() => {});
+    });
+})();
+</script>
+
 {% include "_playlist_modal.html" %}
 
 {% endblock body %}

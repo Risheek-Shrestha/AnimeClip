@@ -458,12 +458,18 @@ def streaming(request, episode_id):
 
     user_rating = None
     is_following = False
+    resume_seconds = 0
     if request.user.is_authenticated:
         try:
             user_rating = UserRating.objects.get(user=request.user, anime=anime)
         except UserRating.DoesNotExist:
             pass
         is_following = Follow.objects.filter(user=request.user, anime=anime).exists()
+        try:
+            history_entry = WatchHistory.objects.get(user=request.user, episode=episode)
+            resume_seconds = history_entry.progress_seconds
+        except WatchHistory.DoesNotExist:
+            pass
 
     return render(request, 'streaming.html', {
         'title': anime.title,
@@ -474,6 +480,7 @@ def streaming(request, episode_id):
         'user_rating': user_rating,
         'is_following': is_following,
         'follower_count': anime.followers.count(),
+        'resume_seconds': resume_seconds,
     })
 
 
@@ -499,10 +506,16 @@ def streaming_movie(request, movie_id):
     )
 
     user_rating = None
+    resume_seconds = 0
     if request.user.is_authenticated:
         try:
             user_rating = UserRating.objects.get(user=request.user, movie=movie)
         except UserRating.DoesNotExist:
+            pass
+        try:
+            history_entry = WatchHistory.objects.get(user=request.user, movie=movie)
+            resume_seconds = history_entry.progress_seconds
+        except WatchHistory.DoesNotExist:
             pass
 
     return render(request, 'streaming_movie.html', {
@@ -510,6 +523,7 @@ def streaming_movie(request, movie_id):
         'movie': movie,
         'comments': comments,
         'user_rating': user_rating,
+        'resume_seconds': resume_seconds,
     })
 
 
