@@ -21,6 +21,8 @@ Examples:
     python manage.py import_catalog --type movie --count 30
     python manage.py import_catalog --type anime --count 50 --with-images
     python manage.py import_catalog --type anime --count 20 --dry-run
+    python manage.py import_catalog --type anime --count 20 --jikan-type ova
+    python manage.py import_catalog --type anime --count 20 --jikan-type special
 
 Notes:
   - `--with-images` downloads poster art and saves it as a MediaImage,
@@ -132,7 +134,14 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument(
             "--type", choices=["anime", "movie"], required=True,
-            help="Which content type to import: 'anime' (TV series) or 'movie'.",
+            help="Which model to import into: 'anime' or 'movie'.",
+        )
+        parser.add_argument(
+            "--jikan-type", choices=["tv", "ova", "ona", "special", "movie"], default=None,
+            help="Override which Jikan content type to pull. Defaults to 'tv' for "
+                 "--type anime, 'movie' for --type movie. Use 'ova'/'ona'/'special' "
+                 "with --type anime to pull short-form anime into the Anime model "
+                 "(--type movie only accepts the default 'movie').",
         )
         parser.add_argument(
             "--count", type=int, default=25,
@@ -154,7 +163,9 @@ class Command(BaseCommand):
         with_images = options["with_images"]
         dry_run     = options["dry_run"]
 
-        jikan_type = "tv" if media_type == "anime" else "movie"
+        jikan_type = options["jikan_type"] or ("tv" if media_type == "anime" else "movie")
+        if media_type == "movie" and jikan_type != "movie":
+            raise CommandError("--type movie only supports --jikan-type movie (or omit --jikan-type).")
         model_cls  = Anime if media_type == "anime" else Movie
 
         created_count = updated_count = skipped_count = 0
