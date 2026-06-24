@@ -19,7 +19,6 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 
-from ananimeclip import views
 
 admin.site.site_header = "Anime CLip"
 admin.site.site_title = "Anime CLip title"

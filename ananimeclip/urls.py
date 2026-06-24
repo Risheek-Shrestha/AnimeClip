@@ -47,6 +47,7 @@ urlpatterns = [
 
     path('search/', views.search_results, name='search_results'),
     path('categories/', views.all_categories, name='all_categories'),
+
     # Watch history
     path('watch-history/update/', views.update_watch_history, name='update_watch_history'),
     path('continue-watching/', views.continue_watching, name='continue_watching'),
@@ -55,14 +56,15 @@ urlpatterns = [
     path('watch-later/', views.watch_later, name='watch_later'),
     path('watch-later/toggle/', views.toggle_watch_later, name='toggle_watch_later'),
 
-    # Playlists
+    # Playlists — fixed sub-paths MUST come before <int:playlist_id> capture
+    # so Django matches them first and doesn't try to cast 'add-item'/'json' as int.
     path('playlists/', views.playlists, name='playlists'),
     path('playlists/create/', views.create_playlist, name='create_playlist'),
-    path('playlists/<int:playlist_id>/', views.playlist_detail, name='playlist_detail'),
-    path('playlists/<int:playlist_id>/delete/', views.delete_playlist, name='delete_playlist'),
     path('playlists/add-item/', views.add_to_playlist, name='add_to_playlist'),
     path('playlists/remove-item/<int:item_id>/', views.remove_from_playlist, name='remove_from_playlist'),
     path('playlists/json/', views.get_user_playlists, name='get_user_playlists'),
+    path('playlists/<int:playlist_id>/', views.playlist_detail, name='playlist_detail'),
+    path('playlists/<int:playlist_id>/delete/', views.delete_playlist, name='delete_playlist'),
 
     path('anime/<int:anime_id>/follow/', views.toggle_follow, name='toggle_follow'),
     path('favourites/', views.favourites, name='favourites'),
@@ -75,5 +77,4 @@ urlpatterns = [
     path('movies/popular/', views.all_popular_movies, name='all_popular_movies'),
     path('anime/recent/', views.all_recent_anime, name='all_recent_anime'),
     path('anime/popular/', views.all_popular_anime, name='all_popular_anime'),
-
 ]

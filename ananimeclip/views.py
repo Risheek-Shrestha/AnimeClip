@@ -356,7 +356,10 @@ def login_view(request):
         user = authenticate(request, username=email, password=password)
         if user is not None:
             login(request, user)
-            next_url = request.POST.get('next') or request.GET.get('next') or 'index'
+            from django.utils.http import url_has_allowed_host_and_scheme
+            next_url = request.POST.get('next') or request.GET.get('next') or ''
+            if not url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
+                next_url = 'index'
             return redirect(next_url)
         return render(request, 'login.html', {
             'title': 'ananimeclip',
@@ -408,41 +411,50 @@ def signup(request):
 
 @login_required
 def streaming(request, episode_id):
+    # Cache only safe primitives (IDs), not live ORM objects.
+    # Caching model instances can serve stale related data (e.g. comments) if
+    # two users post simultaneously and one write races past the cache-delete.
     CACHE_KEY = f'streaming:episode:{episode_id}'
     cached = safe_cache_get(CACHE_KEY)
 
     if cached is not None:
-        episode  = cached['episode']
-        anime    = cached['anime']
-        seasons  = cached['seasons']
-        comments = cached['comments']
+        episode_id_c = cached['episode_id']
+        anime_id_c   = cached['anime_id']
     else:
-        episode = get_object_or_404(
-            Episode.objects.select_related('season__anime').prefetch_related('sources'),
-            id=episode_id,
-        )
-        anime = get_object_or_404(
-            Anime.objects.prefetch_related(
-                'media_images', 'genres',
-                Prefetch(
-                    'seasons',
-                    queryset=Season.objects.prefetch_related(
-                        Prefetch('episodes', queryset=Episode.objects.prefetch_related('sources'))
-                    ),
+        episode_id_c = episode_id
+        anime_id_c   = None
+
+    episode = get_object_or_404(
+        Episode.objects.select_related('season__anime').prefetch_related('sources'),
+        id=episode_id_c,
+    )
+    anime = get_object_or_404(
+        Anime.objects.prefetch_related(
+            'media_images', 'genres',
+            Prefetch(
+                'seasons',
+                queryset=Season.objects.prefetch_related(
+                    Prefetch('episodes', queryset=Episode.objects.prefetch_related('sources'))
                 ),
             ),
-            pk=episode.season.anime_id,
-        )
-        seasons = list(anime.seasons.all())
-        comments = list(
-            episode.comments.filter(parent=None)
-            .select_related('user')
-            .prefetch_related('replies__user', 'likes', 'replies__likes')
-        )
+        ),
+        pk=anime_id_c if anime_id_c else episode.season.anime_id,
+    )
+
+    if cached is None:
         safe_cache_set(CACHE_KEY, {
-            'episode': episode, 'anime': anime,
-            'seasons': seasons, 'comments': comments,
+            'episode_id': episode.pk,
+            'anime_id': anime.pk,
         }, timeout=600)
+
+    seasons = list(anime.seasons.all())
+    # Comments are always fetched fresh — they change too frequently to cache
+    # and add_comment already invalidates by key, but there's still a race window.
+    comments = list(
+        episode.comments.filter(parent=None)
+        .select_related('user')
+        .prefetch_related('replies__user', 'likes', 'replies__likes')
+    )
 
     user_rating = None
     is_following = False
@@ -467,25 +479,24 @@ def streaming(request, episode_id):
 
 @login_required
 def streaming_movie(request, movie_id):
+    # Cache only the movie ID, not the ORM object, to avoid stale pickled state.
     CACHE_KEY = f'streaming:movie:{movie_id}'
     cached = safe_cache_get(CACHE_KEY)
 
-    if cached is not None:
-        movie    = cached['movie']
-        comments = cached['comments']
-    else:
-        movie = get_object_or_404(
-            Movie.objects.prefetch_related('media_images', 'sources', 'genres'),
-            id=movie_id,
-        )
-        comments = list(
-            movie.comments.filter(parent=None)
-            .select_related('user')
-            .prefetch_related('replies__user', 'likes', 'replies__likes')
-        )
-        safe_cache_set(CACHE_KEY, {
-            'movie': movie, 'comments': comments,
-        }, timeout=600)
+    movie = get_object_or_404(
+        Movie.objects.prefetch_related('media_images', 'sources', 'genres'),
+        id=movie_id,
+    )
+
+    if cached is None:
+        safe_cache_set(CACHE_KEY, {'movie_id': movie.pk}, timeout=600)
+
+    # Comments always fetched fresh — too volatile to cache safely.
+    comments = list(
+        movie.comments.filter(parent=None)
+        .select_related('user')
+        .prefetch_related('replies__user', 'likes', 'replies__likes')
+    )
 
     user_rating = None
     if request.user.is_authenticated:
@@ -649,10 +660,12 @@ def get_unread_count(user):
 @login_required
 @never_cache
 def notifications(request):
+    # Count unread BEFORE slicing — Django raises TypeError if you call
+    # .filter() on a queryset that has already been sliced with [:n].
+    unread_count = Notification.objects.filter(user=request.user, is_read=False).count()
     notifs = Notification.objects.filter(user=request.user).select_related(
         'anime', 'episode', 'movie'
     )[:50]
-    unread_count = notifs.filter(is_read=False).count()
     # Mark all as read on page visit
     Notification.objects.filter(user=request.user, is_read=False).update(is_read=True)
     return render(request, 'notifications.html', {
@@ -678,10 +691,6 @@ def unread_notification_count(request):
 # ============================================================
 # SEARCH & DISCOVERY
 # ============================================================
-
-def reset(request):
-    return render(request, 'reset_password.html', {'title': 'Reset Password'})
-
 
 def live_search(request):
     query = request.GET.get('q', '').strip()
@@ -802,6 +811,7 @@ def update_watch_history(request):
 def continue_watching(request):
     history = list(
         WatchHistory.objects.filter(user=request.user)
+        .order_by('-updated_at')
         .select_related('episode__season__anime', 'movie')
         .prefetch_related('episode__season__anime__media_images', 'movie__media_images')
         [:20]
