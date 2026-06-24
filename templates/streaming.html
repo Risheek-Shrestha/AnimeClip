@@ -42,6 +42,29 @@
                     {% endif %}
                     {% endwith %}
                 </div>
+
+                {% if next_episode %}
+                <div id="autoplay-overlay" style="display:none; position:relative; background:rgba(0,0,0,0.82);
+                     border-radius:8px; padding:20px 24px; margin-top:8px; color:#fff; text-align:center;">
+                    <p style="margin:0 0 6px; font-size:13px; opacity:0.75;">Up next</p>
+                    <p style="margin:0 0 12px; font-size:15px; font-weight:600;">
+                        Episode {{ next_episode.number }}{% if next_episode.title %} — {{ next_episode.title }}{% endif %}
+                    </p>
+                    <p style="margin:0 0 14px; font-size:13px;">
+                        Playing in <span id="autoplay-countdown">10</span>s
+                    </p>
+                    <a id="autoplay-now" href="{% url 'streaming' next_episode.id %}"
+                       style="background:#e63946; color:#fff; padding:8px 20px; border-radius:4px;
+                              text-decoration:none; font-size:13px; margin-right:8px;">
+                        Play now
+                    </a>
+                    <button id="autoplay-cancel"
+                            style="background:transparent; border:1px solid rgba(255,255,255,0.4);
+                                   color:#fff; padding:8px 16px; border-radius:4px; font-size:13px; cursor:pointer;">
+                        Cancel
+                    </button>
+                </div>
+                {% endif %}
             </div>
 
             <!-- EPISODE SIDEBAR -->
@@ -510,6 +533,41 @@
         }).catch(() => {});
     });
 })();
+</script>
+
+
+<script>
+{% if next_episode %}
+(function () {
+    const player   = document.getElementById('main-player');
+    const overlay  = document.getElementById('autoplay-overlay');
+    const countEl  = document.getElementById('autoplay-countdown');
+    const cancelBtn= document.getElementById('autoplay-cancel');
+    const nowLink  = document.getElementById('autoplay-now');
+    if (!player || !overlay) return;
+
+    let timer = null;
+
+    player.addEventListener('ended', function () {
+        overlay.style.display = 'block';
+        let secs = 10;
+        countEl.textContent = secs;
+        timer = setInterval(function () {
+            secs -= 1;
+            countEl.textContent = secs;
+            if (secs <= 0) {
+                clearInterval(timer);
+                window.location.href = nowLink.href;
+            }
+        }, 1000);
+    });
+
+    cancelBtn.addEventListener('click', function () {
+        clearInterval(timer);
+        overlay.style.display = 'none';
+    });
+})();
+{% endif %}
 </script>
 
 {% include "_playlist_modal.html" %}

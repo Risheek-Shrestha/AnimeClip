@@ -456,6 +456,21 @@ def streaming(request, episode_id):
         .prefetch_related('replies__user', 'likes', 'replies__likes')
     )
 
+    # Compute next episode across seasons for auto-play
+    next_episode = None
+    current_season = episode.season
+    all_eps_in_season = list(current_season.episodes.order_by('number'))
+    current_idx = next((i for i, e in enumerate(all_eps_in_season) if e.pk == episode.pk), None)
+    if current_idx is not None and current_idx + 1 < len(all_eps_in_season):
+        next_episode = all_eps_in_season[current_idx + 1]
+    else:
+        # Try the first episode of the next season
+        next_season = Season.objects.filter(
+            anime=anime, number__gt=current_season.number
+        ).order_by('number').first()
+        if next_season:
+            next_episode = next_season.episodes.order_by('number').first()
+
     user_rating = None
     is_following = False
     resume_seconds = 0
@@ -481,6 +496,7 @@ def streaming(request, episode_id):
         'is_following': is_following,
         'follower_count': anime.followers.count(),
         'resume_seconds': resume_seconds,
+        'next_episode': next_episode,
     })
 
 
