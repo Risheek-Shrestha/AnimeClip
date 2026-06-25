@@ -1224,7 +1224,7 @@ def profile_create(request):
         return JsonResponse({'error': 'Maximum 4 profiles allowed.'}, status=400)
 
     name   = request.POST.get('name', '').strip()[:30]
-    avatar = request.POST.get('avatar', 'avatar1')
+    avatar = request.POST.get('avatars', 'avatar1')
     kids   = request.POST.get('kids_mode') == 'on'
 
     if not name:

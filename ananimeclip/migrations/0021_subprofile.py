@@ -27,7 +27,7 @@ class Migration(migrations.Migration):
                 ),
                 ("name", models.CharField(max_length=30)),
                 (
-                    "avatar",
+                    "avatars",
                     models.CharField(
                         choices=[
                             ("avatar1", "Blue Dragon"),

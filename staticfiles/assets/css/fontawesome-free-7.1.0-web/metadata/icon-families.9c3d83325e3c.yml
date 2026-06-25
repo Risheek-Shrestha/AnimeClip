@@ -55128,7 +55128,7 @@ user-astronaut:
   label: User Astronaut
   search:
     terms:
-      - avatar
+      - avatars
       - clothing
       - cosmonaut
       - nasa
@@ -55471,7 +55471,7 @@ user-ninja:
   search:
     terms:
       - assassin
-      - avatar
+      - avatars
       - dangerous
       - deadly
       - fighter
@@ -55583,7 +55583,7 @@ user-plus:
   search:
     terms:
       - add
-      - avatar
+      - avatars
       - employee
       - follow
       - positive
@@ -55763,7 +55763,7 @@ user-tie:
   search:
     terms:
       - administrator
-      - avatar
+      - avatars
       - business
       - clothing
       - employee
