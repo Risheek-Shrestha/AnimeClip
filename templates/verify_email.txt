@@ -1,0 +1,13 @@
+Subject: Verify your AnimeClip account
+
+Hi {{ name }},
+
+Thanks for signing up to AnimeClip! Click the link below to verify your email address:
+
+{{ verify_url }}
+
+This link expires in 24 hours.
+
+If you did not create an account, you can safely ignore this email.
+
+— The AnimeClip Team

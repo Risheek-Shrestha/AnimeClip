@@ -7,6 +7,8 @@ from django.core.exceptions import ValidationError
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     age = models.IntegerField(validators=[MinValueValidator(10), MaxValueValidator(80)])
+    email_verified      = models.BooleanField(default=False)
+    verification_token  = models.CharField(max_length=64, blank=True, default='')
 
     def __str__(self):
         return self.user.username

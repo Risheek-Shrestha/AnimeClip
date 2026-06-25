@@ -16,6 +16,7 @@ from django.db.models import Max, Prefetch, Q
 from django.utils import timezone
 from django_ratelimit.decorators import ratelimit
 from datetime import timedelta
+import secrets
 
 
 # ============================================================
@@ -410,10 +411,31 @@ def signup(request):
 
         user = User.objects.create_user(
             username=email, email=email, password=password, first_name=name,
+            is_active=False,
         )
-        Profile.objects.create(user=user, age=age_int)
-        login(request, user)
-        return redirect('index')
+        token = secrets.token_urlsafe(32)
+        Profile.objects.create(user=user, age=age_int, verification_token=token)
+
+        # Send verification email
+        from django.core.mail import send_mail
+        from django.template.loader import render_to_string
+        from django.urls import reverse
+        verify_url = request.build_absolute_uri(
+            reverse('verify_email', args=[token])
+        )
+        body = render_to_string('email_verify.txt', {
+            'name': name, 'verify_url': verify_url,
+        })
+        send_mail(
+            subject='Verify your AnimeClip account',
+            message=body,
+            from_email=None,   # uses DEFAULT_FROM_EMAIL from settings
+            recipient_list=[email],
+            fail_silently=True,
+        )
+        return render(request, 'verify_pending.html', {
+            'title': 'Check your email', 'email': email,
+        })
 
     return render(request, 'signup.html', {'title': 'ananimeclip'})
 
@@ -1128,3 +1150,28 @@ def all_popular_anime(request):
         'genres': _all_genre_names(), 'active_genre': genre,
         'active_sort': sort, 'sort_options': ANIME_SORT_OPTIONS,
     })
+
+# ============================================================
+# EMAIL VERIFICATION
+# ============================================================
+
+def verify_email(request, token):
+    """Activate account when user clicks the link in their verification email."""
+    from .models import Profile
+    try:
+        profile = Profile.objects.select_related('user').get(verification_token=token)
+    except Profile.DoesNotExist:
+        return render(request, 'verify_pending.html', {
+            'title': 'Invalid link',
+            'email': '',
+            'error': 'This verification link is invalid or has already been used.',
+        })
+
+    if not profile.email_verified:
+        profile.email_verified = True
+        profile.verification_token = ''   # invalidate so link can't be reused
+        profile.save(update_fields=['email_verified', 'verification_token'])
+        profile.user.is_active = True
+        profile.user.save(update_fields=['is_active'])
+
+    return render(request, 'verify_success.html', {'title': 'Email Verified'})
