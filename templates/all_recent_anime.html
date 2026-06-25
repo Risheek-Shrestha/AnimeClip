@@ -15,6 +15,8 @@
 
 <section class="recent sec-mar">
     <div class="container">
+        {% include "_browse_filters.html" %}
+
         <div class="heading style-1">
             <h2>Recently Updated Anime
                 <span>{{ anime_list|length }} Title{{ anime_list|length|pluralize }}</span>

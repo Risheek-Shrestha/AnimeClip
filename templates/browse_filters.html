@@ -1,0 +1,48 @@
+{% load static %}
+<div class="browse-filters" style="margin-bottom: 1.5rem;">
+    <form method="get" id="browse-filter-form"
+          style="display:flex; flex-wrap:wrap; gap:10px; align-items:center;">
+
+        <!-- Genre dropdown -->
+        <div style="position:relative;">
+            <select name="genre" onchange="document.getElementById('browse-filter-form').submit()"
+                    style="appearance:none; background:var(--color-bg-secondary, #1a1a2e);
+                           color:#fff; border:1px solid rgba(255,255,255,0.15);
+                           padding:8px 36px 8px 14px; border-radius:6px;
+                           font-size:13px; cursor:pointer; min-width:140px;">
+                <option value="">All Genres</option>
+                {% for g in genres %}
+                <option value="{{ g }}" {% if g == active_genre %}selected{% endif %}>{{ g }}</option>
+                {% endfor %}
+            </select>
+            <i class="fas fa-chevron-down"
+               style="position:absolute; right:12px; top:50%; transform:translateY(-50%);
+                      font-size:11px; pointer-events:none; opacity:0.6;"></i>
+        </div>
+
+        <!-- Sort buttons -->
+        <div style="display:flex; gap:6px; flex-wrap:wrap;">
+            {% for key, val in sort_options.items %}
+            <button type="submit" name="sort" value="{{ key }}"
+                    {% if active_genre %}
+                    onclick="document.querySelector('[name=genre]').value='{{ active_genre }}';"
+                    {% endif %}
+                    style="background:{% if active_sort == key %}#e63946{% else %}rgba(255,255,255,0.07){% endif %};
+                           color:#fff; border:1px solid {% if active_sort == key %}#e63946{% else %}rgba(255,255,255,0.15){% endif %};
+                           padding:8px 14px; border-radius:6px; font-size:13px; cursor:pointer;
+                           transition:background 0.15s;">
+                {{ val.1 }}
+            </button>
+            {% endfor %}
+        </div>
+
+        <!-- Clear link -->
+        {% if active_genre or active_sort != 'recent' %}
+        <a href="?" style="font-size:12px; color:rgba(255,255,255,0.45);
+                           text-decoration:none; padding:8px 4px;">
+            ✕ Clear filters
+        </a>
+        {% endif %}
+
+    </form>
+</div>

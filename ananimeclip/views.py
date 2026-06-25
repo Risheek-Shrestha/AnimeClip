@@ -964,66 +964,142 @@ def get_user_playlists(request):
 # LIST / BROWSE VIEWS
 # ============================================================
 
+# ── Browse sort/filter helpers ───────────────────────────────────────────────
+
+ANIME_SORT_OPTIONS = {
+    'recent':    ('-latest_update', 'Recently Updated'),
+    'rating':    ('-rating',        'Highest Rated'),
+    'a-z':       ('title',          'A → Z'),
+    'z-a':       ('-title',         'Z → A'),
+}
+
+MOVIE_SORT_OPTIONS = {
+    'recent':    ('-release_date',  'Recently Updated'),
+    'rating':    ('-rating',        'Highest Rated'),
+    'a-z':       ('title',          'A → Z'),
+    'z-a':       ('-title',         'Z → A'),
+}
+
+
+def _apply_anime_filters(qs, request):
+    """Apply ?sort= and ?genre= params to an Anime queryset."""
+    genre = request.GET.get('genre', '').strip()
+    sort  = request.GET.get('sort', 'recent')
+    if genre:
+        qs = qs.filter(genres__name__iexact=genre)
+    order = ANIME_SORT_OPTIONS.get(sort, ANIME_SORT_OPTIONS['recent'])[0]
+    if sort == 'recent':
+        qs = qs.annotate(latest_update=Max('seasons__episodes__updated_at'))
+    return qs.order_by(order).distinct(), genre, sort
+
+
+def _apply_movie_filters(qs, request):
+    """Apply ?sort= and ?genre= params to a Movie queryset."""
+    genre = request.GET.get('genre', '').strip()
+    sort  = request.GET.get('sort', 'recent')
+    if genre:
+        qs = qs.filter(genres__name__iexact=genre)
+    order = MOVIE_SORT_OPTIONS.get(sort, MOVIE_SORT_OPTIONS['recent'])[0]
+    return qs.order_by(order).distinct(), genre, sort
+
+
+def _all_genre_names():
+    return list(Genre.objects.values_list('name', flat=True).order_by('name'))
+
+
+# ── Browse views ─────────────────────────────────────────────────────────────
+
 def all_recent_movies(request):
+    genre = request.GET.get('genre', '').strip()
+    sort  = request.GET.get('sort', 'recent')
+    is_filtered = bool(genre or sort != 'recent')
+
     cache_key = 'all_recent_movies'
-    movies = safe_cache_get(cache_key)
+    movies = None if is_filtered else safe_cache_get(cache_key)
+
     if movies is None:
-        movies = list(
-            Movie.objects.filter(release_date__isnull=False)
-            .prefetch_related('media_images', 'sources', 'genres')
-            .order_by('-release_date')
-        )
-        safe_cache_set(cache_key, movies, timeout=300)
+        qs = Movie.objects.filter(release_date__isnull=False).prefetch_related('media_images', 'sources', 'genres')
+        movies, genre, sort = _apply_movie_filters(qs, request)
+        movies = list(movies)
+        if not is_filtered:
+            safe_cache_set(cache_key, movies, timeout=300)
+
     return render(request, 'all_recent_movies.html', {
         'title': 'Recently Updated Movies', 'movies': movies,
+        'genres': _all_genre_names(), 'active_genre': genre,
+        'active_sort': sort, 'sort_options': MOVIE_SORT_OPTIONS,
     })
 
 
 def all_popular_movies(request):
+    genre = request.GET.get('genre', '').strip()
+    sort  = request.GET.get('sort', 'recent')
+    is_filtered = bool(genre or sort != 'recent')
+
     cache_key = 'all_popular_movies'
-    movies = safe_cache_get(cache_key)
+    movies = None if is_filtered else safe_cache_get(cache_key)
+
     if movies is None:
-        movies = list(
-            Movie.objects.filter(is_popular=True)
-            .prefetch_related('media_images', 'sources', 'genres')
-        )
-        safe_cache_set(cache_key, movies, timeout=300)
+        qs = Movie.objects.filter(is_popular=True).prefetch_related('media_images', 'sources', 'genres')
+        movies, genre, sort = _apply_movie_filters(qs, request)
+        movies = list(movies)
+        if not is_filtered:
+            safe_cache_set(cache_key, movies, timeout=300)
+
     return render(request, 'all_popular_movies.html', {
         'title': 'Popular Movies', 'movies': movies,
+        'genres': _all_genre_names(), 'active_genre': genre,
+        'active_sort': sort, 'sort_options': MOVIE_SORT_OPTIONS,
     })
 
 
 def all_recent_anime(request):
+    genre = request.GET.get('genre', '').strip()
+    sort  = request.GET.get('sort', 'recent')
+    is_filtered = bool(genre or sort != 'recent')
+
     cache_key = 'all_recent_anime'
-    anime_list = safe_cache_get(cache_key)
+    anime_list = None if is_filtered else safe_cache_get(cache_key)
+
     if anime_list is None:
-        anime_list = list(
-            Anime.objects.annotate(
-                latest_update=Max('seasons__episodes__updated_at')
-            ).order_by('-latest_update').prefetch_related(
-                'media_images',
-                Prefetch('seasons', queryset=Season.objects.prefetch_related('episodes__sources')),
-            )
+        qs = Anime.objects.prefetch_related(
+            'media_images', 'genres',
+            Prefetch('seasons', queryset=Season.objects.prefetch_related('episodes__sources')),
         )
+        anime_list, genre, sort = _apply_anime_filters(qs, request)
+        anime_list = list(anime_list)
         attach_episode_info(anime_list)
-        safe_cache_set(cache_key, anime_list, timeout=300)
+        if not is_filtered:
+            safe_cache_set(cache_key, anime_list, timeout=300)
+
     return render(request, 'all_recent_anime.html', {
         'title': 'Recently Updated Anime', 'anime_list': anime_list,
+        'genres': _all_genre_names(), 'active_genre': genre,
+        'active_sort': sort, 'sort_options': ANIME_SORT_OPTIONS,
     })
 
 
 def all_popular_anime(request):
+    genre = request.GET.get('genre', '').strip()
+    sort  = request.GET.get('sort', 'recent')
+    is_filtered = bool(genre or sort != 'recent')
+
     cache_key = 'all_popular_anime'
-    anime_list = safe_cache_get(cache_key)
+    anime_list = None if is_filtered else safe_cache_get(cache_key)
+
     if anime_list is None:
-        anime_list = list(
-            Anime.objects.filter(is_popular=True).prefetch_related(
-                'media_images',
-                Prefetch('seasons', queryset=Season.objects.prefetch_related('episodes__sources')),
-            )
+        qs = Anime.objects.filter(is_popular=True).prefetch_related(
+            'media_images', 'genres',
+            Prefetch('seasons', queryset=Season.objects.prefetch_related('episodes__sources')),
         )
+        anime_list, genre, sort = _apply_anime_filters(qs, request)
+        anime_list = list(anime_list)
         attach_episode_info(anime_list)
-        safe_cache_set(cache_key, anime_list, timeout=300)
+        if not is_filtered:
+            safe_cache_set(cache_key, anime_list, timeout=300)
+
     return render(request, 'all_popular_anime.html', {
         'title': 'Popular Anime', 'anime_list': anime_list,
+        'genres': _all_genre_names(), 'active_genre': genre,
+        'active_sort': sort, 'sort_options': ANIME_SORT_OPTIONS,
     })
