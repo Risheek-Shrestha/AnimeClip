@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'ananimeclip',
+    'django_ratelimit',
     'cloudinary',
     'cloudinary_storage',
 ]

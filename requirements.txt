@@ -13,6 +13,7 @@ Pillow>=10.0.0
 
 # Cache
 django-redis>=5.4.0
+django-ratelimit>=4.1.0
 
 # Production server
 gunicorn>=21.2.0

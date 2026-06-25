@@ -14,6 +14,7 @@ from .models import (
 from .recommendation_service import get_recommendations, get_similar
 from django.db.models import Max, Prefetch, Q
 from django.utils import timezone
+from django_ratelimit.decorators import ratelimit
 from datetime import timedelta
 
 
@@ -349,8 +350,14 @@ def edit_profile(request):
 # ============================================================
 
 @never_cache
+@ratelimit(key='ip', rate='10/5m', method='POST', block=False)
 def login_view(request):
     if request.method == 'POST':
+        if getattr(request, 'limited', False):
+            return render(request, 'login.html', {
+                'title': 'ananimeclip',
+                'error': 'Too many login attempts. Please wait a few minutes and try again.',
+            })
         email    = request.POST.get('email', '').strip()
         password = request.POST.get('password', '')
         user = authenticate(request, username=email, password=password)
@@ -369,8 +376,14 @@ def login_view(request):
 
 
 @never_cache
+@ratelimit(key='ip', rate='5/h', method='POST', block=False)
 def signup(request):
     if request.method == 'POST':
+        if getattr(request, 'limited', False):
+            return render(request, 'signup.html', {
+                'title': 'ananimeclip',
+                'error': 'Too many sign-up attempts. Please wait an hour and try again.',
+            })
         name             = request.POST.get('name', '').strip()
         age              = request.POST.get('age')
         email            = request.POST.get('email', '').strip()
@@ -600,7 +613,10 @@ def rate_movie(request, movie_id):
 
 @login_required
 @require_POST
+@ratelimit(key='user', rate='20/10m', method='POST', block=False)
 def add_comment(request, episode_id):
+    if getattr(request, 'limited', False):
+        return JsonResponse({'error': 'You are posting too fast. Slow down.'}, status=429)
     episode   = get_object_or_404(Episode, id=episode_id)
     body      = request.POST.get('body', '').strip()
     parent_id = request.POST.get('parent_id')
@@ -615,7 +631,10 @@ def add_comment(request, episode_id):
 
 @login_required
 @require_POST
+@ratelimit(key='user', rate='20/10m', method='POST', block=False)
 def add_movie_comment(request, movie_id):
+    if getattr(request, 'limited', False):
+        return JsonResponse({'error': 'You are posting too fast. Slow down.'}, status=429)
     movie     = get_object_or_404(Movie, id=movie_id)
     body      = request.POST.get('body', '').strip()
     parent_id = request.POST.get('parent_id')
