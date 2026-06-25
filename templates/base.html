@@ -121,6 +121,10 @@
                 {% endif %}
               </a>
               <a href="{% url 'profile' %}" class="anime-btn2 light me-3">{{ user.first_name }}</a>
+              <a href="{% url 'profile_select' %}" class="anime-btn2 light me-3"
+                 title="Switch Profile" style="padding: 6px 12px;">
+                 {% if active_subprofile %}{{ active_subprofile.name }}{% else %}Profiles{% endif %}
+              </a>
               <a href="{% url 'logout' %}" class="anime-btn2 dark">Log Out</a>
             {% else %}
               <a href="{% url 'signup' %}" class="anime-btn2 light me-3">Sign Up</a>

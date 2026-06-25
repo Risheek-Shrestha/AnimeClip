@@ -10,6 +10,7 @@ from .models import (
     Profile, Anime, Episode, Comment, CommentLike,
     Season, MediaImage, Movie, Genre,
     WatchHistory, WatchLater, Playlist, PlaylistItem, UserRating, Notification, Follow,
+    SubProfile,
 )
 from .recommendation_service import get_recommendations, get_similar
 from django.db.models import Max, Prefetch, Q
@@ -1175,3 +1176,82 @@ def verify_email(request, token):
         profile.user.save(update_fields=['is_active'])
 
     return render(request, 'verify_success.html', {'title': 'Email Verified'})
+
+# ============================================================
+# SUB-PROFILE SWITCHER  (Netflix-style "Who's watching?")
+# ============================================================
+
+SESSION_KEY = 'active_subprofile_id'
+
+
+def _get_active_subprofile(request):
+    """Return the active SubProfile for this session, or None."""
+    sp_id = request.session.get(SESSION_KEY)
+    if sp_id:
+        try:
+            return SubProfile.objects.get(pk=sp_id, user=request.user)
+        except SubProfile.DoesNotExist:
+            del request.session[SESSION_KEY]
+    return None
+
+
+@login_required
+def profile_select(request):
+    """Who's watching? — pick or create a sub-profile."""
+    subprofiles = SubProfile.objects.filter(user=request.user)
+    return render(request, 'profile_select.html', {
+        'title': 'Who\'s watching?',
+        'subprofiles': subprofiles,
+        'max_reached': subprofiles.count() >= SubProfile.MAX_PER_USER,
+        'avatar_choices': SubProfile.AVATAR_CHOICES,
+    })
+
+
+@login_required
+def profile_switch(request, subprofile_id):
+    """Set the active sub-profile in the session and go home."""
+    sp = get_object_or_404(SubProfile, pk=subprofile_id, user=request.user)
+    request.session[SESSION_KEY] = sp.pk
+    return redirect('index')
+
+
+@login_required
+@require_POST
+def profile_create(request):
+    """Create a new sub-profile (max 4 per user)."""
+    subprofiles = SubProfile.objects.filter(user=request.user)
+    if subprofiles.count() >= SubProfile.MAX_PER_USER:
+        return JsonResponse({'error': 'Maximum 4 profiles allowed.'}, status=400)
+
+    name   = request.POST.get('name', '').strip()[:30]
+    avatar = request.POST.get('avatar', 'avatar1')
+    kids   = request.POST.get('kids_mode') == 'on'
+
+    if not name:
+        return JsonResponse({'error': 'Name is required.'}, status=400)
+
+    if SubProfile.objects.filter(user=request.user, name=name).exists():
+        return JsonResponse({'error': 'You already have a profile with that name.'}, status=400)
+
+    valid_avatars = [k for k, _ in SubProfile.AVATAR_CHOICES]
+    if avatar not in valid_avatars:
+        avatar = 'avatar1'
+
+    sp = SubProfile.objects.create(
+        user=request.user, name=name, avatar=avatar, kids_mode=kids
+    )
+    request.session[SESSION_KEY] = sp.pk
+    return redirect('index')
+
+
+@login_required
+@require_POST
+def profile_delete(request, subprofile_id):
+    """Delete a sub-profile. Cannot delete the last one."""
+    sp = get_object_or_404(SubProfile, pk=subprofile_id, user=request.user)
+    if SubProfile.objects.filter(user=request.user).count() <= 1:
+        return JsonResponse({'error': 'You must keep at least one profile.'}, status=400)
+    if request.session.get(SESSION_KEY) == sp.pk:
+        del request.session[SESSION_KEY]
+    sp.delete()
+    return redirect('profile_select')

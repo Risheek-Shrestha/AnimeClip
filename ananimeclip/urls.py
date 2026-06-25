@@ -72,6 +72,12 @@ urlpatterns = [
     path('notifications/<int:notif_id>/read/', views.mark_notification_read, name='mark_notification_read'),
     path('notifications/count/', views.unread_notification_count, name='unread_notification_count'),
     path('verify-email/<str:token>/', views.verify_email, name='verify_email'),
+
+    # Sub-profile switcher
+    path('profiles/', views.profile_select, name='profile_select'),
+    path('profiles/switch/<int:subprofile_id>/', views.profile_switch, name='profile_switch'),
+    path('profiles/create/', views.profile_create, name='profile_create'),
+    path('profiles/delete/<int:subprofile_id>/', views.profile_delete, name='profile_delete'),
     path('anime/<int:anime_id>/rate/', views.rate_anime, name='rate_anime'),
     path('movie/<int:movie_id>/rate/', views.rate_movie, name='rate_movie'),
     path('movies/recent/', views.all_recent_movies, name='all_recent_movies'),

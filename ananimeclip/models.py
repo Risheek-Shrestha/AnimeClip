@@ -14,6 +14,37 @@ class Profile(models.Model):
         return self.user.username
 
 
+class SubProfile(models.Model):
+    """
+    A named profile under a single User account (Netflix-style).
+    Up to 4 per user. The active sub-profile is stored in the session
+    under the key 'active_subprofile_id'.
+    """
+    AVATAR_CHOICES = [
+        ('avatar1', 'Blue Dragon'),
+        ('avatar2', 'Red Fox'),
+        ('avatar3', 'Green Wolf'),
+        ('avatar4', 'Purple Cat'),
+        ('avatar5', 'Gold Eagle'),
+        ('avatar6', 'Silver Bear'),
+    ]
+    MAX_PER_USER = 4
+
+    user        = models.ForeignKey(User, on_delete=models.CASCADE, related_name='subprofiles')
+    name        = models.CharField(max_length=30)
+    avatar      = models.CharField(max_length=20, choices=AVATAR_CHOICES, default='avatar1')
+    kids_mode   = models.BooleanField(default=False,
+                    help_text='Restricts content to PG / PG-13 only')
+    created_at  = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = [['user', 'name']]
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f'{self.user.username} / {self.name}'
+
+
 class Genre(models.Model):
     name = models.CharField(max_length=100)
 

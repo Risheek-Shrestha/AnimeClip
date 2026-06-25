@@ -1,0 +1,132 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block body %}
+
+<section class="sec-mar" style="min-height:80vh; display:flex; align-items:center; justify-content:center;">
+<div class="container" style="max-width:760px; text-align:center;">
+
+    <h1 style="font-size:2rem; margin-bottom:2.5rem; letter-spacing:0.04em;">Who's watching?</h1>
+
+    <div style="display:flex; flex-wrap:wrap; justify-content:center; gap:28px; margin-bottom:2.5rem;">
+
+        {% for sp in subprofiles %}
+        <a href="{% url 'profile_switch' sp.id %}" style="text-decoration:none; color:inherit;">
+            <div class="subprofile-card" style="width:120px; cursor:pointer;">
+                <div style="width:120px; height:120px; border-radius:8px; overflow:hidden;
+                            border:3px solid {% if active_subprofile.id == sp.id %}#e63946{% else %}transparent{% endif %};
+                            transition:border-color 0.2s;">
+                    <img src="{% static 'assets/media/avatars/' %}{{ sp.avatar }}.png"
+                         onerror="this.style.display='none'; this.parentNode.style.background='#e63946'; this.parentNode.style.display='flex'; this.parentNode.style.alignItems='center'; this.parentNode.style.justifyContent='center';"
+                         alt="{{ sp.name }}"
+                         style="width:100%; height:100%; object-fit:cover;">
+                </div>
+                <p style="margin:10px 0 4px; font-size:14px; font-weight:500;">{{ sp.name }}</p>
+                {% if sp.kids_mode %}
+                <span style="font-size:10px; background:#2ecc71; color:#fff;
+                             padding:2px 7px; border-radius:10px;">Kids</span>
+                {% endif %}
+            </div>
+        </a>
+
+        <!-- Delete button -->
+        <form method="post" action="{% url 'profile_delete' sp.id %}"
+              style="position:relative; margin-top:-148px; margin-left:88px; z-index:10;"
+              onsubmit="return confirm('Delete profile {{ sp.name }}?');">
+            {% csrf_token %}
+            <button type="submit" title="Delete"
+                    style="background:rgba(0,0,0,0.6); border:none; color:#fff;
+                           width:24px; height:24px; border-radius:50%; cursor:pointer;
+                           font-size:12px; display:flex; align-items:center; justify-content:center;">✕</button>
+        </form>
+        {% endfor %}
+
+        {% if not max_reached %}
+        <div id="add-profile-btn" onclick="document.getElementById('add-form').style.display='block'; this.style.display='none';"
+             style="width:120px; cursor:pointer;">
+            <div style="width:120px; height:120px; border-radius:8px; border:2px dashed rgba(255,255,255,0.25);
+                        display:flex; align-items:center; justify-content:center; font-size:36px; opacity:0.5;
+                        transition:opacity 0.2s;">+</div>
+            <p style="margin:10px 0 0; font-size:14px; opacity:0.5;">Add Profile</p>
+        </div>
+        {% endif %}
+
+    </div>
+
+    <!-- Add profile form (hidden until + clicked) -->
+    {% if not max_reached %}
+    <div id="add-form" style="display:none; background:rgba(255,255,255,0.05); border-radius:10px;
+                               padding:28px; max-width:380px; margin:0 auto; text-align:left;">
+        <h3 style="margin-bottom:18px; font-size:1rem;">New Profile</h3>
+        <form method="post" action="{% url 'profile_create' %}">
+            {% csrf_token %}
+            <div style="margin-bottom:14px;">
+                <label style="font-size:13px; opacity:0.7; display:block; margin-bottom:6px;">Name</label>
+                <input type="text" name="name" maxlength="30" required
+                       style="width:100%; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2);
+                              color:#fff; padding:9px 12px; border-radius:6px; font-size:14px;">
+            </div>
+            <div style="margin-bottom:14px;">
+                <label style="font-size:13px; opacity:0.7; display:block; margin-bottom:8px;">Avatar</label>
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                    {% for key, label in avatar_choices %}
+                    <label style="cursor:pointer; text-align:center;">
+                        <input type="radio" name="avatar" value="{{ key }}"
+                               {% if forloop.first %}checked{% endif %}
+                               style="display:none;" class="avatar-radio">
+                        <div class="avatar-opt" style="width:52px; height:52px; border-radius:6px;
+                                  border:2px solid transparent; overflow:hidden; transition:border-color 0.15s;">
+                            <img src="{% static 'assets/media/avatars/' %}{{ key }}.png"
+                                 onerror="this.parentNode.style.background='#333';"
+                                 alt="{{ label }}" style="width:100%; height:100%; object-fit:cover;">
+                        </div>
+                        <p style="font-size:10px; margin-top:3px; opacity:0.6;">{{ label }}</p>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+            <div style="margin-bottom:18px; display:flex; align-items:center; gap:10px;">
+                <input type="checkbox" name="kids_mode" id="kids_mode">
+                <label for="kids_mode" style="font-size:13px;">Kids mode (PG / PG-13 only)</label>
+            </div>
+            <div style="display:flex; gap:10px;">
+                <button type="submit"
+                        style="background:#e63946; color:#fff; border:none; padding:9px 22px;
+                               border-radius:6px; font-size:13px; cursor:pointer; flex:1;">
+                    Create Profile
+                </button>
+                <button type="button" onclick="document.getElementById('add-form').style.display='none';
+                                               document.getElementById('add-profile-btn').style.display='block';"
+                        style="background:transparent; color:#fff; border:1px solid rgba(255,255,255,0.2);
+                               padding:9px 16px; border-radius:6px; font-size:13px; cursor:pointer;">
+                    Cancel
+                </button>
+            </div>
+        </form>
+    </div>
+    {% endif %}
+
+    {% if max_reached %}
+    <p style="font-size:13px; opacity:0.5; margin-top:1rem;">
+        Maximum 4 profiles reached. Delete one to add another.
+    </p>
+    {% endif %}
+
+</div>
+</section>
+
+<script>
+// Highlight selected avatar radio
+document.querySelectorAll('.avatar-radio').forEach(function(radio) {
+    radio.addEventListener('change', function() {
+        document.querySelectorAll('.avatar-opt').forEach(function(el) {
+            el.style.borderColor = 'transparent';
+        });
+        this.nextElementSibling.style.borderColor = '#e63946';
+    });
+});
+// Highlight the first one by default
+var first = document.querySelector('.avatar-radio:checked');
+if (first) first.nextElementSibling.style.borderColor = '#e63946';
+</script>
+
+{% endblock body %}
