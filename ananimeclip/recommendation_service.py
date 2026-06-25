@@ -140,3 +140,51 @@ def _popular_fallback(limit: int) -> dict:
     for m in movies:
         m.recommend_reason = "Popular right now"
     return {"animes": animes, "movies": movies}
+
+def get_similar(item, limit: int = 6):
+    """
+    Return up to `limit` Anime or Movie objects that share the most genres
+    with `item`. Works for both Anime and Movie instances.
+    Returns a list with a .recommend_reason attribute set on each result.
+    """
+    genre_ids = list(item.genres.values_list('pk', flat=True))
+    is_anime  = isinstance(item, Anime)
+
+    if not genre_ids:
+        # No genres — fall back to popular of the same type
+        if is_anime:
+            results = list(Anime.objects.exclude(pk=item.pk)
+                           .order_by('-rating', '-is_popular')
+                           .prefetch_related('genres', 'media_images', 'seasons__episodes')[:limit])
+        else:
+            results = list(Movie.objects.exclude(pk=item.pk)
+                           .order_by('-rating', '-is_popular')
+                           .prefetch_related('genres', 'media_images')[:limit])
+        for r in results:
+            r.recommend_reason = 'Popular right now'
+        return results
+
+    from django.db.models import Count
+    if is_anime:
+        qs = (Anime.objects
+              .exclude(pk=item.pk)
+              .filter(genres__pk__in=genre_ids)
+              .annotate(shared=Count('genres', filter=__import__('django.db.models', fromlist=['Q']).Q(genres__pk__in=genre_ids)))
+              .order_by('-shared', '-rating')
+              .prefetch_related('genres', 'media_images', 'seasons__episodes')
+              .distinct()[:limit])
+    else:
+        qs = (Movie.objects
+              .exclude(pk=item.pk)
+              .filter(genres__pk__in=genre_ids)
+              .annotate(shared=Count('genres', filter=__import__('django.db.models', fromlist=['Q']).Q(genres__pk__in=genre_ids)))
+              .order_by('-shared', '-rating')
+              .prefetch_related('genres', 'media_images')
+              .distinct()[:limit])
+
+    results = list(qs)
+    genre_names = list(item.genres.values_list('name', flat=True)[:3])
+    reason = 'Because you like ' + ', '.join(genre_names) if genre_names else 'Similar title'
+    for r in results:
+        r.recommend_reason = reason
+    return results

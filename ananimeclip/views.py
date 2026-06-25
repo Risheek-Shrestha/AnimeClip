@@ -11,7 +11,7 @@ from .models import (
     Season, MediaImage, Movie, Genre,
     WatchHistory, WatchLater, Playlist, PlaylistItem, UserRating, Notification, Follow,
 )
-from .recommendation_service import get_recommendations
+from .recommendation_service import get_recommendations, get_similar
 from django.db.models import Max, Prefetch, Q
 from django.utils import timezone
 from datetime import timedelta
@@ -486,6 +486,8 @@ def streaming(request, episode_id):
         except WatchHistory.DoesNotExist:
             pass
 
+    similar = get_similar(anime, limit=6)
+
     return render(request, 'streaming.html', {
         'title': anime.title,
         'episode': episode,
@@ -497,6 +499,7 @@ def streaming(request, episode_id):
         'follower_count': anime.followers.count(),
         'resume_seconds': resume_seconds,
         'next_episode': next_episode,
+        'similar': similar,
     })
 
 
@@ -534,12 +537,15 @@ def streaming_movie(request, movie_id):
         except WatchHistory.DoesNotExist:
             pass
 
+    similar = get_similar(movie, limit=6)
+
     return render(request, 'streaming_movie.html', {
         'title': movie.title,
         'movie': movie,
         'comments': comments,
         'user_rating': user_rating,
         'resume_seconds': resume_seconds,
+        'similar': similar,
     })
 
 

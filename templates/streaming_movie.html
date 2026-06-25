@@ -166,6 +166,45 @@
     </div>
 </section>
 
+
+{% if similar %}
+<section class="similar-titles sec-mar">
+    <div class="container">
+        <div class="heading style-1">
+            <h2>More Like This</h2>
+        </div>
+        <div class="row g-4">
+            {% for item in similar %}
+            <div class="col-xl-2 col-lg-3 col-sm-4 col-6">
+                <div class="anime-blog">
+                    <div class="img-block">
+                        {% if item.poster_img %}
+                        <img src="{{ item.poster_img.image.url }}" alt="{{ item.title }}">
+                        {% elif item.thumb_img %}
+                        <img src="{{ item.thumb_img.image.url }}" alt="{{ item.title }}">
+                        {% else %}
+                        <img src="{% static 'assets/media/anime-sm-img/anime-img-1.png' %}" alt="{{ item.title }}">
+                        {% endif %}
+                        <div class="action-overlay">
+                            <a href="{% url 'streaming_movie' item.id %}">
+                                <i class="fas fa-play-circle"></i> Play
+                            </a>
+                        </div>
+                    </div>
+                    {% if item.recommend_reason %}
+                    <p style="font-size:11px; opacity:0.5; margin:4px 0 2px; padding:0 4px;">{{ item.recommend_reason }}</p>
+                    {% endif %}
+                    <a href="{% url 'streaming_movie' item.id %}">
+                        <p>{{ item.title }}</p>
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
 <section class="comment sec-mar">
     <div class="container">
         <div class="row">
