@@ -32,7 +32,7 @@
                         <img src="{{ anime.thumb_img.image.url }}" alt="{{ anime.title }}">
                         {% endif %}
                         <div class="cw-bar-wrap">
-                            <div class="cw-bar-fill" style="width: {{ entry.progress_pct }}%;"></div>
+                            <div class="cw-bar-fill" style="--progress: {{ entry.progress_pct }};"></div>
                         </div>
                     </a>
                     <div class="detail">
@@ -55,7 +55,7 @@
                         <img src="{{ entry.movie.thumb_img.image.url }}" alt="{{ entry.movie.title }}">
                         {% endif %}
                         <div class="cw-bar-wrap">
-                            <div class="cw-bar-fill" style="width: {{ entry.progress_pct }}%;"></div>
+                            <div class="cw-bar-fill" style="--progress: {{ entry.progress_pct }};"></div>
                         </div>
                     </a>
                     <div class="detail">

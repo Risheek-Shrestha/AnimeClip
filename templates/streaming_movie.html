@@ -23,6 +23,10 @@
                     {% with movie.sources.all|first as src %}
                     {% if src and src.video_url %}
                     <video id="main-player" controls width="100%" preload="metadata"
+                        data-resume-seconds="{{ resume_seconds }}"
+                        data-content-id="{{ movie.id }}"
+                        data-id-field="movie_id"
+                        data-save-url="{% url 'update_watch_history' %}"
                         {% if src.poster %}poster="{{ src.poster.url }}"
                         {% elif movie.banner_img %}poster="{{ movie.banner_img.image.url }}"
                         {% elif movie.thumb_img %}poster="{{ movie.thumb_img.image.url }}"
@@ -123,7 +127,7 @@
                         <div class="col-md-4 col-sm-6 col-12">
                             <div class="rating-content">
                                 <h4>RATE THE MOVIE</h4>
-                                <div class="star-rating" id="star-rating-movie" data-url="{% url 'rate_movie' movie.id %}" data-current="{{ user_rating.score|default:0 }}">
+                                <div class="star-rating" data-url="{% url 'rate_movie' movie.id %}" data-current="{{ user_rating.score|default:0 }}">
                                     {% for i in "12345678910"|make_list %}
                                     <span class="star {% if user_rating.score >= forloop.counter %}active{% endif %}" data-val="{{ forloop.counter }}">&#9733;</span>
                                     {% endfor %}
@@ -192,7 +196,7 @@
                         </div>
                     </div>
                     {% if item.recommend_reason %}
-                    <p style="font-size:11px; opacity:0.5; margin:4px 0 2px; padding:0 4px;">{{ item.recommend_reason }}</p>
+                    <p class="recommend-reason">{{ item.recommend_reason }}</p>
                     {% endif %}
                     <a href="{% url 'streaming_movie' item.id %}">
                         <p>{{ item.title }}</p>
@@ -211,7 +215,7 @@
             <div class="col-lg-8 col-md-12 col-sm-12">
                 <div class="comment-block">
                     <div class="heading style-1 m-0">
-                        <h2>COMMENTS <span style="font-size:0.55em; font-weight:400; opacity:0.6;">({{ comments|length }})</span></h2>
+                        <h2>COMMENTS <span class="comment-count">({{ comments|length }})</span></h2>
                     </div>
                     <p>We hope you have a good time browsing the comment section!</p>
                 </div>
@@ -314,130 +318,6 @@
     </div>
 </section>
 
-<script>
-    // getCSRF() is defined globally in animeclip.js
-    const getCSRFToken = getCSRF;
-
-    document.addEventListener("click", function (e) {
-        const btn = e.target.closest(".like-btn");
-        if (!btn) return;
-        const id = btn.dataset.id;
-        fetch(`/comment/${id}/like/`, {
-            method: "POST",
-            headers: {"X-CSRFToken": getCSRFToken()}
-        })
-            .then(res => {
-                if (!res.ok) throw new Error("Request failed");
-                return res.json();
-            })
-            .then(data => {
-                document.getElementById(`like-count-${id}`).innerText = data.total_likes;
-            })
-            .catch(err => console.error(err));
-    });
-</script>
-
-
-<style>
-.star-rating { display: inline-flex; gap: 3px; cursor: pointer; margin-bottom: 4px; }
-.star-rating .star { font-size: 20px; color: #555; transition: color 0.15s; }
-.star-rating .star.active, .star-rating .star.hover { color: #f5c518; }
-</style>
-
-<script>
-(function () {
-    const wrap = document.getElementById('star-rating-movie');
-    if (!wrap) return;
-    const stars = wrap.querySelectorAll('.star');
-    const label = document.getElementById('your-rating-label');
-    const avgEl = document.getElementById('avg-rating');
-
-    stars.forEach(star => {
-        star.addEventListener('mouseenter', () => {
-            const val = +star.dataset.val;
-            stars.forEach(s => s.classList.toggle('hover', +s.dataset.val <= val));
-        });
-        star.addEventListener('mouseleave', () => {
-            stars.forEach(s => s.classList.remove('hover'));
-        });
-        star.addEventListener('click', () => {
-            const val = +star.dataset.val;
-            fetch(wrap.dataset.url, {
-                method: 'POST',
-                headers: {'X-CSRFToken': getCSRF(), 'Content-Type': 'application/x-www-form-urlencoded'},
-                body: 'score=' + val
-            })
-            .then(r => r.json())
-            .then(data => {
-                stars.forEach(s => s.classList.toggle('active', +s.dataset.val <= data.score));
-                label.innerHTML = 'YOUR RATING: <b>' + data.score + '/10</b>';
-                if (avgEl) avgEl.textContent = data.avg;
-            })
-            .catch(err => console.error(err));
-        });
-    });
-})();
-</script>
-
 {% include "_playlist_modal.html" %}
-
-
-<script>
-(function () {
-    const player = document.getElementById('main-player');
-    if (!player) return;
-
-    const resumeAt = {{ resume_seconds }};
-    const movieId = {{ movie.id }};
-    const saveUrl = '{% url "update_watch_history" %}';
-
-    // Seek to saved position once metadata is ready
-    if (resumeAt > 0) {
-        player.addEventListener('loadedmetadata', function () {
-            // Only resume if not near the very end (last 10 s)
-            if (resumeAt < player.duration - 10) {
-                player.currentTime = resumeAt;
-            }
-        }, { once: true });
-    }
-
-    // Save progress every 10 seconds while playing
-    let saveTimer = null;
-    function saveProgress() {
-        const secs = Math.floor(player.currentTime);
-        if (secs < 1) return;
-        fetch(saveUrl, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': getCSRF(),
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: 'movie_id=' + movieId + '&progress_seconds=' + secs,
-        }).catch(() => {});
-    }
-
-    player.addEventListener('play', function () {
-        if (!saveTimer) saveTimer = setInterval(saveProgress, 10000);
-    });
-    player.addEventListener('pause', function () {
-        clearInterval(saveTimer);
-        saveTimer = null;
-        saveProgress();
-    });
-    player.addEventListener('ended', function () {
-        clearInterval(saveTimer);
-        saveTimer = null;
-        // Save 0 so "resume" doesn't re-trigger on next visit
-        fetch(saveUrl, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': getCSRF(),
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: 'movie_id=' + movieId + '&progress_seconds=0',
-        }).catch(() => {});
-    });
-})();
-</script>
 
 {% endblock body %}

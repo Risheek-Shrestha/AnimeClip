@@ -47,8 +47,8 @@
                 </div>
             </div>
             {% empty %}
-            <div class="col-12 empty-state text-center py-5">
-                <i class="fas fa-bell-slash fa-3x mb-3" style="color:#555;"></i>
+            <div class="col-12 empty-state">
+                <i class="fas fa-bell-slash fa-3x mb-3"></i>
                 <p>No notifications yet. Follow some anime to get updates!</p>
                 <a href="{% url 'index' %}" class="anime-btn2 dark mt-3">Browse Anime</a>
             </div>
@@ -56,29 +56,5 @@
         </div>
     </div>
 </section>
-
-<style>
-.notif-page-badge {
-    background: #e74c3c; color: #fff; font-size: 13px; font-weight: 600;
-    padding: 4px 12px; border-radius: 20px;
-}
-.notif-list { display: flex; flex-direction: column; gap: 2px; margin-top: 1rem; }
-.notif-item {
-    display: flex; align-items: center; gap: 16px;
-    padding: 16px 20px;
-    background: rgba(255,255,255,0.04);
-    border-radius: 8px;
-    border-left: 3px solid transparent;
-    transition: background 0.2s;
-}
-.notif-item:hover { background: rgba(255,255,255,0.08); }
-.notif-unread { border-left-color: #f5c518; background: rgba(245,197,24,0.06); }
-.notif-icon { font-size: 22px; color: #f5c518; flex-shrink: 0; width: 32px; text-align: center; }
-.notif-body { flex: 1; }
-.notif-message { margin: 0 0 4px; font-size: 15px; color: #eee; }
-.notif-time { font-size: 12px; color: #888; }
-.notif-action { flex-shrink: 0; }
-.notif-watch-btn { font-size: 12px; padding: 6px 14px; }
-</style>
 
 {% endblock body %}

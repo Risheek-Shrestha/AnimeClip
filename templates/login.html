@@ -28,7 +28,7 @@
                             <input class="form-control" type="password" id="password-field" name="password"
                                    required placeholder="Password" autocomplete="current-password">
                             <span class="toggle-password" toggle="#password-field">
-                                <i class="fas fa-eye field-icon toggle-password"></i>
+                                <i class="fas fa-eye-slash field-icon toggle-password"></i>
                             </span>
                         </div>
 
@@ -42,9 +42,9 @@
                     </form>
                 </div>
 
-                <div class="custom-control custom-checkbox mb-3 text-start">
-                    <input type="checkbox" class="custom-control-input" id="check">
-                    <label class="custom-control-label checkbox-label" for="check">
+                <div class="toggle-row mb-3 text-start">
+                    <input type="checkbox" class="toggle-switch" id="check">
+                    <label class="checkbox-label" for="check">
                         I wish to receive news and promotions from Animeloop by email.
                     </label>
                 </div>
@@ -60,24 +60,3 @@
 </section>
 
 {% endblock body %}
-
-{% block signup-script %}
-<script>
-document.addEventListener("DOMContentLoaded", function () {
-    document.querySelectorAll(".toggle-password").forEach(function (toggle) {
-        toggle.addEventListener("click", function () {
-            const input = document.querySelector(this.getAttribute("toggle"));
-            const icon = this.querySelector("i");
-            if (!input) return;
-            if (input.type === "password") {
-                input.type = "text";
-                icon.classList.replace("fa-eye-slash", "fa-eye");
-            } else {
-                input.type = "password";
-                icon.classList.replace("fa-eye", "fa-eye-slash");
-            }
-        });
-    });
-});
-</script>
-{% endblock %}

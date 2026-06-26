@@ -43,9 +43,9 @@
                         </span>
                     </div>
 
-                    <div class="custom-control custom-checkbox mb-3 text-start">
-                        <input type="checkbox" class="custom-control-input" id="check">
-                        <label class="custom-control-label checkbox-label" for="check">
+                    <div class="toggle-row mb-3 text-start">
+                        <input type="checkbox" class="toggle-switch" id="check">
+                        <label class="checkbox-label" for="check">
                             I wish to receive news and promotions from Animeloop by email.
                         </label>
                     </div>
@@ -65,24 +65,3 @@
     </div>
 </section>
 {% endblock %}
-
-{% block signup-script %}
-<script>
-document.addEventListener("DOMContentLoaded", function () {
-    document.querySelectorAll(".toggle-password").forEach(function (toggle) {
-        toggle.addEventListener("click", function () {
-            const input = document.querySelector(this.getAttribute("toggle"));
-            const icon = this.querySelector("i");
-            if (!input) return;
-            if (input.type === "password") {
-                input.type = "text";
-                icon.classList.replace("fa-eye-slash", "fa-eye");
-            } else {
-                input.type = "password";
-                icon.classList.replace("fa-eye", "fa-eye-slash");
-            }
-        });
-    });
-});
-</script>
-{% endblock signup-script %}

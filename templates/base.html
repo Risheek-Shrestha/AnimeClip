@@ -73,7 +73,7 @@
               <a href="{% url 'movies' %}">Movie</a>
             </li>
             <li class="menu-item-has-children">
-              <a href="#" title="Coming Soon" style="opacity:0.5;cursor:not-allowed;">Manga</a>
+              <a href="#" title="Coming Soon" class="menu-disabled">Manga</a>
             </li>
             <li class="menu-item-has-children dropdown">
               <a href="#" class="dropdown-toggle" id="genre"
@@ -100,7 +100,7 @@
             </li>
           </ul>
 
-          <form onsubmit="return false;" role="search">
+          <form class="header-search-form" role="search">
             <div class="input-group form-group header-search-box position-relative">
               <button class="input-group-text anime-btn" type="submit" aria-label="Search">
                 <i class="fas fa-search"></i>
@@ -120,24 +120,33 @@
                 <span class="notif-badge">{{ unread_notification_count }}</span>
                 {% endif %}
               </a>
-              <a href="{% url 'profile' %}" class="anime-btn2 light me-3">{{ user.first_name }}</a>
-              <a href="{% url 'profile_select' %}" class="anime-btn2 light me-3"
-                 title="Switch Profile"
-                 style="padding:6px 16px; white-space:nowrap; min-width:max-content; display:inline-flex; align-items:center; gap:6px;">
-                 <i class="fas fa-user-circle" style="font-size:13px;"></i>
-                 {% if active_subprofile %}{{ active_subprofile.name }}{% else %}Profiles{% endif %}
-              </a>
-              <a href="{% url 'logout' %}" class="anime-btn2 dark">Log Out</a>
+
+              <div class="account-menu dropdown">
+                <button type="button" class="account-trigger dropdown-toggle" id="accountMenuBtn"
+                        data-bs-toggle="dropdown" aria-expanded="false">
+                  <span class="account-avatar">
+                    {% if active_subprofile %}
+                      <img src="{% static 'assets/media/avatars/' %}{{ active_subprofile.avatar }}.png" alt="">
+                    {% else %}
+                      <i class="fas fa-user"></i>
+                    {% endif %}
+                  </span>
+                  <span class="account-name">{% if active_subprofile %}{{ active_subprofile.name }}{% else %}{{ user.first_name }}{% endif %}</span>
+                  <i class="fas fa-chevron-down account-caret"></i>
+                </button>
+                <ul class="dropdown-menu account-dropdown" aria-labelledby="accountMenuBtn">
+                  <li class="account-dropdown-header">Signed in as <strong>{{ user.first_name }}</strong></li>
+                  <li><a class="dropdown-item" href="{% url 'profile' %}"><i class="fas fa-id-badge"></i> Account</a></li>
+                  <li><a class="dropdown-item" href="{% url 'profile_select' %}"><i class="fas fa-users"></i> Switch Profile</a></li>
+                  <li><hr class="dropdown-divider"></li>
+                  <li><a class="dropdown-item" href="{% url 'logout' %}"><i class="fas fa-arrow-right-from-bracket"></i> Log Out</a></li>
+                </ul>
+              </div>
             {% else %}
               <a href="{% url 'signup' %}" class="anime-btn2 light me-3">Sign Up</a>
               <a href="{% url 'login' %}" class="anime-btn2 dark">Log In</a>
             {% endif %}
           </div>
-          <style>
-            .notif-bell { position: relative; color: #fff; font-size: 18px; text-decoration: none; }
-            .notif-bell:hover { color: #f5c518; }
-            .notif-badge { position: absolute; top: -6px; right: -8px; background: #e74c3c; color: #fff; font-size: 10px; font-weight: 700; border-radius: 50%; width: 17px; height: 17px; display: flex; align-items: center; justify-content: center; line-height: 1; }
-          </style>
         </div>
       </nav>
     </div>
@@ -147,6 +156,7 @@
 
 </div><!-- /.main-wrapper -->
 
+{% block footer %}
 <footer class="footer">
   <div class="footer-main style-1">
     <div class="container">
@@ -203,8 +213,7 @@
     </div>
   </div>
 </footer>
-
-{% block signup-script %}{% endblock signup-script %}
+{% endblock footer %}
 
 <script src="{% static 'assets/js/jquery-min.js' %}"           defer></script>
 <script src="{% static 'assets/js/slick.min.js' %}"            defer></script>
@@ -217,113 +226,6 @@
 <script src="{% static 'assets/js/motion.js' %}"               defer></script>
 <script src="{% static 'assets/js/animeclip.js' %}"          defer></script>
 {% block extra_js %}{% endblock extra_js %}
-
-<script>
-window.addEventListener('load', function () {
-  if (typeof jQuery === 'undefined') return;
-  jQuery('.banner-slider').on('init', function () {
-    jQuery('.banner-slider').css('visibility', 'visible');
-  }).slick({
-    autoplay      : true,
-    autoplaySpeed : 4500,
-    arrows        : true,
-    dots          : false,
-    fade          : true,
-    speed         : 800,
-    cssEase       : 'cubic-bezier(0.22,1,0.36,1)',
-    infinite      : true,
-    lazyLoad      : 'ondemand'
-  });
-});
-</script>
-
-<script>
-window.addEventListener('load', function () {
-  var block = document.getElementById('coming-out-block');
-  if (!block || typeof jQuery === 'undefined') return;
-  var releaseDate = block.dataset.release;
-  var streamUrl   = block.dataset.streamUrl;
-  jQuery('.countdown').countdown(releaseDate, function (event) {
-    if (event.offset.totalSeconds <= 0) {
-      jQuery('#coming-label').hide();
-      jQuery('#countdown-timer').hide();
-      jQuery('#play-now-btn').attr('href', streamUrl).show();
-    } else {
-      jQuery(this).html(
-        '<li>' + event.offset.totalDays + '<small>d</small></li>' +
-        '<li>' + event.offset.hours     + '<small>h</small></li>' +
-        '<li>' + event.offset.minutes   + '<small>m</small></li>' +
-        '<li>' + event.offset.seconds   + '<small>s</small></li>'
-      );
-    }
-  });
-});
-</script>
-
-<script>
-(function () {
-  var searchInput   = document.getElementById('searchInput');
-  var searchResults = document.getElementById('searchResults');
-  if (!searchInput) return;
-
-  searchInput.addEventListener('keyup', function (e) {
-    var q = this.value.trim();
-    if (e.key === 'Enter' && q.length > 0) {
-      window.location.href = '/search/?q=' + encodeURIComponent(q);
-      return;
-    }
-    if (!q) { searchResults.innerHTML = ''; searchResults.style.display = 'none'; return; }
-    fetch('/live-search/?q=' + encodeURIComponent(q))
-      .then(function (r) { return r.json(); })
-      .then(function (data) {
-        var html = data.results.map(function (item) {
-          return '<div class="search-item" onclick="goToItem(' + item.id + ',\'' + item.type + '\')">' +
-                   item.title + ' <small>(' + item.type + ')</small></div>';
-        }).join('');
-        if (data.results.length > 0) {
-          html += '<div class="search-item search-item-all" onclick="window.location.href=\'/search/?q=' +
-                  encodeURIComponent(q) + '\'">' +
-                  '<i class="fas fa-search me-2"></i>See all results for "' + q + '"</div>';
-        }
-        searchResults.innerHTML    = html;
-        searchResults.style.display = html ? 'block' : 'none';
-      });
-  });
-
-  document.addEventListener('click', function (e) {
-    if (!e.target.closest('.header-search-box')) searchResults.style.display = 'none';
-  });
-})();
-
-function goToItem(id, type) {
-  window.location.href = type === 'movie'
-    ? '/streaming_movie/' + id + '/'
-    : '/streaming/'       + id + '/';
-}
-</script>
-
-<script>
-(function () {
-  var preloader = document.getElementById('preloader');
-  var bar       = document.getElementById('preloader-bar');
-  if (!preloader || !bar) return;
-  var progress = 0;
-  var interval = setInterval(function () {
-    progress += Math.random() * 20;
-    if (progress >= 100) {
-      progress = 100;
-      clearInterval(interval);
-      bar.style.width = '100%';
-      setTimeout(function () {
-        preloader.classList.add('hide');
-        preloader.addEventListener('transitionend', function () { preloader.remove(); }, { once: true });
-      }, 200);
-    }
-    bar.style.width = progress + '%';
-  }, 80);
-  setTimeout(function () { clearInterval(interval); preloader.classList.add('hide'); }, 1200);
-})();
-</script>
 
 </body>
 </html>

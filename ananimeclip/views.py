@@ -183,7 +183,6 @@ def index(request):
     user_history = []
     user_watch_later = []
     recommended_animes = []
-    recommended_movies = []
 
     if request.user.is_authenticated:
         user_history = list(
@@ -202,9 +201,9 @@ def index(request):
         # Recommendations now come from the persisted Recommendation table
         # (filled by `warm_recommendations` / RecommendationEngine), with an
         # on-the-fly compute-and-persist fallback for never-warmed users.
+        # Movie recommendations are shown on the Movies page instead, not here.
         recs = get_recommendations(request.user, limit=8)
         recommended_animes = attach_episode_info(list(recs['animes']))
-        recommended_movies = recs['movies']
 
     return render(request, 'index.html', {
         'title': 'Animeloop',
@@ -212,7 +211,6 @@ def index(request):
         'user_history': user_history,
         'user_watch_later': user_watch_later,
         'recommended_animes': recommended_animes,
-        'recommended_movies': recommended_movies,
     })
 
 
@@ -255,6 +253,7 @@ def movies(request):
 
     user_history = []
     user_watch_later = []
+    recommended_movies = []
     if request.user.is_authenticated:
         user_history = list(
             WatchHistory.objects.filter(user=request.user, movie__isnull=False)
@@ -267,11 +266,17 @@ def movies(request):
             .order_by('-added_at')[:8]
         )
 
+        # Personalised movie picks live here on the Movies page (anime picks
+        # live on the home/Anime page) — see get_recommendations().
+        recs = get_recommendations(request.user, limit=8)
+        recommended_movies = recs['movies']
+
     return render(request, 'movies.html', {
         'title': 'Animeloop - Movies',
         **public,
         'user_history': user_history,
         'user_watch_later': user_watch_later,
+        'recommended_movies': recommended_movies,
     })
 
 
