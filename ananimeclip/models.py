@@ -4,11 +4,19 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from django.core.exceptions import ValidationError
 
 
+AGE_CHOICES = [
+    ('pg', 'PG'),
+    ('pg13', 'PG-13'),
+    ('r', '18+'),
+]
+
+
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     age = models.IntegerField(validators=[MinValueValidator(10), MaxValueValidator(80)])
-    email_verified      = models.BooleanField(default=False)
-    verification_token  = models.CharField(max_length=64, blank=True, default='')
+    email_verified       = models.BooleanField(default=False)
+    verification_token   = models.CharField(max_length=64, blank=True, default='')
+    verification_sent_at = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
         return self.user.username
@@ -53,12 +61,6 @@ class Genre(models.Model):
 
 
 class Anime(models.Model):
-    AGE_CHOICES = [
-        ('pg', 'PG'),
-        ('pg13', 'PG-13'),
-        ('r', '18+'),
-    ]
-
     title = models.CharField(max_length=100)
     description = models.TextField()
     genres = models.ManyToManyField('Genre', blank=True)
@@ -140,9 +142,15 @@ class Movie(models.Model):
         validators=[MinValueValidator(0), MaxValueValidator(10)],
         default=0
     )
+    age_rating = models.CharField(max_length=10, choices=AGE_CHOICES, default='pg13')
     is_featured = models.BooleanField(default=False)
     is_popular = models.BooleanField(default=False)
     duration_mins = models.PositiveIntegerField(default=0)
+    release_notified = models.BooleanField(
+        default=False,
+        help_text="Set once followers have been notified that this movie is out. "
+                   "Used by the notify_movie_releases command to avoid duplicate notifications."
+    )
 
     def __str__(self):
         return self.title
@@ -475,14 +483,26 @@ class Notification(models.Model):
         return f"{self.user.username} — {self.message}"
 
 class Follow(models.Model):
-    """User following/favouriting an Anime. Drives notifications and shows a Favourites list."""
+    """User following/favouriting an Anime or Movie. Drives notifications and the Favourites list."""
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='follows')
-    anime = models.ForeignKey(Anime, on_delete=models.CASCADE, related_name='followers')
+    anime = models.ForeignKey(Anime, null=True, blank=True, on_delete=models.CASCADE, related_name='followers')
+    movie = models.ForeignKey(Movie, null=True, blank=True, on_delete=models.CASCADE, related_name='followers')
     added_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = [['user', 'anime']]
+        constraints = [
+            models.UniqueConstraint(fields=['user', 'anime'], name='unique_follow_user_anime'),
+            models.UniqueConstraint(fields=['user', 'movie'], name='unique_follow_user_movie'),
+            models.CheckConstraint(
+                check=(
+                    models.Q(anime__isnull=False, movie__isnull=True) |
+                    models.Q(anime__isnull=True, movie__isnull=False)
+                ),
+                name='follow_exactly_one_of_anime_or_movie',
+            ),
+        ]
         ordering = ['-added_at']
 
     def __str__(self):
-        return f'{self.user.username} follows {self.anime.title}'
+        target = self.anime.title if self.anime_id else self.movie.title
+        return f'{self.user.username} follows {target}'

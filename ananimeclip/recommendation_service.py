@@ -21,6 +21,7 @@ import logging
 from datetime import timedelta
 
 from django.db import transaction
+from django.db.models import Count, Q
 from django.utils import timezone
 
 from .models import Anime, Movie, Recommendation
@@ -164,12 +165,11 @@ def get_similar(item, limit: int = 6):
             r.recommend_reason = 'Popular right now'
         return results
 
-    from django.db.models import Count
     if is_anime:
         qs = (Anime.objects
               .exclude(pk=item.pk)
               .filter(genres__pk__in=genre_ids)
-              .annotate(shared=Count('genres', filter=__import__('django.db.models', fromlist=['Q']).Q(genres__pk__in=genre_ids)))
+              .annotate(shared=Count('genres', filter=Q(genres__pk__in=genre_ids)))
               .order_by('-shared', '-rating')
               .prefetch_related('genres', 'media_images', 'seasons__episodes')
               .distinct()[:limit])
@@ -177,7 +177,7 @@ def get_similar(item, limit: int = 6):
         qs = (Movie.objects
               .exclude(pk=item.pk)
               .filter(genres__pk__in=genre_ids)
-              .annotate(shared=Count('genres', filter=__import__('django.db.models', fromlist=['Q']).Q(genres__pk__in=genre_ids)))
+              .annotate(shared=Count('genres', filter=Q(genres__pk__in=genre_ids)))
               .order_by('-shared', '-rating')
               .prefetch_related('genres', 'media_images')
               .distinct()[:limit])

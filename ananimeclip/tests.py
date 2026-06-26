@@ -4,6 +4,7 @@ from django.urls import reverse
 from .models import (
     Profile, Genre, Anime, Movie, Season, Episode,
     WatchHistory, WatchLater, Playlist, PlaylistItem,
+    VideoSource, MovieSource, SubProfile, Follow, Notification,
 )
 
 
@@ -88,6 +89,8 @@ class WatchHistoryModelTest(TestCase):
 class AuthViewTest(TestCase):
     def setUp(self):
         self.client = Client()
+        from django.core.cache import cache
+        cache.clear()
 
     def test_signup_valid_age(self):
         resp = self.client.post(reverse('signup'), {
@@ -97,8 +100,13 @@ class AuthViewTest(TestCase):
             'confirm_password': 'secret123',
             'age': 22,
         })
-        self.assertRedirects(resp, reverse('index'))
-        self.assertTrue(User.objects.filter(username='alice@test.com').exists())
+        # Email verification flow: signup shows a "check your email" page
+        # rather than logging the user in immediately.
+        self.assertEqual(resp.status_code, 200)
+        self.assertTemplateUsed(resp, 'verify_pending.html')
+        user = User.objects.filter(username='alice@test.com').first()
+        self.assertIsNotNone(user)
+        self.assertFalse(user.is_active)
 
     def test_signup_age_too_low_rejected(self):
         resp = self.client.post(reverse('signup'), {
@@ -160,6 +168,38 @@ class AuthViewTest(TestCase):
             'password': 'wrongpassword',
         })
         self.assertEqual(resp.status_code, 200)
+
+    def test_verify_email_activates_account(self):
+        self.client.post(reverse('signup'), {
+            'name': 'Carol', 'email': 'carol@test.com',
+            'password': 'secret123', 'confirm_password': 'secret123', 'age': 22,
+        })
+        user = User.objects.get(username='carol@test.com')
+        token = user.profile.verification_token
+        resp = self.client.get(reverse('verify_email', args=[token]))
+        self.assertEqual(resp.status_code, 200)
+        self.assertTemplateUsed(resp, 'verify_success.html')
+        user.refresh_from_db()
+        self.assertTrue(user.is_active)
+        self.assertTrue(user.profile.email_verified)
+
+    def test_verify_email_expired_link_rejected(self):
+        from datetime import timedelta
+        from django.utils import timezone
+        self.client.post(reverse('signup'), {
+            'name': 'Dave', 'email': 'dave@test.com',
+            'password': 'secret123', 'confirm_password': 'secret123', 'age': 22,
+        })
+        user = User.objects.get(username='dave@test.com')
+        profile = user.profile
+        token = profile.verification_token
+        profile.verification_sent_at = timezone.now() - timedelta(hours=25)
+        profile.save(update_fields=['verification_sent_at'])
+
+        resp = self.client.get(reverse('verify_email', args=[token]))
+        self.assertContains(resp, 'expired')
+        user.refresh_from_db()
+        self.assertFalse(user.is_active)
 
 
 # ──────────────────────────────────────────────────────────────
@@ -350,6 +390,12 @@ class PlaylistViewTest(TestCase):
         # Should be 403/404, not silently succeed
         self.assertIn(resp.status_code, [403, 404])
 
+    def test_add_to_playlist_without_episode_or_movie_id_errors(self):
+        pl = Playlist.objects.create(user=self.user, name='Favs')
+        resp = self.client.post(reverse('add_to_playlist'), {'playlist_id': pl.id})
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(resp.json()['status'], 'error')
+
 
 # ──────────────────────────────────────────────────────────────
 # View tests — Index / Personalised Recommendations
@@ -365,7 +411,7 @@ class IndexRecommendationsTest(TestCase):
         resp = self.client.get(reverse('index'))
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(list(resp.context['recommended_animes']), [])
-        self.assertEqual(list(resp.context['recommended_movies']), [])
+        # Movie recommendations live on the Movies page, not the homepage.
 
     def test_recommendations_populated_from_watch_history(self):
         genre = Genre.objects.create(name='Action')
@@ -396,3 +442,225 @@ class IndexRecommendationsTest(TestCase):
         resp = self.client.get(reverse('index'))
         rec_titles = [a.title for a in resp.context['recommended_animes']]
         self.assertNotIn('Already Watched', rec_titles)
+
+
+# ──────────────────────────────────────────────────────────────
+# View tests — Search results page renders for every code path
+# (regression: a stray {% endif %} previously made this 500 always)
+# ──────────────────────────────────────────────────────────────
+
+class SearchResultsViewTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+
+    def test_search_with_no_results_renders(self):
+        resp = self.client.get(reverse('search_results'), {'q': 'NoSuchTitleAtAll'})
+        self.assertEqual(resp.status_code, 200)
+
+    def test_search_with_anime_result_renders(self):
+        anime = make_anime(title='Searchable Anime')
+        make_episode(anime)
+        resp = self.client.get(reverse('search_results'), {'q': 'Searchable'})
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'Searchable Anime')
+
+    def test_search_with_movie_result_renders(self):
+        make_movie(title='Searchable Movie')
+        resp = self.client.get(reverse('search_results'), {'q': 'Searchable'})
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'Searchable Movie')
+
+
+# ──────────────────────────────────────────────────────────────
+# View tests — "Browse all" pages render
+# (regression: these included "_browse_filters.html", a file that
+# didn't exist — the real file was named "browse_filters.html")
+# ──────────────────────────────────────────────────────────────
+
+class BrowseAllPagesViewTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+
+    def test_all_recent_movies_renders(self):
+        resp = self.client.get(reverse('all_recent_movies'))
+        self.assertEqual(resp.status_code, 200)
+
+    def test_all_popular_movies_renders(self):
+        resp = self.client.get(reverse('all_popular_movies'))
+        self.assertEqual(resp.status_code, 200)
+
+    def test_all_recent_anime_renders(self):
+        resp = self.client.get(reverse('all_recent_anime'))
+        self.assertEqual(resp.status_code, 200)
+
+    def test_all_popular_anime_renders(self):
+        resp = self.client.get(reverse('all_popular_anime'))
+        self.assertEqual(resp.status_code, 200)
+
+
+# ──────────────────────────────────────────────────────────────
+# Age-rating / Kids Mode enforcement
+# (regression: 18+ content was previously only excluded inside the
+# recommendation engine — direct streaming URLs, search, and category
+# pages all ignored age_rating entirely)
+# ──────────────────────────────────────────────────────────────
+
+class AgeGateTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.minor = make_user(username='minor', age=12)
+        self.adult = make_user(username='adult', age=30)
+
+        self.genre = Genre.objects.create(name='Action')
+        self.adult_anime = Anime.objects.create(
+            title='Adult Anime', description='d', age_rating='r',
+        )
+        self.adult_anime.genres.add(self.genre)
+        self.episode = make_episode(self.adult_anime)
+        VideoSource.objects.create(
+            episode=self.episode, label='1080p', type='sub',
+            video_url='https://example.com/v.mp4',
+        )
+
+        self.adult_movie = Movie.objects.create(
+            title='Adult Movie', description='d', age_rating='r',
+        )
+        MovieSource.objects.create(
+            movie=self.adult_movie, label='1080p', type='sub',
+            video_url='https://example.com/m.mp4',
+        )
+
+    def test_minor_blocked_from_streaming_episode(self):
+        self.client.force_login(self.minor)
+        resp = self.client.get(reverse('streaming', args=[self.episode.id]))
+        self.assertRedirects(resp, reverse('index'))
+
+    def test_minor_blocked_from_streaming_movie(self):
+        self.client.force_login(self.minor)
+        resp = self.client.get(reverse('streaming_movie', args=[self.adult_movie.id]))
+        self.assertRedirects(resp, reverse('index'))
+
+    def test_adult_can_stream_episode(self):
+        self.client.force_login(self.adult)
+        resp = self.client.get(reverse('streaming', args=[self.episode.id]))
+        self.assertEqual(resp.status_code, 200)
+
+    def test_adult_can_stream_movie(self):
+        self.client.force_login(self.adult)
+        resp = self.client.get(reverse('streaming_movie', args=[self.adult_movie.id]))
+        self.assertEqual(resp.status_code, 200)
+
+    def test_minor_does_not_see_adult_title_in_search(self):
+        self.client.force_login(self.minor)
+        resp = self.client.get(reverse('search_results'), {'q': 'Adult'})
+        self.assertNotContains(resp, 'Adult Anime')
+        self.assertNotContains(resp, 'Adult Movie')
+
+    def test_adult_sees_adult_title_in_search(self):
+        self.client.force_login(self.adult)
+        resp = self.client.get(reverse('search_results'), {'q': 'Adult'})
+        self.assertContains(resp, 'Adult Anime')
+        self.assertContains(resp, 'Adult Movie')
+
+    def test_minor_does_not_see_adult_title_in_category(self):
+        self.client.force_login(self.minor)
+        resp = self.client.get(reverse('category_page', args=['Action']))
+        self.assertNotContains(resp, 'Adult Anime')
+
+    def test_kids_mode_blocks_even_an_adult_account(self):
+        sp = SubProfile.objects.create(user=self.adult, name='Kiddo', kids_mode=True)
+        self.client.force_login(self.adult)
+        session = self.client.session
+        session['active_subprofile_id'] = sp.id
+        session.save()
+        resp = self.client.get(reverse('streaming', args=[self.episode.id]))
+        self.assertRedirects(resp, reverse('index'))
+
+    def test_non_kids_subprofile_does_not_block_adult_account(self):
+        sp = SubProfile.objects.create(user=self.adult, name='Grownup', kids_mode=False)
+        self.client.force_login(self.adult)
+        session = self.client.session
+        session['active_subprofile_id'] = sp.id
+        session.save()
+        resp = self.client.get(reverse('streaming', args=[self.episode.id]))
+        self.assertEqual(resp.status_code, 200)
+
+
+# ──────────────────────────────────────────────────────────────
+# Movie follow + release notifications
+# (regression: notify_new_movie fired on Movie creation, but nobody
+# could have a Follow/WatchLater/WatchHistory row for a movie that
+# didn't exist yet, so it could never reach anyone. Movies can now be
+# followed, and followers are notified by a periodic command once the
+# movie's release_date actually arrives.)
+# ──────────────────────────────────────────────────────────────
+
+class MovieFollowTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.user = make_user(username='follower', age=25)
+        self.movie = make_movie(title='Upcoming Movie')
+
+    def test_toggle_follow_movie_adds_then_removes(self):
+        self.client.force_login(self.user)
+        url = reverse('toggle_follow_movie', args=[self.movie.id])
+
+        resp = self.client.post(url)
+        self.assertEqual(resp.status_code, 200)
+        self.assertTrue(resp.json()['following'])
+        self.assertTrue(Follow.objects.filter(user=self.user, movie=self.movie).exists())
+
+        resp = self.client.post(url)
+        self.assertFalse(resp.json()['following'])
+        self.assertFalse(Follow.objects.filter(user=self.user, movie=self.movie).exists())
+
+    def test_followed_movie_appears_in_favourites(self):
+        Follow.objects.create(user=self.user, movie=self.movie)
+        self.client.force_login(self.user)
+        resp = self.client.get(reverse('favourites'))
+        self.assertContains(resp, 'Upcoming Movie')
+
+
+class NotifyMovieReleasesCommandTest(TestCase):
+    def test_notifies_followers_once_release_date_arrives(self):
+        from django.core.management import call_command
+        from django.utils import timezone
+
+        user = make_user(username='waiting_fan', age=25)
+        movie = Movie.objects.create(
+            title='Just Released', description='d',
+            release_date=timezone.now().date(),
+        )
+        Follow.objects.create(user=user, movie=movie)
+
+        call_command('notify_movie_releases')
+
+        movie.refresh_from_db()
+        self.assertTrue(movie.release_notified)
+        self.assertTrue(
+            Notification.objects.filter(user=user, movie=movie, notif_type='new_movie').exists()
+        )
+
+        # Running it again shouldn't duplicate the notification.
+        call_command('notify_movie_releases')
+        self.assertEqual(
+            Notification.objects.filter(user=user, movie=movie).count(), 1
+        )
+
+    def test_does_not_notify_for_future_releases(self):
+        from django.core.management import call_command
+        from datetime import timedelta
+        from django.utils import timezone
+
+        user = make_user(username='early_follower', age=25)
+        movie = Movie.objects.create(
+            title='Not Out Yet', description='d',
+            release_date=timezone.now().date() + timedelta(days=30),
+        )
+        Follow.objects.create(user=user, movie=movie)
+
+        call_command('notify_movie_releases')
+
+        movie.refresh_from_db()
+        self.assertFalse(movie.release_notified)
+        self.assertFalse(Notification.objects.filter(user=user, movie=movie).exists())

@@ -335,11 +335,9 @@ class RecommendationEngine:
         watched_ids, genre_ids = self._get_user_signals(media_type)
         exclude_ids = set(watched_ids)
 
-        # 2. Candidate pool — filtered by age rating (Anime has age_rating; Movie doesn't)
-        if media_type == "anime":
-            candidate_qs = _age_filter(model_cls.objects.all(), self.user_age)
-        else:
-            candidate_qs = model_cls.objects.all()
+        # 2. Candidate pool — filtered by age rating (both Anime and Movie
+        #    carry age_rating, so 18+ titles are excluded the same way).
+        candidate_qs = _age_filter(model_cls.objects.all(), self.user_age)
         all_items = list(candidate_qs.prefetch_related("genres").all())
 
         if not all_items:

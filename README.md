@@ -74,6 +74,12 @@ Required variables:
 | `EMAIL_HOST_USER` | SMTP username |
 | `EMAIL_HOST_PASSWORD` | SMTP password |
 
+> **Cloudinary upload preset:** the admin video-upload widget uploads directly
+> to Cloudinary from the browser, which requires an **unsigned** upload preset
+> named `anime_videos_unsigned` to exist on your Cloudinary account (Settings →
+> Upload → Upload presets → Add upload preset, signing mode "Unsigned"). The
+> admin form will load without it, but video uploads will silently fail.
+
 ### 4. Set up the database
 
 ```bash
@@ -96,6 +102,27 @@ python manage.py runserver
 ```
 
 Visit `http://127.0.0.1:8000/`
+
+---
+
+## Docker Setup
+
+A `Dockerfile` and `docker-compose.yml` are included as an alternative to the
+manual setup above.
+
+```bash
+cp .env.example .env
+# fill in .env as described in step 3 above — docker-compose reads it via env_file
+docker-compose up --build
+```
+
+This builds the app image, then on container start runs `collectstatic`,
+applies migrations, and serves via Gunicorn on `http://localhost:8000/`.
+You'll still need to create a superuser once the container is up:
+
+```bash
+docker-compose exec web python manage.py createsuperuser
+```
 
 ---
 
@@ -140,5 +167,5 @@ AnimeClip/
 ## Notes
 
 - **Email:** Password reset emails only reach users when `EMAIL_HOST` is configured. Without it, reset tokens print to the console (dev only).
-- **CSRF & Beacons:** Watch progress is saved via `fetch` with `keepalive: true` on pause/end events — fully CSRF-protected.
+- **CSRF & Beacons:** Watch progress is saved via `fetch` with `keepalive: true` on pause/end events, and flushed on tab close/hide — fully CSRF-protected.
 - **Secret Key:** The app will refuse to start in production (`DEBUG=False`) if `SECRET_KEY` is not set in the environment.

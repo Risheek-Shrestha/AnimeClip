@@ -18,9 +18,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy project
 COPY . .
 
-# Collect static files (Whitenoise serves them)
-RUN python manage.py collectstatic --noinput
-
 EXPOSE 8000
 
 CMD ["gunicorn", "Hello.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "2"]

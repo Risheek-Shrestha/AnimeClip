@@ -14,6 +14,10 @@ from .models import (
     SubProfile,
 )
 from .recommendation_service import get_recommendations, get_similar
+from .content_access import (
+    can_view, filter_age_appropriate, filter_index_context,
+    filter_movies_context, filter_list_age_appropriate, restricted_to_pg13,
+)
 from django.db.models import Max, Prefetch, Q
 from django.utils import timezone
 from django_ratelimit.decorators import ratelimit
@@ -179,7 +183,7 @@ def _get_public_index_context():
 
 
 def index(request):
-    ctx = _get_public_index_context()
+    ctx = filter_index_context(_get_public_index_context(), request)
 
     user_history = []
     user_watch_later = []
@@ -251,6 +255,8 @@ def movies(request):
             ),
         }
         safe_cache_set(CACHE_KEY, public, timeout=300)
+
+    public = filter_movies_context(public, request)
 
     user_history = []
     user_watch_later = []
@@ -421,7 +427,10 @@ def signup(request):
             is_active=False,
         )
         token = secrets.token_urlsafe(32)
-        Profile.objects.create(user=user, age=age_int, verification_token=token)
+        Profile.objects.create(
+            user=user, age=age_int, verification_token=token,
+            verification_sent_at=timezone.now(),
+        )
 
         # Send verification email
         from django.core.mail import send_mail
@@ -430,7 +439,7 @@ def signup(request):
         verify_url = request.build_absolute_uri(
             reverse('verify_email', args=[token])
         )
-        body = render_to_string('email_verify.txt', {
+        body = render_to_string('verify_email.txt', {
             'name': name, 'verify_url': verify_url,
         })
         send_mail(
@@ -482,6 +491,10 @@ def streaming(request, episode_id):
         ),
         pk=anime_id_c if anime_id_c else episode.season.anime_id,
     )
+
+    if not can_view(request, anime.age_rating):
+        messages.error(request, "This title is age-restricted and isn't available on this profile.")
+        return redirect('index')
 
     if cached is None:
         safe_cache_set(CACHE_KEY, {
@@ -556,6 +569,10 @@ def streaming_movie(request, movie_id):
         id=movie_id,
     )
 
+    if not can_view(request, movie.age_rating):
+        messages.error(request, "This title is age-restricted and isn't available on this profile.")
+        return redirect('index')
+
     if cached is None:
         safe_cache_set(CACHE_KEY, {'movie_id': movie.pk}, timeout=600)
 
@@ -567,12 +584,14 @@ def streaming_movie(request, movie_id):
     )
 
     user_rating = None
+    is_following = False
     resume_seconds = 0
     if request.user.is_authenticated:
         try:
             user_rating = UserRating.objects.get(user=request.user, movie=movie)
         except UserRating.DoesNotExist:
             pass
+        is_following = Follow.objects.filter(user=request.user, movie=movie).exists()
         try:
             history_entry = WatchHistory.objects.get(user=request.user, movie=movie)
             resume_seconds = history_entry.progress_seconds
@@ -586,6 +605,8 @@ def streaming_movie(request, movie_id):
         'movie': movie,
         'comments': comments,
         'user_rating': user_rating,
+        'is_following': is_following,
+        'follower_count': movie.followers.count(),
         'resume_seconds': resume_seconds,
         'similar': similar,
     })
@@ -714,9 +735,25 @@ def toggle_follow(request, anime_id):
 
 
 @login_required
+@require_POST
+def toggle_follow_movie(request, movie_id):
+    movie = get_object_or_404(Movie, id=movie_id)
+    obj, created = Follow.objects.get_or_create(user=request.user, movie=movie)
+    if not created:
+        obj.delete()
+        following = False
+    else:
+        following = True
+    return JsonResponse({
+        'following': following,
+        'follower_count': movie.followers.count(),
+    })
+
+
+@login_required
 @never_cache
 def favourites(request):
-    follows = Follow.objects.filter(user=request.user).select_related('anime').prefetch_related(
+    follows = Follow.objects.filter(user=request.user, anime__isnull=False).select_related('anime').prefetch_related(
         'anime__media_images',
         'anime__seasons__episodes',
     )
@@ -727,9 +764,16 @@ def favourites(request):
         anime.first_season = seasons[0] if seasons else None
         anime.first_episode = seasons[0].episodes.first() if anime.first_season else None
         anime_list.append(anime)
+
+    movie_follows = Follow.objects.filter(user=request.user, movie__isnull=False).select_related('movie').prefetch_related(
+        'movie__media_images',
+    )
+    movie_list = [f.movie for f in movie_follows]
+
     return render(request, 'favourites.html', {
         'title': 'My Favourites',
         'anime_list': anime_list,
+        'movie_list': movie_list,
     })
 
 
@@ -783,17 +827,19 @@ def live_search(request):
     if not query:
         return JsonResponse({'results': []})
 
-    cache_key = f'search:live:{query.lower()[:50]}'
+    restricted = restricted_to_pg13(request)
+    cache_key = f'search:live:{query.lower()[:50]}:{"sfw" if restricted else "all"}'
     cached = safe_cache_get(cache_key)
     if cached is not None:
         return JsonResponse({'results': cached})
 
     results = []
-    for movie in Movie.objects.filter(title__icontains=query)[:5]:
+    movie_qs = filter_age_appropriate(Movie.objects.filter(title__icontains=query), request)
+    for movie in movie_qs[:5]:
         results.append({'id': movie.id, 'title': movie.title, 'type': 'movie'})
 
     anime_qs = (
-        Anime.objects.filter(title__icontains=query)
+        filter_age_appropriate(Anime.objects.filter(title__icontains=query), request)
         .prefetch_related(
             Prefetch('seasons', queryset=Season.objects.prefetch_related('episodes'))
         )[:5]
@@ -828,6 +874,12 @@ def category_page(request, genre):
         attach_episode_info(anime_list)
         ctx = {'movies': movies_qs, 'anime': anime_list}
         safe_cache_set(cache_key, ctx, timeout=600)
+
+    if restricted_to_pg13(request):
+        ctx = {
+            'movies': filter_list_age_appropriate(ctx['movies'], request),
+            'anime': filter_list_age_appropriate(ctx['anime'], request),
+        }
     return render(request, 'category.html', {'genre': genre, **ctx})
 
 
@@ -837,10 +889,12 @@ def search_results(request):
     anime_list = []
     if query:
         movies = list(
-            Movie.objects.filter(title__icontains=query).prefetch_related('media_images')
+            filter_age_appropriate(Movie.objects.filter(title__icontains=query), request)
+            .prefetch_related('media_images')
         )
         anime_list = list(
-            Anime.objects.filter(title__icontains=query).prefetch_related(
+            filter_age_appropriate(Anime.objects.filter(title__icontains=query), request)
+            .prefetch_related(
                 'media_images',
                 Prefetch('seasons', queryset=Season.objects.prefetch_related('episodes')),
             )
@@ -991,6 +1045,8 @@ def add_to_playlist(request):
         PlaylistItem.objects.get_or_create(playlist=pl, episode=get_object_or_404(Episode, id=episode_id))
     elif movie_id:
         PlaylistItem.objects.get_or_create(playlist=pl, movie=get_object_or_404(Movie, id=movie_id))
+    else:
+        return JsonResponse({'status': 'error', 'message': 'No episode_id or movie_id provided.'}, status=400)
     return JsonResponse({'status': 'added', 'playlist': pl.name})
 
 
@@ -1081,7 +1137,7 @@ def all_recent_movies(request):
             safe_cache_set(cache_key, movies, timeout=300)
 
     return render(request, 'all_recent_movies.html', {
-        'title': 'Recently Updated Movies', 'movies': movies,
+        'title': 'Recently Updated Movies', 'movies': filter_list_age_appropriate(movies, request),
         'genres': _all_genre_names(), 'active_genre': genre,
         'active_sort': sort, 'sort_options': MOVIE_SORT_OPTIONS,
     })
@@ -1103,7 +1159,7 @@ def all_popular_movies(request):
             safe_cache_set(cache_key, movies, timeout=300)
 
     return render(request, 'all_popular_movies.html', {
-        'title': 'Popular Movies', 'movies': movies,
+        'title': 'Popular Movies', 'movies': filter_list_age_appropriate(movies, request),
         'genres': _all_genre_names(), 'active_genre': genre,
         'active_sort': sort, 'sort_options': MOVIE_SORT_OPTIONS,
     })
@@ -1129,7 +1185,7 @@ def all_recent_anime(request):
             safe_cache_set(cache_key, anime_list, timeout=300)
 
     return render(request, 'all_recent_anime.html', {
-        'title': 'Recently Updated Anime', 'anime_list': anime_list,
+        'title': 'Recently Updated Anime', 'anime_list': filter_list_age_appropriate(anime_list, request),
         'genres': _all_genre_names(), 'active_genre': genre,
         'active_sort': sort, 'sort_options': ANIME_SORT_OPTIONS,
     })
@@ -1155,7 +1211,7 @@ def all_popular_anime(request):
             safe_cache_set(cache_key, anime_list, timeout=300)
 
     return render(request, 'all_popular_anime.html', {
-        'title': 'Popular Anime', 'anime_list': anime_list,
+        'title': 'Popular Anime', 'anime_list': filter_list_age_appropriate(anime_list, request),
         'genres': _all_genre_names(), 'active_genre': genre,
         'active_sort': sort, 'sort_options': ANIME_SORT_OPTIONS,
     })
@@ -1174,6 +1230,13 @@ def verify_email(request, token):
             'title': 'Invalid link',
             'email': '',
             'error': 'This verification link is invalid or has already been used.',
+        })
+
+    if profile.verification_sent_at and timezone.now() - profile.verification_sent_at > timedelta(hours=24):
+        return render(request, 'verify_pending.html', {
+            'title': 'Link expired',
+            'email': profile.user.email,
+            'error': 'This verification link has expired. Please sign up again to get a new one.',
         })
 
     if not profile.email_verified:

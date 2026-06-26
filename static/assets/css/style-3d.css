@@ -920,7 +920,10 @@ ul.pagination li a:hover, ul.pagination li a.current {
 
 /* ── COMING OUT ───────────────────────────────────────────────── */
 .coming-out.style-1 {
-  background: url(../media/coming-out/comingOut-bg.png) no-repeat center/cover;
+  background:
+    radial-gradient(circle at 15% 20%, var(--c-accent-dim), transparent 45%),
+    radial-gradient(circle at 85% 80%, var(--c-gold-dim), transparent 45%),
+    linear-gradient(135deg, var(--c-dark), var(--c-surface-2));
   position: relative;
 }
 .coming-out.style-1::before {
@@ -1079,7 +1082,9 @@ ul.pagination li a:hover, ul.pagination li a.current {
 
 /* Card body */
 .schedule.style-1 .card-body.style-1 {
-  background: url(../media/schedule/schedule-bg.png) no-repeat center/cover;
+  background:
+    radial-gradient(circle at 80% 0%, var(--c-gold-dim), transparent 50%),
+    linear-gradient(160deg, var(--c-surface), var(--c-dark));
   height: auto; padding: 28px;
 }
 .card-body h4 { font-family: var(--font-display); color: var(--c-text-2); font-size: 16px; padding: 16px 0; }
