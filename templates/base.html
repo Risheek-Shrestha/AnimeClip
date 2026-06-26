@@ -152,6 +152,16 @@
     </div>
   </header>
 
+  {% if messages %}
+  <div class="container">
+    <div class="site-messages">
+      {% for message in messages %}
+      <div class="site-message{% if message.tags %} site-message-{{ message.tags }}{% endif %}">{{ message }}</div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
   {% block body %}{% endblock body %}
 
 </div><!-- /.main-wrapper -->

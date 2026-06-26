@@ -20,5 +20,7 @@ def active_subprofile(request):
         try:
             sp = SubProfile.objects.get(pk=sp_id, user=request.user)
         except SubProfile.DoesNotExist:
-            pass
+            # Profile was deleted (e.g. in another tab/session) — drop the
+            # stale reference so we don't keep re-querying for it.
+            del request.session['active_subprofile_id']
     return {'active_subprofile': sp}

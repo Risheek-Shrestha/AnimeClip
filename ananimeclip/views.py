@@ -6,6 +6,7 @@ from django.views.decorators.http import require_POST
 from django.views.decorators.cache import never_cache
 from django.core.cache import cache
 from django.http import JsonResponse
+from django.contrib import messages
 from .models import (
     Profile, Anime, Episode, Comment, CommentLike,
     Season, MediaImage, Movie, Genre,
@@ -644,7 +645,8 @@ def rate_movie(request, movie_id):
 @ratelimit(key='user', rate='20/10m', method='POST', block=False)
 def add_comment(request, episode_id):
     if getattr(request, 'limited', False):
-        return JsonResponse({'error': 'You are posting too fast. Slow down.'}, status=429)
+        messages.error(request, 'You are posting too fast. Slow down and try again in a bit.')
+        return redirect(request.META.get('HTTP_REFERER', '/'))
     episode   = get_object_or_404(Episode, id=episode_id)
     body      = request.POST.get('body', '').strip()
     parent_id = request.POST.get('parent_id')
@@ -662,7 +664,8 @@ def add_comment(request, episode_id):
 @ratelimit(key='user', rate='20/10m', method='POST', block=False)
 def add_movie_comment(request, movie_id):
     if getattr(request, 'limited', False):
-        return JsonResponse({'error': 'You are posting too fast. Slow down.'}, status=429)
+        messages.error(request, 'You are posting too fast. Slow down and try again in a bit.')
+        return redirect(request.META.get('HTTP_REFERER', '/'))
     movie     = get_object_or_404(Movie, id=movie_id)
     body      = request.POST.get('body', '').strip()
     parent_id = request.POST.get('parent_id')
@@ -1187,17 +1190,6 @@ def verify_email(request, token):
 # ============================================================
 
 SESSION_KEY = 'active_subprofile_id'
-
-
-def _get_active_subprofile(request):
-    """Return the active SubProfile for this session, or None."""
-    sp_id = request.session.get(SESSION_KEY)
-    if sp_id:
-        try:
-            return SubProfile.objects.get(pk=sp_id, user=request.user)
-        except SubProfile.DoesNotExist:
-            del request.session[SESSION_KEY]
-    return None
 
 
 @login_required
