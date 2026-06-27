@@ -86,4 +86,5 @@ urlpatterns = [
     path('movies/popular/', views.all_popular_movies, name='all_popular_movies'),
     path('anime/recent/', views.all_recent_anime, name='all_recent_anime'),
     path('anime/popular/', views.all_popular_anime, name='all_popular_anime'),
+
 ]

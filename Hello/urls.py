@@ -19,7 +19,6 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 
-
 admin.site.site_header = "Anime CLip"
 admin.site.site_title = "Anime CLip title"
 admin.site.index_title = "Anime CLip index"
@@ -28,7 +27,7 @@ handler404 = 'ananimeclip.views.handler404'
 handler500 = 'ananimeclip.views.handler500'
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('', include('ananimeclip.urls')),
-
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+                  path('admin/', admin.site.urls),
+                  path("analytics/", include("analytics.urls", namespace="analytics")),
+                  path('', include('ananimeclip.urls'))
+              ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

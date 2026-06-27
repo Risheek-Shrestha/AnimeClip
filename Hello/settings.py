@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     'django_ratelimit',
     'cloudinary',
     'cloudinary_storage',
+    'analytics',
 ]
 
 MIDDLEWARE = [
