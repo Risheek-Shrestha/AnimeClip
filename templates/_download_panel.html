@@ -1,0 +1,159 @@
+{% comment %}
+_download_panel.html
+
+A self-contained download panel to drop into streaming.html and
+streaming_movie.html.
+
+Required template context variables:
+  quality_options  — list of dicts from offline_downloads.QUALITY_OPTIONS
+                     [{"height": 720, "label": "720p (HD)", "size_hint": "~400 MB/hr"}, ...]
+
+  dl_url_name      — the Django URL name to POST to, e.g. 'request_episode_download'
+  dl_content_id    — the episode or movie pk to POST to that URL
+
+  current_source   — the active VideoSource / MovieSource (may be None)
+{% endcomment %}
+
+{% if current_source and quality_options %}
+<section class="download-panel" aria-label="Download options">
+  <h3 class="download-panel__heading">
+    <svg class="download-panel__icon" xmlns="http://www.w3.org/2000/svg"
+         viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+         aria-hidden="true">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+      <polyline points="7 10 12 15 17 10"/>
+      <line x1="12" y1="15" x2="12" y2="3"/>
+    </svg>
+    Download
+  </h3>
+
+  <p class="download-panel__note">
+    Download links expire after 1 hour and are tied to your account.
+  </p>
+
+  <ul class="download-panel__list" role="list">
+    {% for opt in quality_options %}
+    <li class="download-panel__item">
+      <button
+        class="download-panel__btn"
+        type="button"
+        data-dl-url="{% url dl_url_name dl_content_id %}"
+        data-height="{{ opt.height }}"
+        data-source-id="{{ current_source.pk }}"
+        data-csrf="{{ csrf_token }}"
+      >
+        <span class="download-panel__quality">{{ opt.label }}</span>
+        <span class="download-panel__hint">{{ opt.size_hint }}</span>
+      </button>
+    </li>
+    {% endfor %}
+  </ul>
+
+  {# Inline status message shown while the token is being fetched #}
+  <p class="download-panel__status" role="status" aria-live="polite" hidden></p>
+</section>
+
+<style>
+.download-panel {
+  margin: 1.5rem 0;
+  padding: 1rem 1.25rem;
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: .75rem;
+}
+.download-panel__heading {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 .5rem;
+  color: #e5e7eb;
+}
+.download-panel__icon { width: 1.1em; height: 1.1em; color: #60a5fa; }
+.download-panel__note {
+  font-size: .8rem;
+  color: #9ca3af;
+  margin: 0 0 .75rem;
+}
+.download-panel__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.download-panel__btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: .5rem .85rem;
+  background: rgba(96,165,250,.12);
+  border: 1px solid rgba(96,165,250,.35);
+  border-radius: .5rem;
+  color: #93c5fd;
+  cursor: pointer;
+  transition: background .15s, border-color .15s;
+  font: inherit;
+}
+.download-panel__btn:hover:not(:disabled) {
+  background: rgba(96,165,250,.25);
+  border-color: rgba(96,165,250,.7);
+}
+.download-panel__btn:disabled {
+  opacity: .5;
+  cursor: wait;
+}
+.download-panel__quality { font-size: .9rem; font-weight: 600; }
+.download-panel__hint    { font-size: .75rem; color: #6b7280; }
+.download-panel__status  { font-size: .85rem; margin-top: .6rem; color: #fbbf24; }
+</style>
+
+<script>
+(function () {
+  document.querySelectorAll('.download-panel__btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var dlUrl    = btn.dataset.dlUrl;
+      var height   = btn.dataset.height;
+      var sourceId = btn.dataset.sourceId;
+      var csrf     = btn.dataset.csrf;
+      var status   = btn.closest('.download-panel').querySelector('.download-panel__status');
+
+      btn.disabled = true;
+      status.hidden = false;
+      status.textContent = 'Preparing download…';
+
+      fetch(dlUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrf,
+        },
+        body: JSON.stringify({ height: parseInt(height, 10), source_id: parseInt(sourceId, 10) }),
+      })
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        if (data.url) {
+          status.textContent = 'Starting download…';
+          // Open in new tab so the user stays on the streaming page
+          window.open(data.url, '_blank', 'noopener');
+          setTimeout(function () {
+            status.hidden = true;
+            btn.disabled = false;
+          }, 2000);
+        } else {
+          status.textContent = 'Error: ' + (data.error || 'Unknown error');
+          btn.disabled = false;
+        }
+      })
+      .catch(function () {
+        status.textContent = 'Network error — please try again.';
+        btn.disabled = false;
+      });
+    });
+  });
+})();
+</script>
+{% endif %}

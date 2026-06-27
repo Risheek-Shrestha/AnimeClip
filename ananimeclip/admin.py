@@ -175,3 +175,62 @@ class SubtitleAdmin(admin.ModelAdmin):
     list_display = ('__str__', 'language_code', 'is_default')
     list_filter = ('language_code', 'is_default')
     search_fields = ('label', 'video_source__episode__season__anime__title', 'movie_source__movie__title')
+
+# ============================================================
+# Transcoding admin actions
+# ============================================================
+
+def trigger_transcoding_action(modeladmin, request, queryset):
+    """
+    Admin action: queue eager Cloudinary transcoding for all selected
+    VideoSource / MovieSource rows that have a Cloudinary video URL.
+
+    This is useful to manually re-trigger transcoding after a new video is
+    uploaded via the Cloudinary upload widget, or if a previous transcoding
+    job failed silently.
+    """
+    from .transcoding import request_eager_transcoding
+
+    queued = 0
+    skipped = 0
+    for source in queryset:
+        if source.video_url:
+            ok = request_eager_transcoding(source.video_url)
+            if ok:
+                queued += 1
+            else:
+                skipped += 1
+        else:
+            skipped += 1
+
+    modeladmin.message_user(
+        request,
+        f"Queued eager transcoding for {queued} source(s). "
+        f"{skipped} skipped (no URL or non-Cloudinary URL).",
+    )
+
+
+trigger_transcoding_action.short_description = (
+    "Queue eager Cloudinary transcoding (1080p / 720p / 480p / 360p + HLS)"
+)
+
+
+# Attach the action to the existing VideoSource and MovieSource admins.
+# We look up the registered ModelAdmin instances at module load time so we
+# don't have to subclass them.
+def _patch_admin_actions(model, action):
+    """Add *action* to an already-registered ModelAdmin for *model*."""
+    try:
+        ma = admin.site._registry[model]
+        if not hasattr(ma, 'actions') or ma.actions is None:
+            ma.actions = [action]
+        elif action not in ma.actions:
+            ma.actions = list(ma.actions) + [action]
+    except KeyError:
+        pass  # model not registered — nothing to patch
+
+
+from .models import VideoSource as _VS, MovieSource as _MS  # noqa: E402
+
+_patch_admin_actions(_VS, trigger_transcoding_action)
+_patch_admin_actions(_MS, trigger_transcoding_action)

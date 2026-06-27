@@ -87,4 +87,11 @@ urlpatterns = [
     path('anime/recent/', views.all_recent_anime, name='all_recent_anime'),
     path('anime/popular/', views.all_popular_anime, name='all_popular_anime'),
 
+    # ---- Offline downloads ----
+    # Step 1: client POSTs here to get a signed download token URL
+    path('download/episode/<int:episode_id>/', views.request_episode_download, name='request_episode_download'),
+    path('download/movie/<int:movie_id>/', views.request_movie_download, name='request_movie_download'),
+    # Step 2: client GETs this URL; it validates the token and 302s to the Cloudinary mp4
+    path('dl/<str:token>/', views.serve_download, name='serve_download'),
+
 ]

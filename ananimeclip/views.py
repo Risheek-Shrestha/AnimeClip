@@ -20,6 +20,10 @@ from .content_access import (
     filter_movies_context, filter_list_age_appropriate, restricted_to_pg13,
 )
 from .video_access import sign_video_url, unsign_video_url, to_hls_url
+from .offline_downloads import (
+    generate_download_token, validate_download_token,
+    build_download_url, QUALITY_OPTIONS,
+)
 from analytics.models import SearchEvent
 from django.db.models import Max, Prefetch, Q
 from django.utils import timezone
@@ -588,6 +592,7 @@ def streaming(request, episode_id):
         'playable_url': playable_url,
         'hls_url': hls_url,
         'similar': similar,
+        'quality_options': QUALITY_OPTIONS,
     })
 
 
@@ -663,6 +668,7 @@ def streaming_movie(request, movie_id):
         'playable_url': playable_url,
         'hls_url': hls_url,
         'similar': similar,
+        'quality_options': QUALITY_OPTIONS,
     })
 
 
@@ -1406,6 +1412,180 @@ def profile_delete(request, subprofile_id):
         del request.session[SESSION_KEY]
     sp.delete()
     return redirect('profile_select')
+
+# ============================================================
+# ERROR HANDLERS
+# ============================================================
+
+
+# ============================================================
+# OFFLINE DOWNLOADS
+# ============================================================
+
+import json as _json
+import re as _re
+from django.http import HttpResponseRedirect
+
+
+@login_required
+@require_POST
+def request_episode_download(request, episode_id):
+    """
+    POST /download/episode/<episode_id>/
+    Body (JSON or form): { "source_id": <int>, "height": <360|480|720|1080> }
+
+    Returns JSON: { "url": "/dl/<token>/" }  which the client opens to
+    trigger the actual file download.
+    """
+    episode = get_object_or_404(Episode, pk=episode_id)
+    if not can_view(request, episode.season.anime):
+        return JsonResponse({'error': 'Access denied.'}, status=403)
+
+    try:
+        body = _parse_download_request(request)
+    except ValueError as exc:
+        return JsonResponse({'error': str(exc)}, status=400)
+
+    source_id = body.get('source_id')
+    height = body.get('height')
+
+    qs = episode.sources.all()
+    source = get_object_or_404(qs, pk=source_id) if source_id else (qs.first() if qs.exists() else None)
+    if source is None:
+        return JsonResponse({'error': 'No video source available for this episode.'}, status=404)
+
+    token = generate_download_token(
+        source_pk=source.pk,
+        source_type='episode',
+        height=height,
+        user_pk=request.user.pk,
+    )
+    if token is None:
+        return JsonResponse({'error': f'Unsupported quality: {height}p.'}, status=400)
+
+    return JsonResponse({'url': reverse('serve_download', args=[token])})
+
+
+@login_required
+@require_POST
+def request_movie_download(request, movie_id):
+    """
+    POST /download/movie/<movie_id>/
+    Body (JSON or form): { "source_id": <int>, "height": <360|480|720|1080> }
+
+    Returns JSON: { "url": "/dl/<token>/" }
+    """
+    movie = get_object_or_404(Movie, pk=movie_id)
+    if not can_view(request, movie):
+        return JsonResponse({'error': 'Access denied.'}, status=403)
+
+    try:
+        body = _parse_download_request(request)
+    except ValueError as exc:
+        return JsonResponse({'error': str(exc)}, status=400)
+
+    source_id = body.get('source_id')
+    height = body.get('height')
+
+    qs = movie.sources.all()
+    source = get_object_or_404(qs, pk=source_id) if source_id else (qs.first() if qs.exists() else None)
+    if source is None:
+        return JsonResponse({'error': 'No video source available for this movie.'}, status=404)
+
+    token = generate_download_token(
+        source_pk=source.pk,
+        source_type='movie',
+        height=height,
+        user_pk=request.user.pk,
+    )
+    if token is None:
+        return JsonResponse({'error': f'Unsupported quality: {height}p.'}, status=400)
+
+    return JsonResponse({'url': reverse('serve_download', args=[token])})
+
+
+@login_required
+def serve_download(request, token):
+    """
+    GET /dl/<token>/
+
+    Validates the signed token and redirects to the Cloudinary mp4 URL
+    for the requested quality rendition.  Cloudinary's fl_attachment flag
+    ensures the browser pops a Save-As dialog rather than playing inline.
+    """
+    from .models import VideoSource, MovieSource
+
+    payload = validate_download_token(token, request.user.pk)
+    if payload is None:
+        raise Http404("Download link is invalid or has expired.")
+
+    source_pk = payload['spk']
+    source_type = payload['st']
+    height = payload['h']
+
+    if source_type == 'episode':
+        source = get_object_or_404(VideoSource, pk=source_pk)
+        if not can_view(request, source.episode.season.anime):
+            raise Http404
+        raw_url = source.video_url
+        filename_base = (
+            f"{source.episode.season.anime.title}_"
+            f"S{source.episode.season.number}E{source.episode.number}"
+        )
+    else:
+        source = get_object_or_404(MovieSource, pk=source_pk)
+        if not can_view(request, source.movie):
+            raise Http404
+        raw_url = source.video_url
+        filename_base = source.movie.title
+
+    if not raw_url:
+        raise Http404("No video file is attached to this source.")
+
+    dl_url = build_download_url(raw_url, height)
+    if dl_url is None:
+        logger.warning(
+            "serve_download: non-Cloudinary URL for source pk=%d, falling back to raw", source_pk
+        )
+        dl_url = raw_url
+
+    # Insert fl_attachment so Cloudinary adds Content-Disposition: attachment.
+    safe_name = "".join(c if c.isalnum() or c in "-_ " else "_" for c in filename_base)
+    if "res.cloudinary.com" in dl_url and "fl_attachment" not in dl_url:
+        dl_url = _re.sub(
+            r'(/video/upload/)',
+            rf'\1fl_attachment:{safe_name}_{height}p/',
+            dl_url,
+            count=1,
+        )
+
+    return HttpResponseRedirect(dl_url)
+
+
+def _parse_download_request(request):
+    """
+    Parse JSON or form-encoded body.  Returns dict with 'source_id' (int|None)
+    and 'height' (int).  Raises ValueError on bad input.
+    """
+    content_type = request.content_type or ""
+    if "application/json" in content_type:
+        try:
+            data = _json.loads(request.body)
+        except _json.JSONDecodeError:
+            raise ValueError("Request body is not valid JSON.")
+    else:
+        data = request.POST
+
+    try:
+        height = int(data.get('height', 720))
+    except (TypeError, ValueError):
+        raise ValueError("'height' must be an integer (360, 480, 720, or 1080).")
+
+    source_id_raw = data.get('source_id')
+    source_id = int(source_id_raw) if source_id_raw else None
+
+    return {'source_id': source_id, 'height': height}
+
 
 # ============================================================
 # ERROR HANDLERS

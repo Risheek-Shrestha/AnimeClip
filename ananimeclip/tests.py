@@ -984,3 +984,403 @@ class SubtitleModelTest(TestCase):
         )
         with self.assertRaises(ValidationError):
             sub.clean()
+
+
+# ──────────────────────────────────────────────────────────────
+# Transcoding pipeline tests
+# ──────────────────────────────────────────────────────────────
+
+from unittest.mock import patch, MagicMock
+from .transcoding import _extract_public_id, get_rendition_url, request_eager_transcoding, EAGER_TRANSFORMS
+
+
+class TranscodingPublicIdTest(TestCase):
+    """Unit tests for the Cloudinary public_id extractor."""
+
+    def test_extracts_public_id_with_version(self):
+        url = "https://res.cloudinary.com/demo/video/upload/v1234567890/sample.mp4"
+        self.assertEqual(_extract_public_id(url), "sample")
+
+    def test_extracts_public_id_without_version(self):
+        url = "https://res.cloudinary.com/demo/video/upload/my_folder/clip.mp4"
+        self.assertEqual(_extract_public_id(url), "my_folder/clip")
+
+    def test_returns_none_for_non_cloudinary_url(self):
+        self.assertIsNone(_extract_public_id("https://example.com/video.mp4"))
+
+    def test_returns_none_for_image_resource(self):
+        # image/ not video/
+        url = "https://res.cloudinary.com/demo/image/upload/v1/sample.jpg"
+        self.assertIsNone(_extract_public_id(url))
+
+    def test_returns_none_for_empty(self):
+        self.assertIsNone(_extract_public_id(""))
+        self.assertIsNone(_extract_public_id(None))
+
+
+class TranscodingRenditionUrlTest(TestCase):
+    """Unit tests for get_rendition_url()."""
+
+    CL_URL = "https://res.cloudinary.com/demo/video/upload/v1/sample.mp4"
+
+    def test_720p_mp4_url_contains_transform(self):
+        url = get_rendition_url(self.CL_URL, 720, "mp4")
+        self.assertIn("h_720", url)
+        self.assertTrue(url.endswith(".mp4"))
+
+    def test_360p_mp4_url(self):
+        url = get_rendition_url(self.CL_URL, 360, "mp4")
+        self.assertIn("h_360", url)
+
+    def test_non_cloudinary_returns_none(self):
+        self.assertIsNone(get_rendition_url("https://example.com/v.mp4", 720))
+
+    def test_none_url_returns_none(self):
+        self.assertIsNone(get_rendition_url(None, 720))
+
+
+class EagerTransformListTest(TestCase):
+    """EAGER_TRANSFORMS list sanity checks."""
+
+    def test_has_multiple_resolutions(self):
+        # Should have at least one transform for each canonical height
+        heights = {t.get('height') for t in EAGER_TRANSFORMS if 'height' in t}
+        for h in (360, 480, 720, 1080):
+            self.assertIn(h, heights, f"Missing eager transform for {h}p")
+
+    def test_includes_m3u8_format(self):
+        formats = {t.get('format') for t in EAGER_TRANSFORMS}
+        self.assertIn('m3u8', formats)
+
+    def test_includes_mp4_format(self):
+        formats = {t.get('format') for t in EAGER_TRANSFORMS}
+        self.assertIn('mp4', formats)
+
+
+class RequestEagerTranscodingTest(TestCase):
+    """request_eager_transcoding() integration (Cloudinary SDK mocked)."""
+
+    CL_URL = "https://res.cloudinary.com/demo/video/upload/v1/anime_ep1.mp4"
+    NON_CL_URL = "https://example.com/video.mp4"
+
+    @patch("ananimeclip.transcoding.cloudinary")
+    def test_calls_explicit_for_cloudinary_url(self, mock_cl):
+        mock_cl.uploader.explicit.return_value = {"version": 1}
+        result = request_eager_transcoding(self.CL_URL)
+        self.assertTrue(result)
+        mock_cl.uploader.explicit.assert_called_once()
+        call_kwargs = mock_cl.uploader.explicit.call_args
+        self.assertEqual(call_kwargs.kwargs.get("resource_type"), "video")
+        self.assertTrue(call_kwargs.kwargs.get("eager_async"))
+
+    def test_returns_false_for_non_cloudinary_url(self):
+        result = request_eager_transcoding(self.NON_CL_URL)
+        self.assertFalse(result)
+
+    def test_returns_false_for_empty_url(self):
+        self.assertFalse(request_eager_transcoding(""))
+
+    @patch("ananimeclip.transcoding.cloudinary")
+    def test_returns_false_on_api_error(self, mock_cl):
+        mock_cl.uploader.explicit.side_effect = Exception("API error")
+        result = request_eager_transcoding(self.CL_URL)
+        self.assertFalse(result)
+
+
+class TranscodingSignalTest(TestCase):
+    """Signals trigger transcoding when a VideoSource / MovieSource is saved."""
+
+    CL_URL = "https://res.cloudinary.com/demo/video/upload/v1/ep1.mp4"
+
+    def _make_episode_source(self):
+        anime = make_anime()
+        episode = make_episode(anime)
+        return episode
+
+    @patch("ananimeclip.signals.request_eager_transcoding")
+    def test_video_source_save_triggers_transcoding(self, mock_transcode):
+        episode = self._make_episode_source()
+        VideoSource.objects.create(
+            episode=episode,
+            label="Server 1",
+            type="sub",
+            video_url=self.CL_URL,
+        )
+        mock_transcode.assert_called_once_with(self.CL_URL)
+
+    @patch("ananimeclip.signals.request_eager_transcoding")
+    def test_video_source_without_url_does_not_transcode(self, mock_transcode):
+        episode = self._make_episode_source()
+        VideoSource.objects.create(
+            episode=episode, label="Server 1", type="sub", video_url=None
+        )
+        mock_transcode.assert_not_called()
+
+    @patch("ananimeclip.signals.request_eager_transcoding")
+    def test_movie_source_save_triggers_transcoding(self, mock_transcode):
+        movie = make_movie()
+        MovieSource.objects.create(
+            movie=movie, label="Server 1", type="sub", video_url=self.CL_URL
+        )
+        mock_transcode.assert_called_once_with(self.CL_URL)
+
+
+# ──────────────────────────────────────────────────────────────
+# Offline download tests
+# ──────────────────────────────────────────────────────────────
+
+from .offline_downloads import (
+    generate_download_token, validate_download_token,
+    build_download_url, ALLOWED_HEIGHTS, QUALITY_OPTIONS,
+)
+
+
+class DownloadTokenTest(TestCase):
+    """Unit tests for generate_download_token / validate_download_token."""
+
+    def _gen(self, height=720, user_pk=1, source_pk=42, source_type="episode"):
+        return generate_download_token(
+            source_pk=source_pk,
+            source_type=source_type,
+            height=height,
+            user_pk=user_pk,
+        )
+
+    def test_roundtrip(self):
+        token = self._gen()
+        self.assertIsNotNone(token)
+        payload = validate_download_token(token, requesting_user_pk=1)
+        self.assertIsNotNone(payload)
+        self.assertEqual(payload['h'], 720)
+        self.assertEqual(payload['spk'], 42)
+        self.assertEqual(payload['st'], 'episode')
+        self.assertEqual(payload['uid'], 1)
+
+    def test_unsupported_height_returns_none(self):
+        token = self._gen(height=999)
+        self.assertIsNone(token)
+
+    def test_empty_token_returns_none(self):
+        self.assertIsNone(validate_download_token("", requesting_user_pk=1))
+
+    def test_tampered_token_returns_none(self):
+        token = self._gen()
+        tampered = token[:-4] + "xxxx"
+        self.assertIsNone(validate_download_token(tampered, requesting_user_pk=1))
+
+    def test_wrong_user_returns_none(self):
+        token = self._gen(user_pk=1)
+        # Another user tries to reuse the token
+        self.assertIsNone(validate_download_token(token, requesting_user_pk=99))
+
+    def test_all_allowed_heights_produce_tokens(self):
+        for h in ALLOWED_HEIGHTS:
+            self.assertIsNotNone(self._gen(height=h), f"Failed for height={h}")
+
+
+class BuildDownloadUrlTest(TestCase):
+    """Unit tests for build_download_url()."""
+
+    CL_URL = "https://res.cloudinary.com/demo/video/upload/v1/sample.mp4"
+
+    def test_720p_url_contains_transform(self):
+        url = build_download_url(self.CL_URL, 720)
+        self.assertIn("h_720", url)
+        self.assertIn("vc_h264", url)
+        self.assertTrue(url.endswith(".mp4"))
+
+    def test_1080p_uses_h265(self):
+        url = build_download_url(self.CL_URL, 1080)
+        self.assertIn("vc_h265", url)
+
+    def test_360p_uses_eco_quality(self):
+        url = build_download_url(self.CL_URL, 360)
+        self.assertIn("q_auto:eco", url)
+
+    def test_non_cloudinary_returns_none(self):
+        self.assertIsNone(build_download_url("https://example.com/v.mp4", 720))
+
+    def test_none_returns_none(self):
+        self.assertIsNone(build_download_url(None, 720))
+
+    def test_unsupported_height_returns_none(self):
+        self.assertIsNone(build_download_url(self.CL_URL, 144))
+
+
+class QualityOptionsTest(TestCase):
+    def test_all_standard_heights_present(self):
+        heights = {opt['height'] for opt in QUALITY_OPTIONS}
+        self.assertEqual(heights, {360, 480, 720, 1080})
+
+    def test_each_option_has_required_keys(self):
+        for opt in QUALITY_OPTIONS:
+            self.assertIn('height', opt)
+            self.assertIn('label', opt)
+            self.assertIn('size_hint', opt)
+
+
+class EpisodeDownloadViewTest(TestCase):
+    """Integration tests for the episode download request view."""
+
+    CL_URL = "https://res.cloudinary.com/demo/video/upload/v1/ep1.mp4"
+
+    def setUp(self):
+        self.client = Client()
+        self.user = make_user()
+        self.client.force_login(self.user)
+        self.anime = make_anime(title='DL Anime')
+        self.episode = make_episode(self.anime)
+        self.source = VideoSource.objects.create(
+            episode=self.episode, label='S1', type='sub', video_url=self.CL_URL
+        )
+
+    def _post(self, height=720, source_id=None):
+        import json
+        url = reverse('request_episode_download', args=[self.episode.pk])
+        payload = {'height': height}
+        if source_id:
+            payload['source_id'] = source_id
+        return self.client.post(
+            url,
+            data=json.dumps(payload),
+            content_type='application/json',
+        )
+
+    def test_returns_download_url(self):
+        resp = self._post(height=720)
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        self.assertIn('url', data)
+        self.assertIn('/dl/', data['url'])
+
+    def test_requires_login(self):
+        self.client.logout()
+        resp = self._post()
+        self.assertEqual(resp.status_code, 302)  # redirect to login
+
+    def test_unsupported_height_returns_400(self):
+        resp = self._post(height=999)
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn('error', resp.json())
+
+    def test_explicit_source_id_accepted(self):
+        resp = self._post(height=480, source_id=self.source.pk)
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn('url', resp.json())
+
+    def test_all_quality_options_produce_url(self):
+        for h in (360, 480, 720, 1080):
+            resp = self._post(height=h)
+            self.assertEqual(resp.status_code, 200, f"Failed for height={h}")
+
+
+class MovieDownloadViewTest(TestCase):
+    """Integration tests for the movie download request view."""
+
+    CL_URL = "https://res.cloudinary.com/demo/video/upload/v1/movie1.mp4"
+
+    def setUp(self):
+        self.client = Client()
+        self.user = make_user(username='dlmovieuser')
+        self.client.force_login(self.user)
+        self.movie = make_movie(title='DL Movie')
+        self.source = MovieSource.objects.create(
+            movie=self.movie, label='S1', type='sub', video_url=self.CL_URL
+        )
+
+    def _post(self, height=720):
+        import json
+        url = reverse('request_movie_download', args=[self.movie.pk])
+        return self.client.post(
+            url,
+            data=json.dumps({'height': height}),
+            content_type='application/json',
+        )
+
+    def test_returns_download_url(self):
+        resp = self._post(height=720)
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn('url', resp.json())
+
+    def test_requires_login(self):
+        self.client.logout()
+        resp = self._post()
+        self.assertEqual(resp.status_code, 302)
+
+    def test_unsupported_height_returns_400(self):
+        resp = self._post(height=240)
+        self.assertEqual(resp.status_code, 400)
+
+
+class ServeDownloadViewTest(TestCase):
+    """Integration tests for the serve_download redirect view."""
+
+    CL_URL = "https://res.cloudinary.com/demo/video/upload/v1/ep1.mp4"
+
+    def setUp(self):
+        self.client = Client()
+        self.user = make_user(username='servdluser')
+        self.client.force_login(self.user)
+        self.anime = make_anime(title='Serve DL Anime')
+        self.episode = make_episode(self.anime)
+        self.source = VideoSource.objects.create(
+            episode=self.episode, label='S1', type='sub', video_url=self.CL_URL
+        )
+
+    def _get_token(self, height=720):
+        return generate_download_token(
+            source_pk=self.source.pk,
+            source_type='episode',
+            height=height,
+            user_pk=self.user.pk,
+        )
+
+    def test_valid_token_redirects_to_cloudinary(self):
+        token = self._get_token(720)
+        resp = self.client.get(reverse('serve_download', args=[token]))
+        self.assertEqual(resp.status_code, 302)
+        location = resp['Location']
+        self.assertIn('res.cloudinary.com', location)
+        self.assertIn('fl_attachment', location)
+
+    def test_invalid_token_raises_404(self):
+        resp = self.client.get(reverse('serve_download', args=['not-a-real-token']))
+        self.assertEqual(resp.status_code, 404)
+
+    def test_requires_login(self):
+        self.client.logout()
+        token = self._get_token()
+        resp = self.client.get(reverse('serve_download', args=[token]))
+        self.assertEqual(resp.status_code, 302)
+        self.assertIn('/login/', resp['Location'])
+
+    def test_wrong_user_cannot_use_token(self):
+        other = make_user(username='otherservuser')
+        token = generate_download_token(
+            source_pk=self.source.pk,
+            source_type='episode',
+            height=720,
+            user_pk=other.pk,          # token belongs to 'other'
+        )
+        # self.user (not 'other') tries to use it
+        resp = self.client.get(reverse('serve_download', args=[token]))
+        self.assertEqual(resp.status_code, 404)
+
+    def test_redirect_url_contains_mp4(self):
+        token = self._get_token(480)
+        resp = self.client.get(reverse('serve_download', args=[token]))
+        self.assertIn('.mp4', resp['Location'])
+
+    def test_redirect_url_contains_height_transform(self):
+        token = self._get_token(480)
+        resp = self.client.get(reverse('serve_download', args=[token]))
+        self.assertIn('h_480', resp['Location'])
+
+    def test_quality_options_in_streaming_context(self):
+        """streaming view must pass quality_options to the template."""
+        self.source.video_url = self.CL_URL
+        self.source.save(update_fields=['video_url'])
+        resp = self.client.get(reverse('streaming', args=[self.episode.pk]))
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn('quality_options', resp.context)
+        self.assertTrue(len(resp.context['quality_options']) > 0)
