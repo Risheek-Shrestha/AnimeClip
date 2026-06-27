@@ -8,6 +8,8 @@ A full-stack anime streaming web application built with Django, PostgreSQL, Redi
 
 - Browse anime series and movies with genre filtering and live search
 - Stream episodes and movies with automatic watch-progress saving
+- Switchable SUB/DUB (or other) playback sources per episode/movie, with WebVTT subtitle/caption tracks
+- Time-limited signed playback links — raw video URLs are never rendered in HTML; links expire after 4 hours (see `video_access.py`)
 - Continue Watching bar with real-time progress percentage
 - Personalised recommendations derived from the user's genre history
 - Playlist management — create, add to, and delete custom playlists
@@ -212,3 +214,4 @@ AnimeClip/
 - **Email:** Password reset emails only reach users when `EMAIL_HOST` is configured. Without it, reset tokens print to the console (dev only).
 - **CSRF & Beacons:** Watch progress is saved via `fetch` with `keepalive: true` on pause/end events, and flushed on tab close/hide — fully CSRF-protected.
 - **Secret Key:** The app will refuse to start in production (`DEBUG=False`) if `SECRET_KEY` is not set in the environment.
+- **Signed playback links:** these stop a copied link from working forever and route every playback through the app's own age-gate/auth checks, but they are not real DRM — once a link is issued it streams from a public Cloudinary URL until it expires. Real content protection would require switching the Cloudinary delivery type to `authenticated` and enabling token-based authentication at the account level.

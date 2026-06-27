@@ -22,18 +22,21 @@
             <!-- VIDEO PLAYER -->
             <div class="col-lg-9 col-sm-8 col-12">
                 <div class="video-box">
-                    {% with episode.sources.all|first as src %}
-                    {% if src and src.video_url %}
+                    {% if current_source and playable_url %}
                     <video id="main-player" controls width="100%" preload="metadata"
                         data-resume-seconds="{{ resume_seconds }}"
                         data-content-id="{{ episode.id }}"
                         data-id-field="episode_id"
                         data-save-url="{% url 'update_watch_history' %}"
-                        {% if src.poster %}poster="{{ src.poster.url }}"
+                        {% if current_source.poster %}poster="{{ current_source.poster.url }}"
                         {% elif anime.thumb_img %}poster="{{ anime.thumb_img.image.url }}"
                         {% elif anime.banner_img %}poster="{{ anime.banner_img.image.url }}"
                         {% endif %}>
-                        <source src="{{ src.video_url }}" type="video/mp4">
+                        <source src="{{ playable_url }}" type="video/mp4">
+                        {% for sub in current_source.subtitles.all %}
+                        <track kind="subtitles" src="{{ sub.file_url }}" srclang="{{ sub.language_code }}"
+                            label="{{ sub.label }}" {% if sub.is_default %}default{% endif %}>
+                        {% endfor %}
                         Your browser does not support the video tag.
                     </video>
                     {% else %}
@@ -44,7 +47,6 @@
                     {% endif %}
                     <p class="text-center mt-2">No video source available for this episode.</p>
                     {% endif %}
-                    {% endwith %}
                 </div>
 
                 {% if next_episode %}
@@ -114,8 +116,8 @@
                         <p class="primery">{{ group.grouper|upper }}</p>
                         <div class="btn-block">
                             {% for src in group.list %}
-                            <a href="{% url 'streaming' episode.id %}"
-                               class="{% if forloop.first %}active{% endif %}">
+                            <a href="{% url 'streaming' episode.id %}?source={{ src.id }}"
+                               class="{% if current_source.id == src.id %}active{% endif %}">
                                 {{ src.label }}
                             </a>
                             {% endfor %}

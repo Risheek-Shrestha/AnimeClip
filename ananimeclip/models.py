@@ -506,3 +506,44 @@ class Follow(models.Model):
     def __str__(self):
         target = self.anime.title if self.anime_id else self.movie.title
         return f'{self.user.username} follows {target}'
+
+
+class Subtitle(models.Model):
+    """
+    A WebVTT caption/subtitle track for a single VideoSource or
+    MovieSource. Attached to the source (not the episode/movie directly)
+    because a dub track and a sub track often need different — or no —
+    captions.
+    """
+    video_source = models.ForeignKey(
+        VideoSource, null=True, blank=True, on_delete=models.CASCADE, related_name='subtitles'
+    )
+    movie_source = models.ForeignKey(
+        MovieSource, null=True, blank=True, on_delete=models.CASCADE, related_name='subtitles'
+    )
+    language_code = models.CharField(max_length=10, help_text="BCP-47 code, e.g. 'en', 'es', 'ja'")
+    label = models.CharField(max_length=50, help_text="Shown in the player's CC menu, e.g. 'English'")
+    file_url = models.URLField(max_length=500, help_text="URL of a .vtt (WebVTT) file")
+    is_default = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['label']
+        constraints = [
+            models.CheckConstraint(
+                check=(
+                    models.Q(video_source__isnull=False, movie_source__isnull=True) |
+                    models.Q(video_source__isnull=True, movie_source__isnull=False)
+                ),
+                name='subtitle_exactly_one_of_video_or_movie_source',
+            ),
+        ]
+
+    def __str__(self):
+        owner = self.video_source or self.movie_source
+        return f'{self.label} ({self.language_code}) — {owner}'
+
+    def clean(self):
+        if not self.video_source and not self.movie_source:
+            raise ValidationError("Subtitle must be linked to either a VideoSource or a MovieSource")
+        if self.video_source and self.movie_source:
+            raise ValidationError("Subtitle cannot be linked to both a VideoSource and a MovieSource")

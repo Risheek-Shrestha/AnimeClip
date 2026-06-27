@@ -20,18 +20,21 @@
         <div class="row">
             <div class="col-12">
                 <div class="video-box">
-                    {% with movie.sources.all|first as src %}
-                    {% if src and src.video_url %}
+                    {% if current_source and playable_url %}
                     <video id="main-player" controls width="100%" preload="metadata"
                         data-resume-seconds="{{ resume_seconds }}"
                         data-content-id="{{ movie.id }}"
                         data-id-field="movie_id"
                         data-save-url="{% url 'update_watch_history' %}"
-                        {% if src.poster %}poster="{{ src.poster.url }}"
+                        {% if current_source.poster %}poster="{{ current_source.poster.url }}"
                         {% elif movie.banner_img %}poster="{{ movie.banner_img.image.url }}"
                         {% elif movie.thumb_img %}poster="{{ movie.thumb_img.image.url }}"
                         {% endif %}>
-                        <source src="{{ src.video_url }}" type="video/mp4">
+                        <source src="{{ playable_url }}" type="video/mp4">
+                        {% for sub in current_source.subtitles.all %}
+                        <track kind="subtitles" src="{{ sub.file_url }}" srclang="{{ sub.language_code }}"
+                            label="{{ sub.label }}" {% if sub.is_default %}default{% endif %}>
+                        {% endfor %}
                         Your browser does not support the video tag.
                     </video>
                     {% else %}
@@ -42,7 +45,6 @@
                     {% endif %}
                     <p class="text-center mt-2">No video source available for this movie.</p>
                     {% endif %}
-                    {% endwith %}
                 </div>
             </div>
         </div>
@@ -59,8 +61,8 @@
                         <p class="primery">{{ group.grouper|upper }}</p>
                         <div class="btn-block">
                             {% for src in group.list %}
-                            <a href="{% url 'streaming_movie' movie.id %}"
-                               class="{% if forloop.first %}active{% endif %}">
+                            <a href="{% url 'streaming_movie' movie.id %}?source={{ src.id }}"
+                               class="{% if current_source.id == src.id %}active{% endif %}">
                                 {{ src.label }}
                             </a>
                             {% endfor %}

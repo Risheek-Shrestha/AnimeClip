@@ -3,10 +3,18 @@ from django import forms
 from .models import (
     Profile, Anime, Movie, Genre, Season, Episode,
     VideoSource, MovieSource, Comment, CommentLike, MediaImage,
-    Recommendation
+    Recommendation, Subtitle
 )
 from .widgets import CloudinaryVideoWidget
 import os
+
+
+# ── Subtitle (inlined under VideoSource / MovieSource) ─────────────────────────
+
+class SubtitleInline(admin.TabularInline):
+    model = Subtitle
+    extra = 0
+    fields = ('label', 'language_code', 'file_url', 'is_default')
 
 
 # ── VideoSource ────────────────────────────────────────────────────────────────
@@ -27,6 +35,7 @@ class VideoSourceForm(forms.ModelForm):
 @admin.register(VideoSource)
 class VideoSourceAdmin(admin.ModelAdmin):
     form = VideoSourceForm
+    inlines = [SubtitleInline]
 
 
 # ── MovieSource ────────────────────────────────────────────────────────────────
@@ -47,6 +56,7 @@ class MovieSourceForm(forms.ModelForm):
 @admin.register(MovieSource)
 class MovieSourceAdmin(admin.ModelAdmin):
     form = MovieSourceForm
+    inlines = [SubtitleInline]
 
 
 # ── Recommendation (machine-generated — view only, don't hand-edit) ───────────
@@ -158,3 +168,10 @@ class MediaImageAdmin(admin.ModelAdmin):
     list_display = ('__str__', 'type')
     list_filter = ('type',)
     search_fields = ('anime__title', 'movie__title')
+
+
+@admin.register(Subtitle)
+class SubtitleAdmin(admin.ModelAdmin):
+    list_display = ('__str__', 'language_code', 'is_default')
+    list_filter = ('language_code', 'is_default')
+    search_fields = ('label', 'video_source__episode__season__anime__title', 'movie_source__movie__title')

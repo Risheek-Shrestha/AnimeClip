@@ -155,6 +155,15 @@ CACHES = {
     }
 }
 
+# django-ratelimit fails *closed* by default: if it can't read/write a
+# counter in the cache (e.g. Redis is down or unreachable), it treats the
+# request as rate-limited rather than as "unknown". Combined with
+# IGNORE_EXCEPTIONS above, that means a Redis outage would silently block
+# every login and signup attempt — a cache problem turning into a site-wide
+# auth outage. Fail open instead: if the cache can't be reached, skip rate
+# limiting rather than lock everyone out.
+RATELIMIT_FAIL_OPEN = True
+
 if not DEBUG:
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True

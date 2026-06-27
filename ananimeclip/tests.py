@@ -1,11 +1,13 @@
-from django.test import TestCase, Client
+from django.test import TestCase, Client, override_settings
 from django.contrib.auth.models import User
 from django.urls import reverse
+from django.core.exceptions import ValidationError
 from .models import (
     Profile, Genre, Anime, Movie, Season, Episode,
     WatchHistory, WatchLater, Playlist, PlaylistItem,
-    VideoSource, MovieSource, SubProfile, Follow, Notification,
+    VideoSource, MovieSource, SubProfile, Follow, Notification, Subtitle,
 )
+from .video_access import sign_video_url, unsign_video_url
 
 
 # ──────────────────────────────────────────────────────────────
@@ -200,6 +202,55 @@ class AuthViewTest(TestCase):
         self.assertContains(resp, 'expired')
         user.refresh_from_db()
         self.assertFalse(user.is_active)
+
+
+# ──────────────────────────────────────────────────────────────
+# Rate limiting must fail OPEN, not closed, when the cache is down.
+#
+# django-ratelimit treats a cache it can't read/write as "rate limited".
+# Combined with IGNORE_EXCEPTIONS on the Redis cache backend, an outage of
+# Redis alone — with no code change, no attacker, no actual traffic spike —
+# would otherwise silently block every login and signup attempt. This is
+# exactly what happened in CI, which never provisions a Redis service.
+# RATELIMIT_FAIL_OPEN in settings.py is the fix; this test guards it.
+# ──────────────────────────────────────────────────────────────
+
+_UNREACHABLE_CACHE = {
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        # Nothing listens here — guaranteed connection failure, regardless
+        # of whether a real Redis happens to be running wherever this test
+        # executes.
+        'LOCATION': 'redis://127.0.0.1:6399/1',
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+            'IGNORE_EXCEPTIONS': True,
+            'SOCKET_CONNECT_TIMEOUT': 1,
+            'SOCKET_TIMEOUT': 1,
+        },
+    }
+}
+
+
+@override_settings(CACHES=_UNREACHABLE_CACHE)
+class RateLimitFailsOpenTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+
+    def test_signup_proceeds_when_cache_unreachable(self):
+        resp = self.client.post(reverse('signup'), {
+            'name': 'Eve', 'email': 'eve@test.com',
+            'password': 'secret123', 'confirm_password': 'secret123', 'age': 22,
+        })
+        self.assertTemplateUsed(resp, 'verify_pending.html')
+        self.assertTrue(User.objects.filter(username='eve@test.com').exists())
+
+    def test_login_proceeds_when_cache_unreachable(self):
+        make_user(username='cachefail@test.com', password='pass1234')
+        resp = self.client.post(reverse('login'), {
+            'email': 'cachefail@test.com', 'password': 'pass1234',
+        })
+        self.assertRedirects(resp, reverse('index'))
 
 
 # ──────────────────────────────────────────────────────────────
@@ -664,3 +715,185 @@ class NotifyMovieReleasesCommandTest(TestCase):
         movie.refresh_from_db()
         self.assertFalse(movie.release_notified)
         self.assertFalse(Notification.objects.filter(user=user, movie=movie).exists())
+
+# ──────────────────────────────────────────────────────────────
+# Signed video playback links (video_access.py)
+# ──────────────────────────────────────────────────────────────
+
+class VideoAccessTokenTest(TestCase):
+    def test_roundtrip(self):
+        token = sign_video_url('https://example.com/v.mp4')
+        self.assertEqual(unsign_video_url(token), 'https://example.com/v.mp4')
+
+    def test_token_does_not_contain_raw_url(self):
+        token = sign_video_url('https://example.com/super-secret-episode.mp4')
+        self.assertNotIn('super-secret-episode', token)
+
+    def test_expired_token_returns_none(self):
+        token = sign_video_url('https://example.com/v.mp4')
+        # max_age=-1 guarantees the token is "too old" regardless of clock resolution
+        self.assertIsNone(unsign_video_url(token, max_age=-1))
+
+    def test_tampered_token_returns_none(self):
+        token = sign_video_url('https://example.com/v.mp4')
+        tampered = token[:-2] + ('aa' if token[-2:] != 'aa' else 'bb')
+        self.assertIsNone(unsign_video_url(tampered))
+
+    def test_garbage_token_returns_none(self):
+        self.assertIsNone(unsign_video_url('not-a-real-token'))
+
+    def test_empty_token_returns_none(self):
+        self.assertIsNone(unsign_video_url(''))
+        self.assertIsNone(unsign_video_url(None))
+
+
+class StreamRedirectViewTest(TestCase):
+    def setUp(self):
+        self.user = make_user(username='viewer', age=25)
+
+    def test_requires_login(self):
+        token = sign_video_url('https://example.com/v.mp4')
+        resp = self.client.get(reverse('stream_redirect', args=[token]))
+        self.assertEqual(resp.status_code, 302)
+        self.assertIn(reverse('login'), resp.url)
+
+    def test_valid_token_redirects_to_real_url(self):
+        self.client.force_login(self.user)
+        token = sign_video_url('https://example.com/v.mp4')
+        resp = self.client.get(reverse('stream_redirect', args=[token]))
+        self.assertRedirects(resp, 'https://example.com/v.mp4', fetch_redirect_response=False)
+
+    def test_invalid_token_404s(self):
+        self.client.force_login(self.user)
+        resp = self.client.get(reverse('stream_redirect', args=['garbage-token']))
+        self.assertEqual(resp.status_code, 404)
+
+
+# ──────────────────────────────────────────────────────────────
+# Streaming pages: source switching + signed URLs + subtitles
+# ──────────────────────────────────────────────────────────────
+
+class StreamingSourceSwitchingTest(TestCase):
+    def setUp(self):
+        self.user = make_user(username='switcher', age=25)
+        self.anime = make_anime()
+        self.episode = make_episode(self.anime)
+        self.sub_source = VideoSource.objects.create(
+            episode=self.episode, label='1080p', type='sub',
+            video_url='https://example.com/sub.mp4',
+        )
+        self.dub_source = VideoSource.objects.create(
+            episode=self.episode, label='1080p', type='dub',
+            video_url='https://example.com/dub.mp4',
+        )
+        self.client.force_login(self.user)
+
+    def test_default_source_is_first(self):
+        resp = self.client.get(reverse('streaming', args=[self.episode.id]))
+        self.assertEqual(resp.context['current_source'].pk, self.sub_source.pk)
+
+    def test_source_query_param_switches_source(self):
+        resp = self.client.get(
+            reverse('streaming', args=[self.episode.id]), {'source': self.dub_source.pk}
+        )
+        self.assertEqual(resp.context['current_source'].pk, self.dub_source.pk)
+
+    def test_invalid_source_param_falls_back_to_first(self):
+        resp = self.client.get(
+            reverse('streaming', args=[self.episode.id]), {'source': 999999}
+        )
+        self.assertEqual(resp.context['current_source'].pk, self.sub_source.pk)
+
+    def test_raw_video_url_never_appears_in_response(self):
+        resp = self.client.get(reverse('streaming', args=[self.episode.id]))
+        self.assertNotContains(resp, 'https://example.com/sub.mp4')
+        self.assertNotContains(resp, 'https://example.com/dub.mp4')
+
+    def test_response_uses_signed_watch_link(self):
+        resp = self.client.get(reverse('streaming', args=[self.episode.id]))
+        self.assertContains(resp, '/watch/')
+        signed_url = resp.context['playable_url']
+        self.assertTrue(signed_url.startswith('/watch/'))
+        token = signed_url.rsplit('/watch/', 1)[1].rstrip('/')
+        self.assertEqual(unsign_video_url(token), 'https://example.com/sub.mp4')
+
+    def test_switcher_buttons_link_to_distinct_sources(self):
+        resp = self.client.get(reverse('streaming', args=[self.episode.id]))
+        self.assertContains(resp, f'?source={self.sub_source.pk}')
+        self.assertContains(resp, f'?source={self.dub_source.pk}')
+
+
+class MovieStreamingSourceSwitchingTest(TestCase):
+    def setUp(self):
+        self.user = make_user(username='movie_switcher', age=25)
+        self.movie = make_movie()
+        self.source = MovieSource.objects.create(
+            movie=self.movie, label='1080p', type='sub',
+            video_url='https://example.com/movie.mp4',
+        )
+        self.client.force_login(self.user)
+
+    def test_raw_video_url_never_appears_in_response(self):
+        resp = self.client.get(reverse('streaming_movie', args=[self.movie.id]))
+        self.assertNotContains(resp, 'https://example.com/movie.mp4')
+        self.assertContains(resp, '/watch/')
+
+
+class SubtitleRenderingTest(TestCase):
+    def setUp(self):
+        self.user = make_user(username='caption_viewer', age=25)
+        self.anime = make_anime()
+        self.episode = make_episode(self.anime)
+        self.source = VideoSource.objects.create(
+            episode=self.episode, label='1080p', type='sub',
+            video_url='https://example.com/v.mp4',
+        )
+        Subtitle.objects.create(
+            video_source=self.source, language_code='en', label='English',
+            file_url='https://example.com/captions/en.vtt', is_default=True,
+        )
+        self.client.force_login(self.user)
+
+    def test_subtitle_track_rendered(self):
+        resp = self.client.get(reverse('streaming', args=[self.episode.id]))
+        self.assertContains(resp, '<track')
+        self.assertContains(resp, 'https://example.com/captions/en.vtt')
+        self.assertContains(resp, 'English')
+
+
+# ──────────────────────────────────────────────────────────────
+# Subtitle model
+# ──────────────────────────────────────────────────────────────
+
+class SubtitleModelTest(TestCase):
+    def setUp(self):
+        anime = make_anime()
+        episode = make_episode(anime)
+        self.source = VideoSource.objects.create(
+            episode=episode, label='1080p', type='sub',
+            video_url='https://example.com/v.mp4',
+        )
+
+    def test_valid_subtitle_passes_clean(self):
+        sub = Subtitle(
+            video_source=self.source, language_code='en', label='English',
+            file_url='https://example.com/en.vtt',
+        )
+        sub.full_clean()  # should not raise
+
+    def test_clean_rejects_neither_source_set(self):
+        sub = Subtitle(language_code='en', label='English', file_url='https://example.com/en.vtt')
+        with self.assertRaises(ValidationError):
+            sub.clean()
+
+    def test_clean_rejects_both_sources_set(self):
+        movie_source = MovieSource.objects.create(
+            movie=make_movie(), label='1080p', type='sub',
+            video_url='https://example.com/m.mp4',
+        )
+        sub = Subtitle(
+            video_source=self.source, movie_source=movie_source,
+            language_code='en', label='English', file_url='https://example.com/en.vtt',
+        )
+        with self.assertRaises(ValidationError):
+            sub.clean()

@@ -5,7 +5,8 @@ from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
 from django.views.decorators.cache import never_cache
 from django.core.cache import cache
-from django.http import JsonResponse
+from django.http import JsonResponse, Http404
+from django.urls import reverse
 from django.contrib import messages
 from .models import (
     Profile, Anime, Episode, Comment, CommentLike,
@@ -18,6 +19,7 @@ from .content_access import (
     can_view, filter_age_appropriate, filter_index_context,
     filter_movies_context, filter_list_age_appropriate, restricted_to_pg13,
 )
+from .video_access import sign_video_url, unsign_video_url
 from django.db.models import Max, Prefetch, Q
 from django.utils import timezone
 from django_ratelimit.decorators import ratelimit
@@ -480,7 +482,7 @@ def streaming(request, episode_id):
         anime_id_c   = None
 
     episode = get_object_or_404(
-        Episode.objects.select_related('season__anime').prefetch_related('sources'),
+        Episode.objects.select_related('season__anime').prefetch_related('sources__subtitles'),
         id=episode_id_c,
     )
     anime = get_object_or_404(
@@ -547,6 +549,26 @@ def streaming(request, episode_id):
 
     similar = get_similar(anime, limit=6)
 
+    # Pick which VideoSource to play. ?source=<id> lets the SUB/DUB/server
+    # buttons in the sidebar actually switch sources instead of all pointing
+    # at the same default playback. Falls back to the first source if the
+    # param is missing, invalid, or doesn't belong to this episode.
+    sources = list(episode.sources.all())
+    requested_source_id = request.GET.get('source')
+    current_source = None
+    if requested_source_id:
+        current_source = next(
+            (s for s in sources if str(s.pk) == requested_source_id), None
+        )
+    if current_source is None:
+        current_source = sources[0] if sources else None
+
+    # Never put the raw, permanent Cloudinary/video URL in the rendered
+    # page — hand out a short-lived signed link instead (see video_access.py).
+    playable_url = None
+    if current_source and current_source.video_url:
+        playable_url = reverse('stream_redirect', args=[sign_video_url(current_source.video_url)])
+
     return render(request, 'streaming.html', {
         'title': anime.title,
         'episode': episode,
@@ -558,6 +580,8 @@ def streaming(request, episode_id):
         'follower_count': anime.followers.count(),
         'resume_seconds': resume_seconds,
         'next_episode': next_episode,
+        'current_source': current_source,
+        'playable_url': playable_url,
         'similar': similar,
     })
 
@@ -569,7 +593,7 @@ def streaming_movie(request, movie_id):
     cached = safe_cache_get(CACHE_KEY)
 
     movie = get_object_or_404(
-        Movie.objects.prefetch_related('media_images', 'sources', 'genres'),
+        Movie.objects.prefetch_related('media_images', 'sources__subtitles', 'genres'),
         id=movie_id,
     )
 
@@ -604,6 +628,21 @@ def streaming_movie(request, movie_id):
 
     similar = get_similar(movie, limit=6)
 
+    # Same source-switching + signed-URL treatment as streaming() above.
+    sources = list(movie.sources.all())
+    requested_source_id = request.GET.get('source')
+    current_source = None
+    if requested_source_id:
+        current_source = next(
+            (s for s in sources if str(s.pk) == requested_source_id), None
+        )
+    if current_source is None:
+        current_source = sources[0] if sources else None
+
+    playable_url = None
+    if current_source and current_source.video_url:
+        playable_url = reverse('stream_redirect', args=[sign_video_url(current_source.video_url)])
+
     return render(request, 'streaming_movie.html', {
         'title': movie.title,
         'movie': movie,
@@ -612,8 +651,24 @@ def streaming_movie(request, movie_id):
         'is_following': is_following,
         'follower_count': movie.followers.count(),
         'resume_seconds': resume_seconds,
+        'current_source': current_source,
+        'playable_url': playable_url,
         'similar': similar,
     })
+
+
+@login_required
+def stream_redirect(request, token):
+    """
+    Resolve a short-lived signed playback token (see video_access.py) to
+    the real video URL and redirect there. Tokens expire — a copied or
+    leaked link stops working instead of granting permanent access.
+    Still requires login, same as the streaming pages that hand these out.
+    """
+    raw_url = unsign_video_url(token)
+    if not raw_url:
+        raise Http404("This playback link has expired or is invalid.")
+    return redirect(raw_url)
 
 
 
