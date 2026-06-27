@@ -1,6 +1,7 @@
 {% load static %}
+{% load i18n %}
 <!doctype html>
-<html lang="en">
+<html lang="{{ LANGUAGE_CODE }}">
 <head>
 <meta charset="UTF-8">
 <meta http-equiv="X-UA-Compatible" content="IE=Edge">
@@ -67,34 +68,34 @@
         <div class="collapse navbar-collapse" id="mynavbar">
           <ul class="navbar-nav ms-auto mainmenu">
             <li class="menu-item-has-children">
-              <a href="{% url 'index' %}">Anime</a>
+              <a href="{% url 'index' %}">{% trans "Anime" %}</a>
             </li>
             <li class="menu-item-has-children">
-              <a href="{% url 'movies' %}">Movie</a>
+              <a href="{% url 'movies' %}">{% trans "Movie" %}</a>
             </li>
             <li class="menu-item-has-children">
-              <a href="#" title="Coming Soon" class="menu-disabled">Manga</a>
+              <a href="#" title="{% trans 'Coming Soon' %}" class="menu-disabled">{% trans "Manga" %}</a>
             </li>
             <li class="menu-item-has-children dropdown">
               <a href="#" class="dropdown-toggle" id="genre"
                  data-bs-toggle="dropdown"
                  data-bs-auto-close="outside"
                  aria-expanded="false">
-                Categories <i class="fas fa-angle-down"></i>
+                {% trans "Categories" %} <i class="fas fa-angle-down"></i>
               </a>
               <ul class="dropdown-menu" aria-labelledby="genre"
                   data-popper-placement="bottom-start">
-                <li><div class="custom-control custom-checkbox"><a href="/category/action/"><i class="fas fa-bolt me-2"></i> Action</a></div></li>
-                <li><div class="custom-control custom-checkbox"><a href="/category/adventure/"><i class="fas fa-compass me-2"></i> Adventure</a></div></li>
-                <li><div class="custom-control custom-checkbox"><a href="/category/comedy/"><i class="fas fa-laugh me-2"></i> Comedy</a></div></li>
-                <li><div class="custom-control custom-checkbox"><a href="/category/drama/"><i class="fas fa-theater-masks me-2"></i> Drama</a></div></li>
-                <li><div class="custom-control custom-checkbox"><a href="/category/fantasy/"><i class="fas fa-hat-wizard me-2"></i> Fantasy</a></div></li>
-                <li><div class="custom-control custom-checkbox"><a href="/category/horror/"><i class="fas fa-skull me-2"></i> Horror</a></div></li>
-                <li><div class="custom-control custom-checkbox"><a href="/category/isekai/"><i class="fas fa-door-open me-2"></i> Isekai</a></div></li>
-                <li><div class="custom-control custom-checkbox"><a href="/category/romance/"><i class="fas fa-heart me-2"></i> Romance</a></div></li>
-                <li><div class="custom-control custom-checkbox"><a href="/category/sci-fi/"><i class="fas fa-rocket me-2"></i> Sci-Fi</a></div></li>
-                <li><div class="custom-control custom-checkbox"><a href="/category/slice-of-life/"><i class="fas fa-leaf me-2"></i> Slice of Life</a></div></li>
-                <li><div class="custom-control custom-checkbox"><a href="{% url 'all_categories' %}"><i class="fas fa-th me-2"></i> View All</a></div></li>
+                <li><div class="custom-control custom-checkbox"><a href="/category/action/"><i class="fas fa-bolt me-2"></i> {% trans "Action" %}</a></div></li>
+                <li><div class="custom-control custom-checkbox"><a href="/category/adventure/"><i class="fas fa-compass me-2"></i> {% trans "Adventure" %}</a></div></li>
+                <li><div class="custom-control custom-checkbox"><a href="/category/comedy/"><i class="fas fa-laugh me-2"></i> {% trans "Comedy" %}</a></div></li>
+                <li><div class="custom-control custom-checkbox"><a href="/category/drama/"><i class="fas fa-theater-masks me-2"></i> {% trans "Drama" %}</a></div></li>
+                <li><div class="custom-control custom-checkbox"><a href="/category/fantasy/"><i class="fas fa-hat-wizard me-2"></i> {% trans "Fantasy" %}</a></div></li>
+                <li><div class="custom-control custom-checkbox"><a href="/category/horror/"><i class="fas fa-skull me-2"></i> {% trans "Horror" %}</a></div></li>
+                <li><div class="custom-control custom-checkbox"><a href="/category/isekai/"><i class="fas fa-door-open me-2"></i> {% trans "Isekai" %}</a></div></li>
+                <li><div class="custom-control custom-checkbox"><a href="/category/romance/"><i class="fas fa-heart me-2"></i> {% trans "Romance" %}</a></div></li>
+                <li><div class="custom-control custom-checkbox"><a href="/category/sci-fi/"><i class="fas fa-rocket me-2"></i> {% trans "Sci-Fi" %}</a></div></li>
+                <li><div class="custom-control custom-checkbox"><a href="/category/slice-of-life/"><i class="fas fa-leaf me-2"></i> {% trans "Slice of Life" %}</a></div></li>
+                <li><div class="custom-control custom-checkbox"><a href="{% url 'all_categories' %}"><i class="fas fa-th me-2"></i> {% trans "View All" %}</a></div></li>
                 <li><hr class="dropdown-divider"></li>
               </ul>
             </li>
@@ -102,19 +103,42 @@
 
           <form class="header-search-form" role="search">
             <div class="input-group form-group header-search-box position-relative">
-              <button class="input-group-text anime-btn" type="submit" aria-label="Search">
+              <button class="input-group-text anime-btn" type="submit" aria-label="{% trans 'Search' %}">
                 <i class="fas fa-search"></i>
               </button>
               <input class="form-control" type="search" id="searchInput"
-                     placeholder="Search anime, movies…" autocomplete="off"
-                     aria-label="Search anime, movies">
+                     placeholder="{% trans 'Search anime, movies…' %}" autocomplete="off"
+                     aria-label="{% trans 'Search anime, movies' %}">
               <div id="searchResults" class="search-dropdown" role="listbox"></div>
             </div>
           </form>
 
           <div class="d-flex right-nav align-items-center">
+            <div class="lang-switcher dropdown me-3">
+              <button type="button" class="lang-trigger dropdown-toggle" id="langMenuBtn"
+                      data-bs-toggle="dropdown" aria-expanded="false" title="{% trans 'Language' %}">
+                <i class="fas fa-globe"></i>
+                <span class="lang-current">{{ LANGUAGE_CODE|upper }}</span>
+              </button>
+              <ul class="dropdown-menu lang-dropdown" aria-labelledby="langMenuBtn">
+                {% get_current_language as CURRENT_LANGUAGE %}
+                {% get_available_languages as AVAILABLE_LANGUAGES %}
+                {% for lang_code, lang_name in AVAILABLE_LANGUAGES %}
+                <li>
+                  <form action="{% url 'set_language' %}" method="post" class="lang-form">
+                    {% csrf_token %}
+                    <input name="next" type="hidden" value="{{ request.path }}">
+                    <input name="language" type="hidden" value="{{ lang_code }}">
+                    <button type="submit" class="dropdown-item{% if lang_code == CURRENT_LANGUAGE %} active{% endif %}">
+                      {{ lang_name }}
+                    </button>
+                  </form>
+                </li>
+                {% endfor %}
+              </ul>
+            </div>
             {% if user.is_authenticated %}
-              <a href="{% url 'notifications' %}" class="notif-bell me-3" aria-label="Notifications" title="Notifications">
+              <a href="{% url 'notifications' %}" class="notif-bell me-3" aria-label="{% trans 'Notifications' %}" title="{% trans 'Notifications' %}">
                 <i class="fa fa-bell"></i>
                 {% if unread_notification_count > 0 %}
                 <span class="notif-badge">{{ unread_notification_count }}</span>
@@ -135,16 +159,16 @@
                   <i class="fas fa-chevron-down account-caret"></i>
                 </button>
                 <ul class="dropdown-menu account-dropdown" aria-labelledby="accountMenuBtn">
-                  <li class="account-dropdown-header">Signed in as <strong>{{ user.first_name }}</strong></li>
-                  <li><a class="dropdown-item" href="{% url 'profile' %}"><i class="fas fa-id-badge"></i> Account</a></li>
-                  <li><a class="dropdown-item" href="{% url 'profile_select' %}"><i class="fas fa-users"></i> Switch Profile</a></li>
+                  <li class="account-dropdown-header">{% blocktrans with name=user.first_name %}Signed in as <strong>{{ name }}</strong>{% endblocktrans %}</li>
+                  <li><a class="dropdown-item" href="{% url 'profile' %}"><i class="fas fa-id-badge"></i> {% trans "Account" %}</a></li>
+                  <li><a class="dropdown-item" href="{% url 'profile_select' %}"><i class="fas fa-users"></i> {% trans "Switch Profile" %}</a></li>
                   <li><hr class="dropdown-divider"></li>
-                  <li><a class="dropdown-item" href="{% url 'logout' %}"><i class="fas fa-arrow-right-from-bracket"></i> Log Out</a></li>
+                  <li><a class="dropdown-item" href="{% url 'logout' %}"><i class="fas fa-arrow-right-from-bracket"></i> {% trans "Log Out" %}</a></li>
                 </ul>
               </div>
             {% else %}
-              <a href="{% url 'signup' %}" class="anime-btn2 light me-3">Sign Up</a>
-              <a href="{% url 'login' %}" class="anime-btn2 dark">Log In</a>
+              <a href="{% url 'signup' %}" class="anime-btn2 light me-3">{% trans "Sign Up" %}</a>
+              <a href="{% url 'login' %}" class="anime-btn2 dark">{% trans "Log In" %}</a>
             {% endif %}
           </div>
         </div>
@@ -177,8 +201,8 @@
               <img alt="Animeloop" src="{% static 'assets/media/logo.png' %}"
                    width="140" height="40" loading="lazy">
             </a>
-            <p class="mb-5">Discover a universe of anime, movies, and manga — curated for every kind of fan. Stream in HD, track your progress, and get personalised picks.</p>
-            <h6 class="mb-2">Join the Community</h6>
+            <p class="mb-5">{% blocktrans %}Discover a universe of anime, movies, and manga — curated for every kind of fan. Stream in HD, track your progress, and get personalised picks.{% endblocktrans %}</p>
+            <h6 class="mb-2">{% trans "Join the Community" %}</h6>
             <ul class="social-icons">
               <li><a href="#" aria-label="Reddit">   <img alt="Reddit"    src="{% static 'assets/media/footer/reddit.png' %}"    loading="lazy" width="24" height="24"></a></li>
               <li><a href="#" aria-label="Discord">  <img alt="Discord"   src="{% static 'assets/media/footer/discord.png' %}"   loading="lazy" width="24" height="24"></a></li>
@@ -189,16 +213,16 @@
         </div>
         <div class="col-lg-7 col-sm-12">
           <div class="footer-widget align-middle">
-            <h6>Get Notified</h6>
-            <p class="light-text">New episodes, season drops, and exclusives — delivered to your inbox.</p>
+            <h6>{% trans "Get Notified" %}</h6>
+            <p class="light-text">{% trans "New episodes, season drops, and exclusives — delivered to your inbox." %}</p>
             <form>
               <div class="input-group form-group footer-email-box">
                 <input class="form-control" type="email" name="email"
-                       placeholder="your@email.com" required>
-                <button class="input-group-text anime-btn" type="submit">Subscribe</button>
+                       placeholder="{% trans 'your@email.com' %}" required>
+                <button class="input-group-text anime-btn" type="submit">{% trans "Subscribe" %}</button>
               </div>
             </form>
-            <p class="text">By subscribing you agree to our terms and conditions</p>
+            <p class="text">{% trans "By subscribing you agree to our terms and conditions" %}</p>
           </div>
         </div>
       </div>
@@ -210,13 +234,13 @@
       <div class="row">
         <div class="col-lg-6 col-12">
           <div class="footer-copyright">
-            <span class="copyright-text">&copy; 2025 All rights reserved by <a href="#">Animeloop</a>.</span>
+            <span class="copyright-text">{% blocktrans %}&copy; 2025 All rights reserved by <a href="#">Animeloop</a>.{% endblocktrans %}</span>
           </div>
         </div>
         <div class="col-lg-6 col-12">
           <div class="footer-bottom-link text-end">
-            <a href="#">Privacy Policy</a>
-            <a href="#" class="ps-2">Comments Policy</a>
+            <a href="#">{% trans "Privacy Policy" %}</a>
+            <a href="#" class="ps-2">{% trans "Comments Policy" %}</a>
           </div>
         </div>
       </div>

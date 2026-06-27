@@ -1,0 +1,257 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-06-27 17:19+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+#: templates/base.html:71 templates/search_results.html:58
+msgid "Anime"
+msgstr "Anime"
+
+#: templates/base.html:74 templates/search_results.html:33
+msgid "Movie"
+msgstr "Película"
+
+#: templates/base.html:77
+msgid "Coming Soon"
+msgstr "Próximamente"
+
+#: templates/base.html:77
+msgid "Manga"
+msgstr "Manga"
+
+#: templates/base.html:84
+msgid "Categories"
+msgstr "Categorías"
+
+#: templates/base.html:88
+msgid "Action"
+msgstr "Acción"
+
+#: templates/base.html:89
+msgid "Adventure"
+msgstr "Aventura"
+
+#: templates/base.html:90
+msgid "Comedy"
+msgstr "Comedia"
+
+#: templates/base.html:91
+msgid "Drama"
+msgstr "Drama"
+
+#: templates/base.html:92
+msgid "Fantasy"
+msgstr "Fantasía"
+
+#: templates/base.html:93
+msgid "Horror"
+msgstr "Terror"
+
+#: templates/base.html:94
+msgid "Isekai"
+msgstr "Isekai"
+
+#: templates/base.html:95
+msgid "Romance"
+msgstr "Romance"
+
+#: templates/base.html:96
+msgid "Sci-Fi"
+msgstr "Ciencia Ficción"
+
+#: templates/base.html:97
+msgid "Slice of Life"
+msgstr "Recuento de Vida"
+
+#: templates/base.html:98
+msgid "View All"
+msgstr "Ver Todo"
+
+#: templates/base.html:106
+msgid "Search"
+msgstr "Buscar"
+
+#: templates/base.html:110
+msgid "Search anime, movies…"
+msgstr "Buscar anime, películas…"
+
+#: templates/base.html:111
+msgid "Search anime, movies"
+msgstr "Buscar anime, películas"
+
+#: templates/base.html:119
+msgid "Language"
+msgstr "Idioma"
+
+#: templates/base.html:141
+msgid "Notifications"
+msgstr "Notificaciones"
+
+#: templates/base.html:162
+#, python-format
+msgid "Signed in as <strong>%(name)s</strong>"
+msgstr "Conectado como <strong>%(name)s</strong>"
+
+#: templates/base.html:163
+msgid "Account"
+msgstr "Cuenta"
+
+#: templates/base.html:164
+msgid "Switch Profile"
+msgstr "Cambiar Perfil"
+
+#: templates/base.html:166
+msgid "Log Out"
+msgstr "Cerrar Sesión"
+
+#: templates/base.html:170
+msgid "Sign Up"
+msgstr "Registrarse"
+
+#: templates/base.html:171 templates/login.html:41
+msgid "Log In"
+msgstr "Iniciar Sesión"
+
+#: templates/base.html:204
+msgid ""
+"Discover a universe of anime, movies, and manga — curated for every kind of "
+"fan. Stream in HD, track your progress, and get personalised picks."
+msgstr ""
+"Descubre un universo de anime, películas y manga — seleccionado para todo "
+"tipo de fan. Transmite en HD, sigue tu progreso y recibe recomendaciones "
+"personalizadas."
+
+#: templates/base.html:205
+msgid "Join the Community"
+msgstr "Únete a la Comunidad"
+
+#: templates/base.html:216
+msgid "Get Notified"
+msgstr "Recibe Notificaciones"
+
+#: templates/base.html:217
+msgid "New episodes, season drops, and exclusives — delivered to your inbox."
+msgstr "Nuevos episodios, estrenos de temporada y exclusivos — directo a tu correo."
+
+#: templates/base.html:221
+msgid "your@email.com"
+msgstr "tucorreo@email.com"
+
+#: templates/base.html:222
+msgid "Subscribe"
+msgstr "Suscribirse"
+
+#: templates/base.html:225
+msgid "By subscribing you agree to our terms and conditions"
+msgstr "Al suscribirte, aceptas nuestros términos y condiciones"
+
+#: templates/base.html:237
+msgid "&copy; 2025 All rights reserved by <a href=\"#\">Animeloop</a>."
+msgstr "&copy; 2025 Todos los derechos reservados por <a href=\"#\">Animeloop</a>."
+
+#: templates/base.html:242
+msgid "Privacy Policy"
+msgstr "Política de Privacidad"
+
+#: templates/base.html:243
+msgid "Comments Policy"
+msgstr "Política de Comentarios"
+
+#: templates/login.html:11
+msgid "Welcome Back"
+msgstr "Bienvenido de Vuelta"
+
+#: templates/login.html:25 templates/signup.html:30
+msgid "Email address"
+msgstr "Correo electrónico"
+
+#: templates/login.html:30
+msgid "Password"
+msgstr "Contraseña"
+
+#: templates/login.html:37
+msgid "Forgot Password?"
+msgstr "¿Olvidaste tu Contraseña?"
+
+#: templates/login.html:49 templates/signup.html:50
+msgid "I wish to receive news and promotions from Animeloop by email."
+msgstr "Deseo recibir noticias y promociones de Animeloop por correo electrónico."
+
+#: templates/login.html:54 templates/signup.html:55
+msgid ""
+"By continuing, you agree to Animeloop <a href=\"#\">Terms of Use</a> and <a "
+"href=\"#\">Privacy Policy</a>."
+msgstr ""
+"Al continuar, aceptas los <a href=\"#\">Términos de Uso</a> y la <a "
+"href=\"#\">Política de Privacidad</a> de Animeloop."
+
+#: templates/login.html:58
+#, python-format
+msgid "Don't have an account? <a href=\"%(signup_url)s\">Sign Up</a>"
+msgstr "¿No tienes una cuenta? <a href=\"%(signup_url)s\">Regístrate</a>"
+
+#: templates/search_results.html:9
+#, python-format
+msgid "Search results for: \"%(query)s\""
+msgstr "Resultados de búsqueda para: \"%(query)s\""
+
+#: templates/search_results.html:14
+msgid "Movies"
+msgstr "Películas"
+
+#: templates/search_results.html:28 templates/search_results.html:77
+msgid "Play Now"
+msgstr "Reproducir Ahora"
+
+#: templates/search_results.html:38 templates/search_results.html:41
+#: templates/search_results.html:95 templates/search_results.html:98
+msgid "Watch Later"
+msgstr "Ver Más Tarde"
+
+#: templates/search_results.html:39 templates/search_results.html:42
+#: templates/search_results.html:96 templates/search_results.html:99
+msgid "Add to Playlist"
+msgstr "Agregar a Lista"
+
+#: templates/search_results.html:116
+#, python-format
+msgid "No results found for \"%(query)s\"."
+msgstr "No se encontraron resultados para \"%(query)s\"."
+
+#: templates/signup.html:11 templates/signup.html:59
+msgid "Create Account"
+msgstr "Crear Cuenta"
+
+#: templates/signup.html:22
+msgid "Full name"
+msgstr "Nombre completo"
+
+#: templates/signup.html:26
+msgid "Age"
+msgstr "Edad"
+
+#: templates/signup.html:34
+msgid "Create password"
+msgstr "Crear contraseña"
+
+#: templates/signup.html:41
+msgid "Confirm password"
+msgstr "Confirmar contraseña"
+
+#: templates/signup.html:64
+#, python-format
+msgid "Already have an account? <a href=\"%(login_url)s\">Log In</a>"
+msgstr "¿Ya tienes una cuenta? <a href=\"%(login_url)s\">Inicia Sesión</a>"

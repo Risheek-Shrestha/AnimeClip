@@ -1,0 +1,256 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-06-27 17:23+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+#: templates/base.html:71 templates/search_results.html:58
+msgid "Anime"
+msgstr "एनीमे"
+
+#: templates/base.html:74 templates/search_results.html:33
+msgid "Movie"
+msgstr "मूवी"
+
+#: templates/base.html:77
+msgid "Coming Soon"
+msgstr "शीघ्र आ रहा है"
+
+#: templates/base.html:77
+msgid "Manga"
+msgstr "मांगा"
+
+#: templates/base.html:84
+msgid "Categories"
+msgstr "श्रेणियाँ"
+
+#: templates/base.html:88
+msgid "Action"
+msgstr "एक्शन"
+
+#: templates/base.html:89
+msgid "Adventure"
+msgstr "एडवेंचर"
+
+#: templates/base.html:90
+msgid "Comedy"
+msgstr "कॉमेडी"
+
+#: templates/base.html:91
+msgid "Drama"
+msgstr "ड्रामा"
+
+#: templates/base.html:92
+msgid "Fantasy"
+msgstr "फ़ैंटेसी"
+
+#: templates/base.html:93
+msgid "Horror"
+msgstr "हॉरर"
+
+#: templates/base.html:94
+msgid "Isekai"
+msgstr "इसेकाई"
+
+#: templates/base.html:95
+msgid "Romance"
+msgstr "रोमांस"
+
+#: templates/base.html:96
+msgid "Sci-Fi"
+msgstr "साइ-फाई"
+
+#: templates/base.html:97
+msgid "Slice of Life"
+msgstr "स्लाइस ऑफ़ लाइफ़"
+
+#: templates/base.html:98
+msgid "View All"
+msgstr "सभी देखें"
+
+#: templates/base.html:106
+msgid "Search"
+msgstr "खोजें"
+
+#: templates/base.html:110
+msgid "Search anime, movies…"
+msgstr "एनीमे, मूवी खोजें…"
+
+#: templates/base.html:111
+msgid "Search anime, movies"
+msgstr "एनीमे, मूवी खोजें"
+
+#: templates/base.html:119
+msgid "Language"
+msgstr "भाषा"
+
+#: templates/base.html:141
+msgid "Notifications"
+msgstr "सूचनाएं"
+
+#: templates/base.html:162
+#, python-format
+msgid "Signed in as <strong>%(name)s</strong>"
+msgstr "<strong>%(name)s</strong> के रूप में साइन इन"
+
+#: templates/base.html:163
+msgid "Account"
+msgstr "खाता"
+
+#: templates/base.html:164
+msgid "Switch Profile"
+msgstr "प्रोफ़ाइल बदलें"
+
+#: templates/base.html:166
+msgid "Log Out"
+msgstr "लॉग आउट"
+
+#: templates/base.html:170
+msgid "Sign Up"
+msgstr "साइन अप"
+
+#: templates/base.html:171 templates/login.html:41
+msgid "Log In"
+msgstr "लॉग इन"
+
+#: templates/base.html:204
+msgid ""
+"Discover a universe of anime, movies, and manga — curated for every kind of "
+"fan. Stream in HD, track your progress, and get personalised picks."
+msgstr ""
+"एनीमे, मूवी और मांगा का एक संसार खोजें — हर तरह के फैन के लिए चुना गया। HD "
+"में स्ट्रीम करें, अपनी प्रगति को ट्रैक करें, और व्यक्तिगत सुझाव पाएं।"
+
+#: templates/base.html:205
+msgid "Join the Community"
+msgstr "समुदाय से जुड़ें"
+
+#: templates/base.html:216
+msgid "Get Notified"
+msgstr "सूचना प्राप्त करें"
+
+#: templates/base.html:217
+msgid "New episodes, season drops, and exclusives — delivered to your inbox."
+msgstr "नए एपिसोड, सीज़न रिलीज़ और एक्सक्लूसिव — सीधे आपके इनबॉक्स में।"
+
+#: templates/base.html:221
+msgid "your@email.com"
+msgstr "your@email.com"
+
+#: templates/base.html:222
+msgid "Subscribe"
+msgstr "सब्सक्राइब करें"
+
+#: templates/base.html:225
+msgid "By subscribing you agree to our terms and conditions"
+msgstr "सब्सक्राइब करके आप हमारी शर्तों से सहमत होते हैं"
+
+#: templates/base.html:237
+msgid "&copy; 2025 All rights reserved by <a href=\"#\">Animeloop</a>."
+msgstr "&copy; 2025 <a href=\"#\">Animeloop</a> द्वारा सर्वाधिकार सुरक्षित।"
+
+#: templates/base.html:242
+msgid "Privacy Policy"
+msgstr "प्राइवेसी पॉलिसी"
+
+#: templates/base.html:243
+msgid "Comments Policy"
+msgstr "कमेंट पॉलिसी"
+
+#: templates/login.html:11
+msgid "Welcome Back"
+msgstr "वापसी पर स्वागत है"
+
+#: templates/login.html:25 templates/signup.html:30
+msgid "Email address"
+msgstr "ईमेल पता"
+
+#: templates/login.html:30
+msgid "Password"
+msgstr "पासवर्ड"
+
+#: templates/login.html:37
+msgid "Forgot Password?"
+msgstr "पासवर्ड भूल गए?"
+
+#: templates/login.html:49 templates/signup.html:50
+msgid "I wish to receive news and promotions from Animeloop by email."
+msgstr "मैं Animeloop से ईमेल द्वारा समाचार और प्रचार प्राप्त करना चाहता हूँ।"
+
+#: templates/login.html:54 templates/signup.html:55
+msgid ""
+"By continuing, you agree to Animeloop <a href=\"#\">Terms of Use</a> and <a "
+"href=\"#\">Privacy Policy</a>."
+msgstr ""
+"जारी रखकर, आप Animeloop की <a href=\"#\">उपयोग की शर्तों</a> और <a "
+"href=\"#\">प्राइवेसी पॉलिसी</a> से सहमत होते हैं।"
+
+#: templates/login.html:58
+#, python-format
+msgid "Don't have an account? <a href=\"%(signup_url)s\">Sign Up</a>"
+msgstr "खाता नहीं है? <a href=\"%(signup_url)s\">साइन अप करें</a>"
+
+#: templates/search_results.html:9
+#, python-format
+msgid "Search results for: \"%(query)s\""
+msgstr "\"%(query)s\" के लिए खोज परिणाम"
+
+#: templates/search_results.html:14
+msgid "Movies"
+msgstr "मूवीज़"
+
+#: templates/search_results.html:28 templates/search_results.html:77
+msgid "Play Now"
+msgstr "अभी देखें"
+
+#: templates/search_results.html:38 templates/search_results.html:41
+#: templates/search_results.html:95 templates/search_results.html:98
+msgid "Watch Later"
+msgstr "बाद में देखें"
+
+#: templates/search_results.html:39 templates/search_results.html:42
+#: templates/search_results.html:96 templates/search_results.html:99
+msgid "Add to Playlist"
+msgstr "प्लेलिस्ट में जोड़ें"
+
+#: templates/search_results.html:116
+#, python-format
+msgid "No results found for \"%(query)s\"."
+msgstr "\"%(query)s\" के लिए कोई परिणाम नहीं मिला।"
+
+#: templates/signup.html:11 templates/signup.html:59
+msgid "Create Account"
+msgstr "खाता बनाएं"
+
+#: templates/signup.html:22
+msgid "Full name"
+msgstr "पूरा नाम"
+
+#: templates/signup.html:26
+msgid "Age"
+msgstr "उम्र"
+
+#: templates/signup.html:34
+msgid "Create password"
+msgstr "पासवर्ड बनाएं"
+
+#: templates/signup.html:41
+msgid "Confirm password"
+msgstr "पासवर्ड की पुष्टि करें"
+
+#: templates/signup.html:64
+#, python-format
+msgid "Already have an account? <a href=\"%(login_url)s\">Log In</a>"
+msgstr "पहले से खाता है? <a href=\"%(login_url)s\">लॉग इन करें</a>"

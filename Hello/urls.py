@@ -28,6 +28,7 @@ handler500 = 'ananimeclip.views.handler500'
 
 urlpatterns = [
                   path('admin/', admin.site.urls),
+                  path('i18n/', include('django.conf.urls.i18n')),
                   path("analytics/", include("analytics.urls", namespace="analytics")),
                   path('', include('ananimeclip.urls'))
               ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -1715,6 +1715,46 @@ ul.pagination li a:hover, ul.pagination li a.current {
 .account-dropdown .dropdown-divider { border-color: var(--c-border); margin: 6px 0; }
 .menu-disabled { opacity: .5; cursor: not-allowed; }
 
+/* ── UTILITY: LANGUAGE SWITCHER (navbar i18n dropdown) ───────── */
+.lang-switcher { position: relative; }
+.lang-trigger {
+  display: flex; align-items: center; gap: 6px;
+  background: transparent;
+  border: 1px solid rgba(255,255,255,.2);
+  border-radius: 24px;
+  padding: 5px 12px;
+  color: var(--c-text-1);
+  font-family: var(--font-display);
+  font-size: 12px; font-weight: 600; letter-spacing: .03em;
+  transition: var(--transition);
+  cursor: pointer;
+}
+.lang-trigger:hover, .lang-trigger[aria-expanded="true"] {
+  border-color: var(--c-gold);
+  background: var(--c-gold-dim);
+}
+.lang-current { letter-spacing: .04em; }
+.lang-dropdown {
+  min-width: 160px;
+  background: var(--c-panel);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--c-border);
+  border-radius: 14px;
+  box-shadow: var(--shadow-xl);
+  padding: 8px;
+  margin-top: 10px !important;
+}
+.lang-form { margin: 0; }
+.lang-dropdown .dropdown-item {
+  width: 100%; text-align: left;
+  background: transparent; border: none;
+  color: var(--c-text-2); font-size: 14px;
+  padding: 9px 12px; border-radius: 8px;
+  transition: var(--transition);
+}
+.lang-dropdown .dropdown-item:hover { background: var(--c-gold-dim); color: var(--c-gold); }
+.lang-dropdown .dropdown-item.active { color: var(--c-gold); font-weight: 600; }
+
 /* ── UTILITY: PROFILE SELECT (single-viewport "who's watching") ─ */
 .profile-select-section {
   min-height: calc(100vh - 90px);

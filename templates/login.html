@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load i18n %}
 {% block body %}
 
 <section class="login text-center">
@@ -7,7 +8,7 @@
         <div class="login-block">
             <div class="login-content">
                 <img src="{% static 'assets/media/icon/user.png' %}" alt="User" class="user-icon">
-                <h3>Welcome Back</h3>
+                <h3>{% trans "Welcome Back" %}</h3>
 
                 <div class="login-sec">
                     <form method="POST" action="{% url 'login' %}" class="form-validator" novalidate="novalidate">
@@ -21,23 +22,23 @@
 
                         <div class="form-group mb-4">
                             <input class="form-control" type="email" name="email" required
-                                   placeholder="Email address" autocomplete="email">
+                                   placeholder="{% trans 'Email address' %}" autocomplete="email">
                         </div>
 
                         <div class="form-group password-type-field mb-2">
                             <input class="form-control" type="password" id="password-field" name="password"
-                                   required placeholder="Password" autocomplete="current-password">
+                                   required placeholder="{% trans 'Password' %}" autocomplete="current-password">
                             <span class="toggle-password" toggle="#password-field">
                                 <i class="fas fa-eye-slash field-icon toggle-password"></i>
                             </span>
                         </div>
 
                         <div class="text-end mb-4">
-                            <a href="{% url 'password_reset' %}" class="forgot-link">Forgot Password?</a>
+                            <a href="{% url 'password_reset' %}" class="forgot-link">{% trans "Forgot Password?" %}</a>
                         </div>
 
                         <button type="submit" class="anime-btn btn-dark border-change w-100">
-                            Log In
+                            {% trans "Log In" %}
                         </button>
                     </form>
                 </div>
@@ -45,15 +46,16 @@
                 <div class="toggle-row mb-3 text-start">
                     <input type="checkbox" class="toggle-switch" id="check">
                     <label class="checkbox-label" for="check">
-                        I wish to receive news and promotions from Animeloop by email.
+                        {% trans "I wish to receive news and promotions from Animeloop by email." %}
                     </label>
                 </div>
 
                 <p class="policy">
-                    By continuing, you agree to Animeloop <a href="#">Terms of Use</a> and <a href="#">Privacy Policy</a>.
+                    {% blocktrans %}By continuing, you agree to Animeloop <a href="#">Terms of Use</a> and <a href="#">Privacy Policy</a>.{% endblocktrans %}
                 </p>
 
-                <p class="guide">Don't have an account? <a href="{% url 'signup' %}">Sign Up</a></p>
+                {% url 'signup' as signup_url %}
+                <p class="guide">{% blocktrans %}Don't have an account? <a href="{{ signup_url }}">Sign Up</a>{% endblocktrans %}</p>
             </div>
         </div>
     </div>
