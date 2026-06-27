@@ -1,0 +1,33 @@
+{% load static %}
+<div class="browse-filters">
+    <form method="get" id="browse-filter-form" class="browse-filter-form">
+
+        <!-- Genre dropdown -->
+        <div class="genre-filter-wrap">
+            <select name="genre" class="genre-filter-select">
+                <option value="">All Genres</option>
+                {% for g in genres %}
+                <option value="{{ g }}" {% if g == active_genre %}selected{% endif %}>{{ g }}</option>
+                {% endfor %}
+            </select>
+            <i class="fas fa-chevron-down genre-filter-caret"></i>
+        </div>
+
+        <!-- Sort buttons -->
+        <div class="sort-btn-group">
+            {% for key, val in sort_options.items %}
+            <button type="submit" name="sort" value="{{ key }}"
+                    class="sort-btn{% if active_sort == key %} active{% endif %}"
+                    {% if active_genre %}data-keep-genre="{{ active_genre }}"{% endif %}>
+                {{ val.1 }}
+            </button>
+            {% endfor %}
+        </div>
+
+        <!-- Clear link -->
+        {% if active_genre or active_sort != 'recent' %}
+        <a href="?" class="clear-filters-link">✕ Clear filters</a>
+        {% endif %}
+
+    </form>
+</div>

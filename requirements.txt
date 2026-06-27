@@ -21,3 +21,6 @@ gunicorn>=21.2.0
 # Recommendations
 numpy>=1.26.0
 scikit-learn>=1.4.0
+
+# Error monitoring
+sentry-sdk[django]>=2.0.0

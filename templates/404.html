@@ -1,0 +1,28 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>404 – Page Not Found | AnimeClip</title>
+<link href="{% static 'assets/css/bootstrap.min.css' %}" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'assets/css/style-3d.css' %}">
+<style>
+  body { background: #0a0a1a; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
+  .error-box { text-align: center; padding: 3rem 2rem; }
+  .error-code { font-size: 8rem; font-weight: 900; color: var(--primary, #e63946); line-height: 1; text-shadow: 0 0 40px rgba(230,57,70,0.5); }
+  .error-title { font-size: 1.8rem; color: #fff; margin: 1rem 0 0.5rem; }
+  .error-msg { color: #aaa; margin-bottom: 2rem; }
+  .btn-home { background: var(--primary, #e63946); color: #fff; padding: 0.75rem 2rem; border-radius: 4px; text-decoration: none; font-weight: 600; transition: opacity .2s; }
+  .btn-home:hover { opacity: 0.85; color: #fff; }
+</style>
+</head>
+<body>
+  <div class="error-box">
+    <div class="error-code">404</div>
+    <h1 class="error-title">This episode doesn't exist</h1>
+    <p class="error-msg">The page you're looking for has been removed or never existed.</p>
+    <a href="/" class="btn-home">Back to Home</a>
+  </div>
+</body>
+</html>

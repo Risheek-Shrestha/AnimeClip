@@ -23,6 +23,9 @@ from django.utils import timezone
 from django_ratelimit.decorators import ratelimit
 from datetime import timedelta
 import secrets
+import logging
+
+logger = logging.getLogger('ananimeclip')
 
 
 # ============================================================
@@ -47,6 +50,7 @@ def safe_cache_get(key):
     try:
         return cache.get(key)
     except Exception:
+        logger.warning('Cache GET failed for key: %s', key, exc_info=True)
         return None
 
 
@@ -54,14 +58,14 @@ def safe_cache_set(key, value, timeout=300):
     try:
         cache.set(key, value, timeout=timeout)
     except Exception:
-        pass
+        logger.warning('Cache SET failed for key: %s', key, exc_info=True)
 
 
 def safe_cache_delete(key):
     try:
         cache.delete(key)
     except Exception:
-        pass
+        logger.warning('Cache DELETE failed for key: %s', key, exc_info=True)
 
 
 # ============================================================
@@ -618,6 +622,7 @@ def streaming_movie(request, movie_id):
 # ============================================================
 
 @login_required
+@ratelimit(key='user', rate='30/h', method='POST', block=False)
 @require_POST
 def rate_anime(request, anime_id):
     from django.db.models import Avg
@@ -638,6 +643,7 @@ def rate_anime(request, anime_id):
 
 
 @login_required
+@ratelimit(key='user', rate='30/h', method='POST', block=False)
 @require_POST
 def rate_movie(request, movie_id):
     from django.db.models import Avg
@@ -700,6 +706,7 @@ def add_movie_comment(request, movie_id):
 
 
 @login_required
+@ratelimit(key='user', rate='60/10m', method='POST', block=False)
 @require_POST
 def like_comment(request, comment_id):
     comment = get_object_or_404(Comment, id=comment_id)
@@ -719,6 +726,7 @@ def like_comment(request, comment_id):
 # ============================================================
 
 @login_required
+@ratelimit(key='user', rate='60/h', method='POST', block=False)
 @require_POST
 def toggle_follow(request, anime_id):
     anime = get_object_or_404(Anime, id=anime_id)
@@ -735,6 +743,7 @@ def toggle_follow(request, anime_id):
 
 
 @login_required
+@ratelimit(key='user', rate='60/h', method='POST', block=False)
 @require_POST
 def toggle_follow_movie(request, movie_id):
     movie = get_object_or_404(Movie, id=movie_id)
@@ -973,6 +982,7 @@ def continue_watching(request):
 # ============================================================
 
 @login_required
+@ratelimit(key='user', rate='60/h', method='POST', block=False)
 @require_POST
 @never_cache
 def toggle_watch_later(request):
@@ -1315,3 +1325,14 @@ def profile_delete(request, subprofile_id):
         del request.session[SESSION_KEY]
     sp.delete()
     return redirect('profile_select')
+
+# ============================================================
+# ERROR HANDLERS
+# ============================================================
+
+def handler404(request, exception=None):
+    return render(request, '404.html', status=404)
+
+
+def handler500(request):
+    return render(request, '500.html', status=500)
