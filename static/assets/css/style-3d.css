@@ -1943,6 +1943,24 @@ ul.pagination li a:hover, ul.pagination li a.current {
   color: #fff; padding: 8px 16px; border-radius: 4px; font-size: 13px; cursor: pointer;
 }
 
+/* ── UTILITY: CAST / AIRPLAY CONTROLS (video player overlay) ─── */
+.video-box { position: relative; }
+.player-cast-controls {
+  position: absolute; top: 12px; right: 12px;
+  display: flex; gap: 8px; z-index: 5;
+}
+.cast-control-btn {
+  display: flex; align-items: center; justify-content: center;
+  width: 38px; height: 38px; border-radius: 50%;
+  background: rgba(0,0,0,.55);
+  border: 1px solid rgba(255,255,255,.25);
+  color: #fff; font-size: 15px;
+  cursor: pointer; transition: var(--transition);
+  backdrop-filter: blur(4px);
+}
+.cast-control-btn:hover { background: var(--c-gold-dim); border-color: var(--c-gold); color: var(--c-gold); }
+.cast-control-btn.is-active { background: var(--c-gold-dim); border-color: var(--c-gold); color: var(--c-gold); }
+
 /* ── UTILITY: STAR RATING WIDGET ─────────────────────────────── */
 .star-rating { display: inline-flex; gap: 3px; cursor: pointer; margin-bottom: 4px; }
 .star-rating .star { font-size: 20px; color: rgba(255,255,255,.25); transition: color .15s; }

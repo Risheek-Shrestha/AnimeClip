@@ -44,6 +44,14 @@
                         {% endfor %}
                         Your browser does not support the video tag.
                     </video>
+                    <div class="player-cast-controls" aria-label="Cast options">
+                        <button type="button" id="cast-btn" class="cast-control-btn" title="Cast to TV" style="display:none">
+                            <i class="fas fa-tv"></i>
+                        </button>
+                        <button type="button" id="airplay-btn" class="cast-control-btn" title="AirPlay" style="display:none">
+                            <i class="fas fa-wifi"></i>
+                        </button>
+                    </div>
                     {% else %}
                     {% if anime.banner_img %}
                     <img class="detail-image" src="{{ anime.banner_img.image.url }}" alt="{{ anime.title }}">
@@ -434,6 +442,7 @@
 
 {% block extra_js %}
 <script src="{% static 'js/analytics_tracker.js' %}" defer></script>
+<script src="{% static 'js/cast_airplay.js' %}" defer></script>
 {% if hls_url %}
 <script src="https://cdn.jsdelivr.net/npm/hls.js@1"></script>
 <script>
