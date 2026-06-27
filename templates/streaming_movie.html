@@ -26,6 +26,7 @@
                         data-content-id="{{ movie.id }}"
                         data-id-field="movie_id"
                         data-save-url="{% url 'update_watch_history' %}"
+                        {% if hls_url %}data-hls-src="{{ hls_url }}"{% endif %}
                         {% if current_source.poster %}poster="{{ current_source.poster.url }}"
                         {% elif movie.banner_img %}poster="{{ movie.banner_img.image.url }}"
                         {% elif movie.thumb_img %}poster="{{ movie.thumb_img.image.url }}"
@@ -323,3 +324,31 @@
 {% include "_playlist_modal.html" %}
 
 {% endblock body %}
+
+{% block extra_js %}
+{% if hls_url %}
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1"></script>
+<script>
+(function () {
+    var video = document.getElementById('main-player');
+    if (!video) return;
+    var hlsSrc = video.dataset.hlsSrc;
+    if (!hlsSrc) return;
+
+    if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        video.src = hlsSrc;
+    } else if (window.Hls && window.Hls.isSupported()) {
+        var hls = new Hls();
+        hls.loadSource(hlsSrc);
+        hls.attachMedia(video);
+        hls.on(Hls.Events.ERROR, function (event, data) {
+            if (data && data.fatal) {
+                hls.destroy();
+                video.load();
+            }
+        });
+    }
+})();
+</script>
+{% endif %}
+{% endblock extra_js %}

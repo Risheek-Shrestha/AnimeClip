@@ -28,6 +28,7 @@
                         data-content-id="{{ episode.id }}"
                         data-id-field="episode_id"
                         data-save-url="{% url 'update_watch_history' %}"
+                        {% if hls_url %}data-hls-src="{{ hls_url }}"{% endif %}
                         {% if current_source.poster %}poster="{{ current_source.poster.url }}"
                         {% elif anime.thumb_img %}poster="{{ anime.thumb_img.image.url }}"
                         {% elif anime.banner_img %}poster="{{ anime.banner_img.image.url }}"
@@ -426,3 +427,36 @@
 {% include "_playlist_modal.html" %}
 
 {% endblock body %}
+
+{% block extra_js %}
+{% if hls_url %}
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1"></script>
+<script>
+(function () {
+    var video = document.getElementById('main-player');
+    if (!video) return;
+    var hlsSrc = video.dataset.hlsSrc;
+    if (!hlsSrc) return;
+
+    if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        // Safari / iOS already speak HLS natively — no library needed.
+        video.src = hlsSrc;
+    } else if (window.Hls && window.Hls.isSupported()) {
+        var hls = new Hls();
+        hls.loadSource(hlsSrc);
+        hls.attachMedia(video);
+        hls.on(Hls.Events.ERROR, function (event, data) {
+            if (data && data.fatal) {
+                // Adaptive stream failed (e.g. still transcoding on
+                // Cloudinary's side) — fall back to the plain MP4
+                // <source> already present in the markup.
+                hls.destroy();
+                video.load();
+            }
+        });
+    }
+    // Any other browser: the plain MP4 <source> in the markup just plays.
+})();
+</script>
+{% endif %}
+{% endblock extra_js %}

@@ -7,7 +7,7 @@ from .models import (
     WatchHistory, WatchLater, Playlist, PlaylistItem,
     VideoSource, MovieSource, SubProfile, Follow, Notification, Subtitle,
 )
-from .video_access import sign_video_url, unsign_video_url
+from .video_access import sign_video_url, unsign_video_url, to_hls_url
 
 
 # ──────────────────────────────────────────────────────────────
@@ -837,6 +837,93 @@ class MovieStreamingSourceSwitchingTest(TestCase):
         resp = self.client.get(reverse('streaming_movie', args=[self.movie.id]))
         self.assertNotContains(resp, 'https://example.com/movie.mp4')
         self.assertContains(resp, '/watch/')
+
+
+# ──────────────────────────────────────────────────────────────
+# Adaptive bitrate (HLS) streaming via Cloudinary's sp_auto profile
+# ──────────────────────────────────────────────────────────────
+
+class ToHlsUrlTest(TestCase):
+    def test_cloudinary_video_url_converted(self):
+        url = 'https://res.cloudinary.com/demo/video/upload/v123/anime/clip.mp4'
+        self.assertEqual(
+            to_hls_url(url),
+            'https://res.cloudinary.com/demo/video/upload/sp_auto/v123/anime/clip.m3u8',
+        )
+
+    def test_cloudinary_video_url_without_version_converted(self):
+        url = 'https://res.cloudinary.com/demo/video/upload/anime/clip.mov'
+        self.assertEqual(
+            to_hls_url(url),
+            'https://res.cloudinary.com/demo/video/upload/sp_auto/anime/clip.m3u8',
+        )
+
+    def test_non_cloudinary_url_returns_none(self):
+        self.assertIsNone(to_hls_url('https://example.com/video.mp4'))
+
+    def test_cloudinary_image_resource_returns_none(self):
+        url = 'https://res.cloudinary.com/demo/image/upload/v1/pic.jpg'
+        self.assertIsNone(to_hls_url(url))
+
+    def test_empty_or_none_returns_none(self):
+        self.assertIsNone(to_hls_url(''))
+        self.assertIsNone(to_hls_url(None))
+
+
+class HlsStreamingViewTest(TestCase):
+    def setUp(self):
+        self.user = make_user(username='hls_viewer', age=25)
+        self.anime = make_anime()
+        self.episode = make_episode(self.anime)
+        self.client.force_login(self.user)
+
+    def test_cloudinary_source_exposes_hls_url(self):
+        VideoSource.objects.create(
+            episode=self.episode, label='1080p', type='sub',
+            video_url='https://res.cloudinary.com/demo/video/upload/v1/anime/clip.mp4',
+        )
+        resp = self.client.get(reverse('streaming', args=[self.episode.id]))
+        self.assertIsNotNone(resp.context['hls_url'])
+        self.assertIn('?format=hls', resp.context['hls_url'])
+        self.assertContains(resp, 'hls.js')
+
+    def test_non_cloudinary_source_has_no_hls_url(self):
+        VideoSource.objects.create(
+            episode=self.episode, label='1080p', type='sub',
+            video_url='https://example.com/clip.mp4',
+        )
+        resp = self.client.get(reverse('streaming', args=[self.episode.id]))
+        self.assertIsNone(resp.context['hls_url'])
+        self.assertNotContains(resp, 'hls.js')
+
+
+class StreamRedirectHlsFormatTest(TestCase):
+    def setUp(self):
+        self.user = make_user(username='hls_redirect_viewer', age=25)
+        self.client.force_login(self.user)
+
+    def test_format_hls_redirects_to_manifest_for_cloudinary_source(self):
+        token = sign_video_url('https://res.cloudinary.com/demo/video/upload/v1/anime/clip.mp4')
+        resp = self.client.get(reverse('stream_redirect', args=[token]) + '?format=hls')
+        self.assertRedirects(
+            resp,
+            'https://res.cloudinary.com/demo/video/upload/sp_auto/v1/anime/clip.m3u8',
+            fetch_redirect_response=False,
+        )
+
+    def test_format_hls_falls_back_to_raw_url_for_non_cloudinary_source(self):
+        token = sign_video_url('https://example.com/clip.mp4')
+        resp = self.client.get(reverse('stream_redirect', args=[token]) + '?format=hls')
+        self.assertRedirects(resp, 'https://example.com/clip.mp4', fetch_redirect_response=False)
+
+    def test_no_format_param_redirects_to_raw_mp4(self):
+        token = sign_video_url('https://res.cloudinary.com/demo/video/upload/v1/anime/clip.mp4')
+        resp = self.client.get(reverse('stream_redirect', args=[token]))
+        self.assertRedirects(
+            resp,
+            'https://res.cloudinary.com/demo/video/upload/v1/anime/clip.mp4',
+            fetch_redirect_response=False,
+        )
 
 
 class SubtitleRenderingTest(TestCase):

@@ -19,7 +19,7 @@ from .content_access import (
     can_view, filter_age_appropriate, filter_index_context,
     filter_movies_context, filter_list_age_appropriate, restricted_to_pg13,
 )
-from .video_access import sign_video_url, unsign_video_url
+from .video_access import sign_video_url, unsign_video_url, to_hls_url
 from django.db.models import Max, Prefetch, Q
 from django.utils import timezone
 from django_ratelimit.decorators import ratelimit
@@ -566,8 +566,11 @@ def streaming(request, episode_id):
     # Never put the raw, permanent Cloudinary/video URL in the rendered
     # page — hand out a short-lived signed link instead (see video_access.py).
     playable_url = None
+    hls_url = None
     if current_source and current_source.video_url:
         playable_url = reverse('stream_redirect', args=[sign_video_url(current_source.video_url)])
+        if to_hls_url(current_source.video_url):
+            hls_url = playable_url + '?format=hls'
 
     return render(request, 'streaming.html', {
         'title': anime.title,
@@ -582,6 +585,7 @@ def streaming(request, episode_id):
         'next_episode': next_episode,
         'current_source': current_source,
         'playable_url': playable_url,
+        'hls_url': hls_url,
         'similar': similar,
     })
 
@@ -640,8 +644,11 @@ def streaming_movie(request, movie_id):
         current_source = sources[0] if sources else None
 
     playable_url = None
+    hls_url = None
     if current_source and current_source.video_url:
         playable_url = reverse('stream_redirect', args=[sign_video_url(current_source.video_url)])
+        if to_hls_url(current_source.video_url):
+            hls_url = playable_url + '?format=hls'
 
     return render(request, 'streaming_movie.html', {
         'title': movie.title,
@@ -653,6 +660,7 @@ def streaming_movie(request, movie_id):
         'resume_seconds': resume_seconds,
         'current_source': current_source,
         'playable_url': playable_url,
+        'hls_url': hls_url,
         'similar': similar,
     })
 
@@ -664,10 +672,19 @@ def stream_redirect(request, token):
     the real video URL and redirect there. Tokens expire — a copied or
     leaked link stops working instead of granting permanent access.
     Still requires login, same as the streaming pages that hand these out.
+
+    ?format=hls redirects to the same source's adaptive-bitrate HLS
+    manifest instead of the plain MP4, when the source is hosted on
+    Cloudinary (see video_access.to_hls_url). Anything else falls back to
+    the plain MP4 link — same token, same access checks either way.
     """
     raw_url = unsign_video_url(token)
     if not raw_url:
         raise Http404("This playback link has expired or is invalid.")
+    if request.GET.get('format') == 'hls':
+        hls_url = to_hls_url(raw_url)
+        if hls_url:
+            return redirect(hls_url)
     return redirect(raw_url)
 
 

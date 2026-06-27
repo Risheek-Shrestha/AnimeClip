@@ -23,9 +23,18 @@ change, not something this code change can do on its own). Treat this as
 raising the bar, not as airtight content protection.
 """
 from django.core import signing
+import re
 
 SALT = 'ananimeclip.video-stream'
 DEFAULT_MAX_AGE = 4 * 60 * 60  # 4 hours
+
+# Matches Cloudinary's video delivery URL shape, e.g.
+#   https://res.cloudinary.com/<cloud>/video/upload/v123/some_id.mp4
+# Capturing the bit right after "/upload/" lets us insert a streaming-profile
+# transformation (sp_auto) without disturbing the version/public_id that follow.
+_CLOUDINARY_VIDEO_UPLOAD_RE = re.compile(
+    r'^(https?://res\.cloudinary\.com/[^/]+/video/upload/)(.+)\.[A-Za-z0-9]+$'
+)
 
 
 def sign_video_url(raw_url):
@@ -44,3 +53,29 @@ def unsign_video_url(token, max_age=DEFAULT_MAX_AGE):
         return signing.loads(token, salt=SALT, max_age=max_age)
     except signing.BadSignature:
         return None
+
+
+def to_hls_url(raw_url):
+    """
+    Turn a Cloudinary video URL into an adaptive-bitrate HLS manifest URL by
+    inserting the `sp_auto` streaming-profile transformation and switching
+    the extension to .m3u8. Cloudinary generates the multi-bitrate
+    renditions from the *same* already-uploaded asset on first request —
+    no re-upload or admin workflow change needed.
+
+    Returns None for anything that isn't a recognizable Cloudinary video
+    upload URL (e.g. an admin pasted an arbitrary external URL), so callers
+    can cleanly fall back to plain MP4 instead of generating a broken link.
+
+    Note: the very first request for a given video pays a one-time
+    transcoding delay while Cloudinary processes it; subsequent requests
+    are served from cache. This also consumes Cloudinary transformation
+    credits, so it's worth keeping an eye on usage at scale.
+    """
+    if not raw_url:
+        return None
+    match = _CLOUDINARY_VIDEO_UPLOAD_RE.match(raw_url)
+    if not match:
+        return None
+    prefix, rest = match.groups()
+    return f'{prefix}sp_auto/{rest}.m3u8'

@@ -9,6 +9,7 @@ A full-stack anime streaming web application built with Django, PostgreSQL, Redi
 - Browse anime series and movies with genre filtering and live search
 - Stream episodes and movies with automatic watch-progress saving
 - Switchable SUB/DUB (or other) playback sources per episode/movie, with WebVTT subtitle/caption tracks
+- Adaptive bitrate (HLS) streaming for Cloudinary-hosted videos — multi-quality playback that adjusts to bandwidth, via Cloudinary's `sp_auto` streaming profile + hls.js, with automatic fallback to plain MP4 for non-Cloudinary sources or unsupported browsers
 - Time-limited signed playback links — raw video URLs are never rendered in HTML; links expire after 4 hours (see `video_access.py`)
 - Continue Watching bar with real-time progress percentage
 - Personalised recommendations derived from the user's genre history
@@ -215,3 +216,4 @@ AnimeClip/
 - **CSRF & Beacons:** Watch progress is saved via `fetch` with `keepalive: true` on pause/end events, and flushed on tab close/hide — fully CSRF-protected.
 - **Secret Key:** The app will refuse to start in production (`DEBUG=False`) if `SECRET_KEY` is not set in the environment.
 - **Signed playback links:** these stop a copied link from working forever and route every playback through the app's own age-gate/auth checks, but they are not real DRM — once a link is issued it streams from a public Cloudinary URL until it expires. Real content protection would require switching the Cloudinary delivery type to `authenticated` and enabling token-based authentication at the account level.
+- **Adaptive streaming:** the first request for a given video's HLS manifest pays a one-time Cloudinary transcoding delay; later requests are served from cache. This also consumes Cloudinary transformation credits — worth watching at scale. Sources hosted outside Cloudinary (or non-video Cloudinary resources) automatically fall back to plain MP4.
