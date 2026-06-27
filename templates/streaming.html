@@ -28,6 +28,10 @@
                         data-content-id="{{ episode.id }}"
                         data-id-field="episode_id"
                         data-save-url="{% url 'update_watch_history' %}"
+                        data-anime-slug="{{ anime.title|slugify }}"
+                        data-anime-title="{{ anime.title }}"
+                        data-episode="{{ episode.number }}"
+                        data-genre="{{ anime.genres.first.name }}"
                         {% if hls_url %}data-hls-src="{{ hls_url }}"{% endif %}
                         {% if current_source.poster %}poster="{{ current_source.poster.url }}"
                         {% elif anime.thumb_img %}poster="{{ anime.thumb_img.image.url }}"
@@ -429,6 +433,7 @@
 {% endblock body %}
 
 {% block extra_js %}
+<script src="{% static 'js/analytics_tracker.js' %}" defer></script>
 {% if hls_url %}
 <script src="https://cdn.jsdelivr.net/npm/hls.js@1"></script>
 <script>

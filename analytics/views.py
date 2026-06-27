@@ -56,7 +56,7 @@ def record_search(request):
 
 # ── Staff-only dashboard ─────────────────────────────────────────────────────
 
-# @staff_member_required
+@staff_member_required
 def dashboard(request):
     now = timezone.now()
     days = int(request.GET.get("days", 30))

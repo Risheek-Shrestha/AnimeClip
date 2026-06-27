@@ -20,6 +20,7 @@ from .content_access import (
     filter_movies_context, filter_list_age_appropriate, restricted_to_pg13,
 )
 from .video_access import sign_video_url, unsign_video_url, to_hls_url
+from analytics.models import SearchEvent
 from django.db.models import Max, Prefetch, Q
 from django.utils import timezone
 from django_ratelimit.decorators import ratelimit
@@ -981,6 +982,14 @@ def search_results(request):
             )
         )
         attach_episode_info(anime_list)
+        try:
+            SearchEvent.objects.create(
+                user=request.user if request.user.is_authenticated else None,
+                query=query[:300],
+                results_count=len(movies) + len(anime_list),
+            )
+        except Exception:
+            logger.warning('Failed to record SearchEvent for query: %s', query, exc_info=True)
     return render(request, 'search_results.html', {
         'query': query, 'movies': movies, 'anime_list': anime_list,
     })
