@@ -87,13 +87,16 @@ python manage.py migrate
 python manage.py createsuperuser
 ```
 
-### 5. (Optional) Load sample data
+### 5. (Optional) Import catalog data
+
+Instead of a fixture file, use the included management command to pull real metadata from the Jikan API (no API key required):
 
 ```bash
-python manage.py loaddata data.json
+python manage.py import_catalog --type anime --count 50
+python manage.py import_catalog --type movie --count 30
 ```
 
-> **Note:** `data.json` is a development fixture. It includes admin log entries — safe to ignore.
+Add `--with-images` to also download and store poster art via Cloudinary.
 
 ### 6. Run the development server
 
@@ -126,6 +129,46 @@ docker-compose exec web python manage.py createsuperuser
 
 ---
 
+
+## Production Deployment
+
+### Environment variables checklist
+
+Before going live, make sure these are set in your `.env`:
+
+| Variable | Notes |
+|---|---|
+| `SECRET_KEY` | Long random string — never the dev default |
+| `DEBUG` | Must be `False` |
+| `ALLOWED_HOSTS` | Your actual domain(s), space-separated |
+| `DB_NAME`, `DB_USER`, `DB_PASSWORD` | Strong, unique password — not `animeclip` |
+| `CLOUDINARY_*` | Required for media uploads |
+| `EMAIL_HOST` + credentials | Required for password reset emails |
+| `REDIS_URL` | Required for caching and rate limiting |
+
+### Gunicorn workers
+
+The default is 3 workers. Override via `GUNICORN_WORKERS` in your `.env`:
+
+```
+# Rule of thumb: 2 x CPU cores + 1
+GUNICORN_WORKERS=5
+```
+
+### HTTPS
+
+The app enforces HTTPS in production (`DEBUG=False`) via `SECURE_SSL_REDIRECT`. You must terminate TLS at the reverse proxy or load balancer level (Nginx, Caddy, your cloud provider's LB). If your proxy already handles TLS termination and forwards plain HTTP to Gunicorn, set `SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')` in settings so Django trusts the `X-Forwarded-Proto` header.
+
+### Docker
+
+```bash
+cp .env.example .env
+# Fill in all required values — DB_PASSWORD must be a strong password
+docker-compose up --build -d
+docker-compose exec web python manage.py createsuperuser
+```
+
+---
 ## Project Structure
 
 ```

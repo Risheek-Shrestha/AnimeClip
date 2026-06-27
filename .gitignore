@@ -1,6 +1,7 @@
 # Python cache
 __pycache__/
 *.pyc
+*.pyo
 
 # Database
 db.sqlite3
@@ -17,3 +18,11 @@ staticfiles/
 # IDE files
 .idea/
 .vscode/
+
+# Dev artefacts — never commit these
+*.patch
+commit_message.txt
+
+# Fixture data — load via `python manage.py loaddata` from a private location,
+# not from a file checked into the repo
+data.json

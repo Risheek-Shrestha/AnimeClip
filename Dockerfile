@@ -20,4 +20,5 @@ COPY . .
 
 EXPOSE 8000
 
-CMD ["gunicorn", "Hello.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "2"]
+# Worker count defaults to 3 (2 x 1 CPU + 1). Override via GUNICORN_WORKERS env var.
+CMD ["sh", "-c", "gunicorn Hello.wsgi:application --bind 0.0.0.0:8000 --workers ${GUNICORN_WORKERS:-3}"]
