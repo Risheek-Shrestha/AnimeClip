@@ -58,6 +58,35 @@
             </div>
             {% endfor %}
         </div>
+
+        {% if movie_list %}
+        <div class="section-title mt-5 mb-3">
+            <h4>Movies</h4>
+        </div>
+        <div class="row">
+            {% for movie in movie_list %}
+            <div class="col-xl-3 col-lg-4 col-sm-6 col-12 mb-4">
+                <div class="anime-blog">
+                    <a href="{% url 'streaming_movie' movie.id %}" class="img-block">
+                        {% if movie.poster_img %}
+                        <img src="{{ movie.poster_img.image.url }}" alt="{{ movie.title }}">
+                        {% endif %}
+                    </a>
+                    <div class="detail">
+                        <div class="tags"><p class="text">Movie</p></div>
+                    </div>
+                    <a href="{% url 'streaming_movie' movie.id %}"><p>{{ movie.title }}</p></a>
+                    <form method="POST" action="{% url 'toggle_follow_movie' movie.id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="comment-btn mt-1">
+                            <i class="fa fa-heart-o"></i> Unfollow
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
     </div>
 </section>
 
