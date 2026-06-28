@@ -167,6 +167,27 @@ CLOUDINARY_STORAGE = {
     'API_SECRET': os.getenv('CLOUDINARY_API_SECRET'),
 }
 
+# ============================================================
+# VIDEO CONTENT PROTECTION
+# ============================================================
+# CLOUDINARY_AUTH_TOKEN_KEY enables CDN-edge URL expiry so that even a
+# captured raw Cloudinary URL can't be replayed after the signed Django
+# redirect expires.  In production this MUST be set — without it video
+# URLs are effectively public and permanent once shared.
+#
+# To enable:
+#   1. Cloudinary dashboard → Security → Token-based access control → Enable
+#   2. Change video delivery type to "authenticated"
+#   3. Copy the hex signing key below
+CLOUDINARY_AUTH_TOKEN_KEY = os.getenv('CLOUDINARY_AUTH_TOKEN_KEY')
+
+if not DEBUG and not CLOUDINARY_AUTH_TOKEN_KEY and 'test' not in sys.argv:
+    raise RuntimeError(
+        'CLOUDINARY_AUTH_TOKEN_KEY is not set. '
+        'Without it, video URLs are public and permanent. '
+        'Enable token auth in your Cloudinary dashboard and set this variable before starting in production.'
+    )
+
 CACHES = {
     'default': {
         'BACKEND': 'django_redis.cache.RedisCache',
