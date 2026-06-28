@@ -93,6 +93,42 @@
             <div class="col-lg-9 col-12">
                 <div class="row">
                     <div class="col-lg-6 col-md-4 col-sm-6 col-12">
+                        <div class="trailer-box">
+                            <img src="{% static 'assets/media/video/trailer-img.png' %}" alt="" class="image">
+                            <div class="overlay">
+                                {% if movie.trailer_url %}
+                                <a href="#" class="icon" data-bs-toggle="modal" data-bs-target="#videoModal">
+                                    <i class="fas fa-play"></i>
+                                </a>
+                                <p>Watch Trailer</p>
+                                {% else %}
+                                <p style="padding:1rem;font-size:.85rem;opacity:.6">No trailer available</p>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="modal fade" id="videoModal" tabindex="-1" role="dialog" aria-hidden="true">
+                            <div class="modal-dialog" role="document">
+                                <div class="modal-content">
+                                    <div class="modal-body">
+                                        {% if movie.trailer_url %}
+                                        <div class="trailer-iframe-wrap">
+                                            <iframe src="{{ movie.trailer_url }}"
+                                                title="{{ movie.title }} trailer" frameborder="0"
+                                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                                referrerpolicy="strict-origin-when-cross-origin"
+                                                allowfullscreen></iframe>
+                                        </div>
+                                        {% else %}
+                                        <p class="text-center p-4">Trailer not available.</p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-6 col-md-8 col-sm-6 col-12">
                         <div class="trailer-content">
                             <h2 class="mb-3">{{ movie.title }}</h2>
                             <p class="light-text">Movie</p>
@@ -126,9 +162,18 @@
                                             <i class="fas fa-plus"></i> Add to Playlist
                                         </a>
                                     </li>
+                                    <li>
+                                        <a href="#" class="none follow-btn"
+                                           data-movie-id="{{ movie.id }}"
+                                           data-url="{% url 'toggle_follow_movie' movie.id %}">
+                                            <i class="fa {% if is_following %}fa-heart{% else %}fa-heart-o{% endif %}"></i>
+                                            <span id="follow-label">{% if is_following %}Following{% else %}Follow{% endif %}</span>
+                                        </a>
+                                    </li>
                                     {% else %}
                                     <li><a href="{% url 'login' %}"><i class="fa fa-clock"></i> Watch Later</a></li>
                                     <li><a href="{% url 'login' %}"><i class="fas fa-plus"></i> Add to Playlist</a></li>
+                                    <li><a href="{% url 'login' %}"><i class="fa fa-heart-o"></i> Follow</a></li>
                                     {% endif %}
                                 </ul>
                             </div>
@@ -278,6 +323,15 @@
                                 Reply
                             </button>
 
+                            {% if user.is_authenticated and comment.user == user or user.is_staff %}
+                            <button class="comment-btn delete-comment-btn"
+                                    data-id="{{ comment.id }}"
+                                    data-url="{% url 'delete_comment' comment.id %}"
+                                    title="Delete comment">
+                                <i class="fa fa-trash"></i>
+                            </button>
+                            {% endif %}
+
                             <div id="reply{{ comment.id }}" class="accordion-collapse collapse">
                                 <div class="card card-body">
                                     {% if user.is_authenticated %}
@@ -364,4 +418,23 @@
 })();
 </script>
 {% endif %}
+<script>
+// ── Delete Comment ────────────────────────────────────────────────────────────
+document.querySelectorAll('.delete-comment-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+        if (!confirm('Delete this comment?')) return;
+        fetch(btn.dataset.url, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '' },
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            if (data.deleted) {
+                var row = btn.closest('.row.mb-4');
+                if (row) row.remove();
+            }
+        });
+    });
+});
+</script>
 {% endblock extra_js %}

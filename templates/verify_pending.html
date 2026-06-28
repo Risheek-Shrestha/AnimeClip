@@ -2,12 +2,33 @@
 {% block body %}
 <section class="sec-mar">
     <div class="status-panel">
-        <i class="fas fa-envelope-open-text icon-circle-plain error"></i>
+        {% if error %}
+        <i class="fas fa-times-circle icon-circle-plain error"></i>
+        <h2>{{ title }}</h2>
+        <p>{{ error }}</p>
+        {% elif resent %}
+        <i class="fas fa-envelope-open-text icon-circle-plain"></i>
+        <h2>Email resent</h2>
+        <p>If <strong>{{ email }}</strong> has a pending account, a new link is on its way. Check your spam folder too.</p>
+        {% else %}
+        <i class="fas fa-envelope-open-text icon-circle-plain"></i>
         <h2>Check your email</h2>
         <p>
             We sent a verification link to <strong>{{ email }}</strong>.<br>
             Click it to activate your account. Check your spam folder if you don't see it.
         </p>
+        {% endif %}
+
+        {% if email and not resent %}
+        <details class="mt-4" style="text-align:center">
+            <summary style="cursor:pointer;opacity:.7">Didn't receive the email?</summary>
+            <form method="POST" action="{% url 'resend_verification' %}" class="mt-3">
+                {% csrf_token %}
+                <input type="hidden" name="email" value="{{ email }}">
+                <button type="submit" class="anime-btn2">Resend verification email</button>
+            </form>
+        </details>
+        {% endif %}
     </div>
 </section>
 {% endblock body %}

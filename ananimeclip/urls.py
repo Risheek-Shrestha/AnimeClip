@@ -68,6 +68,7 @@ urlpatterns = [
     path('notifications/<int:notif_id>/read/', views.mark_notification_read, name='mark_notification_read'),
     path('notifications/count/', views.unread_notification_count, name='unread_notification_count'),
     path('verify-email/<str:token>/', views.verify_email, name='verify_email'),
+    path('resend-verification/', views.resend_verification, name='resend_verification'),
     # Sub-profile switcher
     path('profiles/', views.profile_select, name='profile_select'),
     path('profiles/switch/<int:subprofile_id>/', views.profile_switch, name='profile_switch'),

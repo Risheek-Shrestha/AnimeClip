@@ -472,9 +472,16 @@ def login_view(request):
             )
         email = request.POST.get('email', '').strip()
         password = request.POST.get('password', '')
+        remember_me = request.POST.get('remember_me') == 'on'
         user = authenticate(request, username=email, password=password)
         if user is not None:
             login(request, user)
+            # "Remember me" keeps the session for 30 days; otherwise it expires
+            # when the browser tab closes (SESSION_EXPIRE_AT_BROWSER_CLOSE default).
+            if remember_me:
+                request.session.set_expiry(60 * 60 * 24 * 30)  # 30 days
+            else:
+                request.session.set_expiry(0)  # browser-session only
             from django.utils.http import url_has_allowed_host_and_scheme
 
             next_url = request.POST.get('next') or request.GET.get('next') or ''
@@ -790,6 +797,11 @@ def streaming_movie(request, movie_id):
             'hls_url': hls_url,
             'similar': similar,
             'quality_options': QUALITY_OPTIONS,
+            # Open Graph / social sharing
+            'og_title': movie.title,
+            'og_description': (movie.description or '')[:200],
+            'og_type': 'video.movie',
+            'og_image': next((img.image.url for img in movie.media_images.all() if img.image), None),
         },
     )
 
@@ -1645,6 +1657,59 @@ def verify_email(request, token):
     return render(request, 'verify_success.html', {'title': 'Email Verified'})
 
 
+@ratelimit(key='ip', rate='3/h', method='POST', block=True)
+@require_POST
+def resend_verification(request):
+    """
+    POST /resend-verification/
+    Form field: email
+
+    Re-sends the verification email for an account that is still inactive.
+    Rate-limited to 3 attempts per IP per hour to prevent abuse.
+    Always shows the same success message regardless of whether the email
+    exists, to avoid leaking account existence.
+    """
+    from django.core.mail import send_mail
+    from django.template.loader import render_to_string
+
+    email = request.POST.get('email', '').strip()
+    try:
+        profile = (
+            Profile.objects.select_related('user')
+            .get(user__email=email, email_verified=False, user__is_active=False)
+        )
+        # Regenerate token and reset the clock.
+        token = secrets.token_urlsafe(32)
+        profile.verification_token = token
+        profile.verification_sent_at = timezone.now()
+        profile.save(update_fields=['verification_token', 'verification_sent_at'])
+
+        verify_url = request.build_absolute_uri(reverse('verify_email', args=[token]))
+        body = render_to_string(
+            'verify_email.txt',
+            {'name': profile.user.first_name, 'verify_url': verify_url},
+        )
+        send_mail(
+            subject='Verify your AnimeClip account',
+            message=body,
+            from_email=None,
+            recipient_list=[email],
+            fail_silently=True,
+        )
+    except Profile.DoesNotExist:
+        pass  # Don't reveal whether this email exists / is already verified
+
+    return render(
+        request,
+        'verify_pending.html',
+        {
+            'title': 'Check your email',
+            'email': email,
+            'resent': True,
+        },
+    )
+
+
 # ============================================================
 # SUB-PROFILE SWITCHER  (Netflix-style "Who's watching?")
 # ============================================================
@@ -1773,7 +1838,7 @@ def request_episode_download(request, episode_id):
     trigger the actual file download.
     """
     episode = get_object_or_404(Episode, pk=episode_id)
-    if not can_view(request, episode.season.anime):
+    if not can_view(request, episode.season.anime.age_rating):
         return JsonResponse({'error': 'Access denied.'}, status=403)
 
     try:
@@ -1811,7 +1876,7 @@ def request_movie_download(request, movie_id):
     Returns JSON: { "url": "/dl/<token>/" }
     """
     movie = get_object_or_404(Movie, pk=movie_id)
-    if not can_view(request, movie):
+    if not can_view(request, movie.age_rating):
         return JsonResponse({'error': 'Access denied.'}, status=403)
 
     try:
@@ -1860,13 +1925,13 @@ def serve_download(request, token):
 
     if source_type == 'episode':
         source = get_object_or_404(VideoSource, pk=source_pk)
-        if not can_view(request, source.episode.season.anime):
+        if not can_view(request, source.episode.season.anime.age_rating):
             raise Http404
         raw_url = source.video_url
         filename_base = f'{source.episode.season.anime.title}_S{source.episode.season.number}E{source.episode.number}'
     else:
         source = get_object_or_404(MovieSource, pk=source_pk)
-        if not can_view(request, source.movie):
+        if not can_view(request, source.movie.age_rating):
             raise Http404
         raw_url = source.video_url
         filename_base = source.movie.title
