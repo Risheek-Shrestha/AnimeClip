@@ -1,3 +1,7 @@
+import hashlib
+import hmac
+import re
+import time
 from datetime import date
 
 from django.contrib.auth.models import User
@@ -23,7 +27,7 @@ from .models import (
     WatchHistory,
     WatchLater,
 )
-from .video_access import sign_video_url, to_hls_url, unsign_video_url
+from .video_access import _build_cloudinary_auth_token, sign_video_url, to_hls_url, unsign_video_url
 
 # ──────────────────────────────────────────────────────────────
 # Helpers
@@ -919,6 +923,77 @@ class VideoAccessTokenTest(TestCase):
         self.assertIsNone(unsign_video_url(None))
 
 
+# ──────────────────────────────────────────────────────────────
+# Cloudinary CDN-edge token auth (the CLOUDINARY_AUTH_TOKEN_KEY path)
+#
+# This setting is *required* in production (settings.py refuses to start
+# without it when DEBUG=False), but the rest of the suite intentionally
+# runs without it set, so this path previously had no coverage at all —
+# a regression here would only surface after deploying to production.
+# ──────────────────────────────────────────────────────────────
+
+_TEST_CLD_TOKEN_KEY = 'deadbeefcafebabe00112233445566778899aabbccddeeff0011223344556677'
+
+
+def _verify_cld_token(url, expected_raw_url):
+    """
+    Re-derive the Cloudinary token-auth HMAC for *url* and assert it matches
+    Cloudinary's documented spec: HMAC-SHA256 over "exp=<exp>~url=<path>".
+    Returns the parsed expiry (int) for further assertions.
+    """
+    base, _, query = url.partition('?__cld_token__=')
+    assert base == expected_raw_url, f'{base!r} != {expected_raw_url!r}'
+    params = dict(p.split('=', 1) for p in query.split('~'))
+    exp = int(params['exp'])
+    url_path = re.sub(r'^https?://[^/]+', '', expected_raw_url)
+    to_sign = f'exp={exp}~url={url_path}'
+    expected_digest = hmac.new(bytes.fromhex(_TEST_CLD_TOKEN_KEY), to_sign.encode(), hashlib.sha256).hexdigest()
+    assert params['hmac'] == expected_digest, 'HMAC does not match Cloudinary token-auth spec'
+    return exp
+
+
+class CloudinaryAuthTokenTest(TestCase):
+    @override_settings(CLOUDINARY_AUTH_TOKEN_KEY=_TEST_CLD_TOKEN_KEY)
+    def test_build_auth_token_appends_valid_cld_token(self):
+        raw_url = 'https://res.cloudinary.com/demo/video/upload/v1/anime/clip.mp4'
+        signed = _build_cloudinary_auth_token(raw_url, expiry=3600)
+        self.assertIsNotNone(signed)
+        _verify_cld_token(signed, raw_url)
+
+    @override_settings(CLOUDINARY_AUTH_TOKEN_KEY=_TEST_CLD_TOKEN_KEY)
+    def test_build_auth_token_uses_ampersand_when_url_already_has_query_string(self):
+        raw_url = 'https://example.com/v.mp4?quality=1080p'
+        signed = _build_cloudinary_auth_token(raw_url, expiry=3600)
+        self.assertTrue(signed.startswith('https://example.com/v.mp4?quality=1080p&__cld_token__='))
+
+    def test_build_auth_token_is_noop_without_key_configured(self):
+        # Default test settings have no CLOUDINARY_AUTH_TOKEN_KEY set.
+        self.assertIsNone(_build_cloudinary_auth_token('https://example.com/v.mp4', expiry=3600))
+
+    @override_settings(CLOUDINARY_AUTH_TOKEN_KEY=_TEST_CLD_TOKEN_KEY)
+    def test_unsign_video_url_upgrades_to_cdn_signed_url_when_key_configured(self):
+        raw_url = 'https://example.com/v.mp4'
+        token = sign_video_url(raw_url)
+        resolved = unsign_video_url(token)
+        self.assertNotEqual(resolved, raw_url)  # upgraded, not the bare URL
+        _verify_cld_token(resolved, raw_url)
+
+    @override_settings(CLOUDINARY_AUTH_TOKEN_KEY=_TEST_CLD_TOKEN_KEY)
+    def test_unsign_video_url_cdn_token_expiry_is_in_the_future(self):
+        token = sign_video_url('https://example.com/v.mp4')
+        resolved = unsign_video_url(token)
+        exp = _verify_cld_token(resolved, 'https://example.com/v.mp4')
+        self.assertGreater(exp, int(time.time()))
+
+    @override_settings(CLOUDINARY_AUTH_TOKEN_KEY=_TEST_CLD_TOKEN_KEY)
+    def test_tampered_token_still_returns_none_when_key_configured(self):
+        # CDN-token upgrade must never run on a forged/expired Django token —
+        # signature verification has to happen before the Cloudinary upgrade.
+        token = sign_video_url('https://example.com/v.mp4')
+        tampered = token[:-2] + ('aa' if token[-2:] != 'aa' else 'bb')
+        self.assertIsNone(unsign_video_url(tampered))
+
+
 class StreamRedirectViewTest(TestCase):
     def setUp(self):
         self.user = make_user(username='viewer', age=25)
@@ -939,6 +1014,15 @@ class StreamRedirectViewTest(TestCase):
         self.client.force_login(self.user)
         resp = self.client.get(reverse('stream_redirect', args=['garbage-token']))
         self.assertEqual(resp.status_code, 404)
+
+    @override_settings(CLOUDINARY_AUTH_TOKEN_KEY=_TEST_CLD_TOKEN_KEY)
+    def test_valid_token_redirects_to_cdn_signed_url_when_key_configured(self):
+        self.client.force_login(self.user)
+        raw_url = 'https://example.com/v.mp4'
+        token = sign_video_url(raw_url)
+        resp = self.client.get(reverse('stream_redirect', args=[token]))
+        self.assertEqual(resp.status_code, 302)
+        _verify_cld_token(resp.url, raw_url)
 
 
 # ──────────────────────────────────────────────────────────────
