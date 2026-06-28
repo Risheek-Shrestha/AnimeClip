@@ -251,13 +251,18 @@ CONTENT_SECURITY_POLICY = {
         'script-src': [
             "'self'",
             "'unsafe-inline'",
+            'blob:',  # hls.js creates blob: worker URLs for segment fetching
             'https://cdn.jsdelivr.net',
             'https://upload-widget.cloudinary.com',
             'https://www.gstatic.com',  # Chromecast sender SDK (cast_airplay.js)
         ],
         'style-src': ["'self'", "'unsafe-inline'"],
         'img-src': ["'self'", 'data:', 'https://res.cloudinary.com'],
-        'media-src': ["'self'", 'https://res.cloudinary.com'],
+        'media-src': [
+            "'self'",
+            'blob:',  # hls.js feeds segments to <video> via a MediaSource blob: URL
+            'https://res.cloudinary.com',
+        ],
         'font-src': ["'self'", 'data:'],
         'connect-src': ["'self'", 'https://res.cloudinary.com', 'https://api.cloudinary.com'],
         'frame-src': ["'self'", 'https://www.youtube.com', 'https://upload-widget.cloudinary.com'],

@@ -1662,3 +1662,16 @@ class ContentSecurityPolicyTest(TestCase):
         csp = resp['Content-Security-Policy']
         for origin in ('cdn.jsdelivr.net', 'upload-widget.cloudinary.com', 'www.gstatic.com'):
             self.assertIn(origin, csp)
+
+    def test_csp_allows_blob_for_hls_playback(self):
+        """hls.js doesn't just load from a CDN — at runtime it creates a
+        blob: worker (script-src) and feeds segments to <video> through a
+        blob: MediaSource URL (media-src). Without both, playback fails
+        even though the script itself loaded fine."""
+        resp = self.client.get(reverse('index'))
+        csp = resp['Content-Security-Policy']
+        directives = dict(
+            d.strip().split(' ', 1) for d in csp.split(';') if d.strip() and ' ' in d.strip()
+        )
+        self.assertIn('blob:', directives.get('script-src', ''))
+        self.assertIn('blob:', directives.get('media-src', ''))
