@@ -44,6 +44,8 @@ returns the full asset metadata including the eager URLs.
 import logging
 import re
 
+import cloudinary.uploader
+
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
@@ -51,18 +53,15 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 # Matches URLs of the form:
-#   https://res.cloudinary.com/<cloud>/video/upload/[optional_transforms/]v<ver>/<public_id>.<ext>
-# or without a version:
-#   https://res.cloudinary.com/<cloud>/video/upload/<public_id>.<ext>
+#   https://res.cloudinary.com/<cloud>/video/upload/[v<ver>/]<public_id>.<ext>
 #
-# Capturing group 1: everything after "/upload/" that is NOT a version segment
-#                    (i.e. skip any leading transformation strings)
-# Capturing group 2: the public_id (no extension)
+# public_id may itself contain folder segments (e.g. "my_folder/clip") — those
+# are captured as part of group 1, not stripped. The only thing optionally
+# skipped before the public_id is a version segment like "v1234567890/".
 _PUBLIC_ID_RE = re.compile(
     r'https?://res\.cloudinary\.com/[^/]+/video/upload/'
-    r'(?:[^/]+/)*'  # optional transformation segments (greedy, each ends with /)
     r'(?:v\d+/)?'  # optional version segment  v123/
-    r'([^.]+)'  # public_id (no extension)
+    r'([^.]+)'  # public_id (no extension) — may contain folder segments
     r'\.[A-Za-z0-9]+'  # extension
     r'$'
 )
@@ -121,10 +120,6 @@ def request_eager_transcoding(video_url: str) -> bool:
     Returns True if the API call succeeded, False otherwise (the caller
     should treat False as non-fatal — the lazy on-the-fly fallback still
     works, just with a delay for the first viewer).
-
-    This function imports ``cloudinary`` at call-time so that unit tests
-    that do not configure Cloudinary credentials can still import this
-    module without errors.
     """
     public_id = _extract_public_id(video_url)
     if not public_id:
@@ -135,8 +130,6 @@ def request_eager_transcoding(video_url: str) -> bool:
         return False
 
     try:
-        import cloudinary.uploader  # noqa: PLC0415 — intentional late import
-
         result = cloudinary.uploader.explicit(
             public_id,
             type='upload',

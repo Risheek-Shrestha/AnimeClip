@@ -14,16 +14,16 @@ Transcoding
 When a VideoSource or MovieSource is saved with a Cloudinary video URL,
 ``trigger_source_transcoding`` asks Cloudinary to eagerly pre-generate all
 quality renditions (1080p, 720p, 480p, 360p as mp4 + HLS) via
-``transcoding.request_eager_transcoding()``.  This is async on Cloudinary's
-side (``eager_async=True``) so the save does not block.
+``transcoding.request_eager_transcoding()``. The Cloudinary job itself runs
+asynchronously on Cloudinary's side (``eager_async=True``); the call we make
+here just queues it and returns quickly.
 """
-
-import threading
 
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
 from .models import Episode, Follow, MovieSource, Notification, VideoSource, WatchHistory, WatchLater
+from .transcoding import request_eager_transcoding
 
 
 def _users_interested_in_anime(anime):
@@ -96,13 +96,7 @@ def trigger_source_transcoding(sender, instance, created, update_fields, **kwarg
     if not created and not _should_transcode(instance, update_fields):
         return
 
-    # Run in a background thread so the admin save response is never blocked by
-    # a Cloudinary API call. request_eager_transcoding already handles its own
-    # exceptions and logs them, so the thread is fire-and-forget safe.
-    from .transcoding import request_eager_transcoding  # noqa: PLC0415
-
-    url = instance.video_url
-    threading.Thread(target=request_eager_transcoding, args=(url,), daemon=True).start()
+    request_eager_transcoding(instance.video_url)
 
 
 @receiver(post_save, sender=MovieSource)
@@ -113,7 +107,4 @@ def trigger_movie_source_transcoding(sender, instance, created, update_fields, *
     if not created and not _should_transcode(instance, update_fields):
         return
 
-    from .transcoding import request_eager_transcoding  # noqa: PLC0415
-
-    url = instance.video_url
-    threading.Thread(target=request_eager_transcoding, args=(url,), daemon=True).start()
+    request_eager_transcoding(instance.video_url)

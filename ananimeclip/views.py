@@ -1077,7 +1077,7 @@ def category_page(request, genre):
             'movies': filter_list_age_appropriate(ctx['movies'], request),
             'anime': filter_list_age_appropriate(ctx['anime'], request),
         }
-    return render(request, 'category.html', {'genre': genre, **ctx})
+    return render(request, 'category.html', {'title': genre, 'genre': genre, **ctx})
 
 
 def search_results(request):
@@ -1150,6 +1150,7 @@ def search_results(request):
         request,
         'search_results.html',
         {
+            'title': f'Search results for "{query}"' if query else 'Search',
             'query': query,
             'movies': movies,
             'anime_list': anime_list,
@@ -1226,7 +1227,7 @@ def continue_watching(request):
             entry.progress_pct = min(round(entry.progress_seconds / total_secs * 100), 100)
         else:
             entry.progress_pct = 0
-    return render(request, 'continue_watching.html', {'history': history})
+    return render(request, 'continue_watching.html', {'title': 'Continue Watching', 'history': history})
 
 
 # ============================================================
