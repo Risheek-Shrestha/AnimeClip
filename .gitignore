@@ -31,3 +31,8 @@ commit_message.txt
 # Fixture data — load via `python manage.py loaddata` from a private location,
 # not from a file checked into the repo
 data.json
+
+# SSL certificates — provisioned on the server, never committed
+nginx/certs/*.pem
+nginx/certs/*.key
+nginx/certs/*.crt
