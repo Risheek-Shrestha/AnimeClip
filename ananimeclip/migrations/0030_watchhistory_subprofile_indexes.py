@@ -27,13 +27,11 @@ class Migration(migrations.Migration):
 
     operations = [
         # ── WatchHistory ─────────────────────────────────────────────────────
-
         # Drop old user-scoped unique constraints first (can't alter while they exist)
         migrations.AlterUniqueTogether(
             name='watchhistory',
             unique_together=set(),
         ),
-
         # Add nullable subprofile FK
         migrations.AddField(
             model_name='watchhistory',
@@ -46,13 +44,11 @@ class Migration(migrations.Migration):
                 to='ananimeclip.subprofile',
             ),
         ),
-
         # New unique constraints scoped to sub-profile
         migrations.AlterUniqueTogether(
             name='watchhistory',
             unique_together={('subprofile', 'episode'), ('subprofile', 'movie')},
         ),
-
         # Performance indexes
         migrations.AddIndex(
             model_name='watchhistory',
@@ -62,14 +58,11 @@ class Migration(migrations.Migration):
             model_name='watchhistory',
             index=models.Index(fields=['user', '-updated_at'], name='wh_user_updated_idx'),
         ),
-
         # ── WatchLater ───────────────────────────────────────────────────────
-
         migrations.AlterUniqueTogether(
             name='watchlater',
             unique_together=set(),
         ),
-
         migrations.AddField(
             model_name='watchlater',
             name='subprofile',
@@ -81,14 +74,11 @@ class Migration(migrations.Migration):
                 to='ananimeclip.subprofile',
             ),
         ),
-
         migrations.AlterUniqueTogether(
             name='watchlater',
             unique_together={('subprofile', 'episode'), ('subprofile', 'movie')},
         ),
-
         # ── Comment indexes ──────────────────────────────────────────────────
-
         migrations.AddIndex(
             model_name='comment',
             index=models.Index(fields=['episode', 'created_at'], name='comment_episode_created_idx'),
@@ -97,12 +87,10 @@ class Migration(migrations.Migration):
             model_name='comment',
             index=models.Index(fields=['movie', 'created_at'], name='comment_movie_created_idx'),
         ),
-
         # ── Notification index ───────────────────────────────────────────────
         # The unread-count badge is fetched via context_processors.py on every
         # single page load.  Without this index PostgreSQL does a sequential
         # scan of the entire notification table per request.
-
         migrations.AddIndex(
             model_name='notification',
             index=models.Index(

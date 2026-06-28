@@ -204,9 +204,9 @@ AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
 ]
 AXES_FAILURE_LIMIT = 5
-AXES_COOLOFF_TIME = 1          # hours until lockout is lifted automatically
-AXES_LOCKOUT_PARAMETERS = ['ip_address']   # lock by IP (add 'username' for extra strictness)
-AXES_RESET_ON_SUCCESS = True   # clear failure count on successful login
+AXES_COOLOFF_TIME = 1  # hours until lockout is lifted automatically
+AXES_LOCKOUT_PARAMETERS = ['ip_address']  # lock by IP (add 'username' for extra strictness)
+AXES_RESET_ON_SUCCESS = True  # clear failure count on successful login
 AXES_HANDLER = 'axes.handlers.cache.AxesCacheHandler'  # use Redis for fast counter storage
 
 # ============================================================

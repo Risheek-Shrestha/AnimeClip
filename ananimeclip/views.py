@@ -98,8 +98,6 @@ def safe_cache_delete(key):
         logger.warning('Cache DELETE failed for key: %s', key, exc_info=True)
 
 
-
-
 def get_active_subprofile(request):
     """
     Return the SubProfile currently active in the session, or None.
@@ -118,6 +116,7 @@ def get_active_subprofile(request):
         return SubProfile.objects.get(pk=sp_id, user=request.user)
     except SubProfile.DoesNotExist:
         return None
+
 
 # ============================================================
 # INDEX
@@ -1692,8 +1691,6 @@ def profile_delete(request, subprofile_id):
     return redirect('profile_select')
 
 
-
-
 # ============================================================
 # HEALTH CHECK + ROBOTS
 # ============================================================
@@ -1707,6 +1704,7 @@ def healthz(request):
 def robots_txt(request):
     """Serve a robots.txt that blocks bots from private / API paths."""
     from django.http import HttpResponse
+
     lines = [
         'User-agent: *',
         'Disallow: /admin/',
