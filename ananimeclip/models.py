@@ -75,8 +75,8 @@ class Anime(models.Model):
         max_digits=3, decimal_places=1, validators=[MinValueValidator(0), MaxValueValidator(10)], default=0
     )
     age_rating = models.CharField(max_length=10, choices=AGE_CHOICES, default='pg13')
-    is_featured = models.BooleanField(default=False)
-    is_popular = models.BooleanField(default=False)
+    is_featured = models.BooleanField(default=False, db_index=True)
+    is_popular = models.BooleanField(default=False, db_index=True)
     trailer_url = models.URLField(
         max_length=500,
         blank=True,
@@ -146,8 +146,8 @@ class Movie(models.Model):
         max_digits=3, decimal_places=1, validators=[MinValueValidator(0), MaxValueValidator(10)], default=0
     )
     age_rating = models.CharField(max_length=10, choices=AGE_CHOICES, default='pg13')
-    is_featured = models.BooleanField(default=False)
-    is_popular = models.BooleanField(default=False)
+    is_featured = models.BooleanField(default=False, db_index=True)
+    is_popular = models.BooleanField(default=False, db_index=True)
     duration_mins = models.PositiveIntegerField(default=0)
     trailer_url = models.URLField(
         max_length=500,
