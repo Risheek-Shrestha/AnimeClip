@@ -267,7 +267,8 @@
         </div>
         <div class="col-lg-6 col-12">
           <div class="footer-bottom-link text-end">
-            <a href="#">{% trans "Privacy Policy" %}</a>
+            <a href="{% url 'privacy_policy' %}">{% trans "Privacy Policy" %}</a>
+            <a href="{% url 'terms_of_service' %}" class="ps-2">{% trans "Terms of Service" %}</a>
             <a href="#" class="ps-2">{% trans "Comments Policy" %}</a>
           </div>
         </div>

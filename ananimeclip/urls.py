@@ -6,6 +6,8 @@ from ananimeclip import views
 urlpatterns = [
     path('healthz/', views.healthz, name='healthz'),
     path('robots.txt', views.robots_txt, name='robots_txt'),
+    path('privacy-policy/', views.privacy_policy, name='privacy_policy'),
+    path('terms-of-service/', views.terms_of_service, name='terms_of_service'),
     path('', views.index, name='index'),
     path('login/', views.login_view, name='login'),
     path('signup/', views.signup, name='signup'),

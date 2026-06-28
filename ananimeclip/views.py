@@ -1817,10 +1817,27 @@ def robots_txt(request):
         'Disallow: /profiles/',
         'Allow: /',
         '',
-        '# Update this URL to match your real domain before deploying.',
-        'Sitemap: https://animeclip.example.com/sitemap.xml',
+        f'Sitemap: {request.build_absolute_uri("/sitemap.xml")}',
     ]
     return HttpResponse('\n'.join(lines), content_type='text/plain')
+
+
+# ============================================================
+# LEGAL PAGES
+# ============================================================
+# Placeholder content — these exist so the footer links resolve to a real
+# page instead of "#" and so there's *something* in place before a public
+# launch, but the actual wording needs a real legal review before this app
+# handles real users' data or real (e.g. licensed/3rd-party) video content.
+# Not legal advice; just a starting point.
+
+
+def privacy_policy(request):
+    return render(request, 'privacy_policy.html', {'title': 'Privacy Policy'})
+
+
+def terms_of_service(request):
+    return render(request, 'terms_of_service.html', {'title': 'Terms of Service'})
 
 
 # ============================================================

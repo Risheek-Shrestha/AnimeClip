@@ -18,7 +18,10 @@ Including another URLconf
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
+from django.contrib.sitemaps.views import sitemap
 from django.urls import include, path
+
+from ananimeclip.sitemaps import sitemaps
 
 admin.site.site_header = 'Anime CLip'
 admin.site.site_title = 'Anime CLip title'
@@ -31,5 +34,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('i18n/', include('django.conf.urls.i18n')),
     path('analytics/', include('analytics.urls', namespace='analytics')),
+    # robots.txt has always pointed at /sitemap.xml — this is what actually serves it.
+    path('sitemap.xml', sitemap, {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.sitemap'),
     path('', include('ananimeclip.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -1580,3 +1580,85 @@ class ServeDownloadViewTest(TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertIn('quality_options', resp.context)
         self.assertTrue(len(resp.context['quality_options']) > 0)
+
+
+# ──────────────────────────────────────────────────────────────
+# Production-readiness fixes
+# ──────────────────────────────────────────────────────────────
+
+
+class PasswordResetTimeoutTest(TestCase):
+    """PASSWORD_RESET_TIMEOUT was 300s (5 min) — far too short for an email
+    flow. Guard against it silently regressing back to a short value."""
+
+    def test_timeout_is_at_least_one_day(self):
+        from django.conf import settings
+
+        self.assertGreaterEqual(settings.PASSWORD_RESET_TIMEOUT, 60 * 60 * 24)
+
+
+class SitemapTest(TestCase):
+    def setUp(self):
+        self.genre = Genre.objects.create(name='Action')
+        anime = make_anime()
+        anime.genres.add(self.genre)
+
+    def test_sitemap_returns_200_and_xml(self):
+        resp = self.client.get('/sitemap.xml')
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn(b'<urlset', resp.content)
+
+    def test_sitemap_includes_static_pages(self):
+        resp = self.client.get('/sitemap.xml')
+        body = resp.content.decode()
+        self.assertIn(reverse('index'), body)
+        self.assertIn(reverse('movies'), body)
+        self.assertIn(reverse('all_categories'), body)
+
+    def test_sitemap_includes_genre_pages(self):
+        resp = self.client.get('/sitemap.xml')
+        body = resp.content.decode()
+        self.assertIn(reverse('category_page', args=[self.genre.name]), body)
+
+    def test_robots_txt_sitemap_line_resolves(self):
+        """robots.txt previously pointed at a sitemap.xml that 404'd."""
+        robots_resp = self.client.get('/robots.txt')
+        sitemap_line = next(line for line in robots_resp.content.decode().splitlines() if line.startswith('Sitemap:'))
+        sitemap_url = sitemap_line.split('Sitemap:', 1)[1].strip()
+        sitemap_resp = self.client.get(sitemap_url.replace('http://testserver', ''))
+        self.assertEqual(sitemap_resp.status_code, 200)
+
+
+class LegalPagesTest(TestCase):
+    def test_privacy_policy_renders(self):
+        resp = self.client.get(reverse('privacy_policy'))
+        self.assertEqual(resp.status_code, 200)
+
+    def test_terms_of_service_renders(self):
+        resp = self.client.get(reverse('terms_of_service'))
+        self.assertEqual(resp.status_code, 200)
+
+    def test_footer_links_to_legal_pages(self):
+        resp = self.client.get(reverse('index'))
+        body = resp.content.decode()
+        self.assertIn(reverse('privacy_policy'), body)
+        self.assertIn(reverse('terms_of_service'), body)
+
+
+class ContentSecurityPolicyTest(TestCase):
+    def test_csp_header_present_on_homepage(self):
+        resp = self.client.get(reverse('index'))
+        self.assertIn('Content-Security-Policy', resp)
+        csp = resp['Content-Security-Policy']
+        self.assertIn("default-src 'self'", csp)
+        self.assertIn('frame-ancestors', csp)
+
+    def test_csp_allows_known_third_party_script_origins(self):
+        """Regression guard: hls.js, the Cloudinary upload widget, and the
+        Chromecast sender SDK are loaded from these origins — if someone
+        tightens script-src without updating this list, those features
+        break silently in the browser instead of failing a test."""
+        resp = self.client.get(reverse('index'))
+        csp = resp['Content-Security-Policy']
+        for origin in ('cdn.jsdelivr.net', 'upload-widget.cloudinary.com', 'www.gstatic.com'):
+            self.assertIn(origin, csp)

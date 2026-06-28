@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block body %}
+
+<section class="breadcrumb sec-mar">
+    <div class="container">
+        <div class="breadcrumb-content">
+            <ul>
+                <li><a href="{% url 'index' %}">Home</a></li>
+                <li><a class="active">Terms of Service</a></li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<section class="recent sec-mar">
+    <div class="container">
+        <div class="heading style-1">
+            <h2>Terms of Service</h2>
+        </div>
+
+        <div class="legal-content">
+            <p><em>Last updated: this is placeholder text — replace it with your own terms, reviewed for your jurisdiction, before launching publicly.</em></p>
+
+            <h3>Accounts</h3>
+            <p>You're responsible for keeping your login credentials secure and for activity that happens under your account. You must provide an accurate age when creating an account so age-rating and Kids Mode controls work correctly.</p>
+
+            <h3>Acceptable use</h3>
+            <p>Don't attempt to circumvent the age-rating or Kids Mode controls, share or republish signed playback/download links, scrape the catalog, or use automated tools to interact with the service outside of normal browsing. Comments must not contain harassment, hate speech, spam, or illegal content; comments may be removed and accounts suspended for violations.</p>
+
+            <h3>Content</h3>
+            <p>Video and metadata made available through this service are provided as-is. Operators of a deployment are solely responsible for ensuring they hold the necessary rights or licenses for any media they upload or stream through this software.</p>
+
+            <h3>Availability</h3>
+            <p>The service is provided "as is" without warranties of any kind. We may suspend or modify the service at any time, including for maintenance, and don't guarantee uninterrupted availability.</p>
+
+            <h3>Termination</h3>
+            <p>Accounts that violate these terms may be suspended or terminated without notice.</p>
+
+            <h3>Changes</h3>
+            <p>These terms may be updated from time to time; continued use of the service after a change constitutes acceptance of the updated terms.</p>
+
+            <h3>Contact</h3>
+            <p>Questions about these terms can be directed to the site administrator.</p>
+        </div>
+    </div>
+</section>
+
+{% endblock body %}

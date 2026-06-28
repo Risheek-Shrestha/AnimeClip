@@ -30,6 +30,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sitemaps',
     'ananimeclip',
     'django_ratelimit',
     'cloudinary',
@@ -37,10 +38,15 @@ INSTALLED_APPS = [
     'analytics',
     'django_celery_beat',
     'axes',
+    'csp',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    # Sets the Content-Security-Policy header on every response. Must come
+    # early (right after SecurityMiddleware) per django-csp's docs so it can
+    # see/modify the final response on the way back out.
+    'csp.middleware.CSPMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.locale.LocaleMiddleware',
@@ -145,7 +151,10 @@ if os.getenv('EMAIL_HOST'):
 else:
     # Fallback: prints to console — only for local dev
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-PASSWORD_RESET_TIMEOUT = 300
+# PASSWORD_RESET_TIMEOUT was previously 300 (5 minutes) — far too short for an
+# email-based flow: the user has to receive the email, open it, and click the
+# link before it expires. Django's own default is 259200 (3 days); we use that.
+PASSWORD_RESET_TIMEOUT = 60 * 60 * 24 * 3  # 3 days
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/'
 
@@ -199,6 +208,45 @@ if not DEBUG:
     CSRF_COOKIE_SAMESITE = 'Lax'
     # Tell Django we're behind an SSL-terminating nginx proxy.
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# ============================================================
+# CONTENT SECURITY POLICY (django-csp)
+# ============================================================
+# Restricts which origins the browser will load scripts/styles/media/etc.
+# from, which meaningfully shrinks the blast radius of any future XSS even
+# though our SecurityMiddleware/cookie settings already cover a lot of
+# ground. Kept on in dev too so CSP violations are caught locally rather
+# than discovered for the first time in production.
+#
+# 'unsafe-inline' is still needed for script-src/style-src because several
+# templates use inline <script> blocks and inline style="" attributes
+# (see streaming.html, the analytics dashboard, etc.). Migrating those to
+# nonces (request.csp_nonce) would let us drop 'unsafe-inline' entirely —
+# worth doing as a follow-up, but out of scope here since it touches every
+# template with an inline <script> tag.
+CONTENT_SECURITY_POLICY = {
+    'DIRECTIVES': {
+        'default-src': ["'self'"],
+        'script-src': [
+            "'self'",
+            "'unsafe-inline'",
+            'https://cdn.jsdelivr.net',
+            'https://upload-widget.cloudinary.com',
+            'https://www.gstatic.com',  # Chromecast sender SDK (cast_airplay.js)
+        ],
+        'style-src': ["'self'", "'unsafe-inline'"],
+        'img-src': ["'self'", 'data:', 'https://res.cloudinary.com'],
+        'media-src': ["'self'", 'https://res.cloudinary.com'],
+        'font-src': ["'self'", 'data:'],
+        'connect-src': ["'self'", 'https://res.cloudinary.com', 'https://api.cloudinary.com'],
+        'frame-src': ["'self'", 'https://www.youtube.com', 'https://upload-widget.cloudinary.com'],
+        'object-src': ["'none'"],
+        'base-uri': ["'self'"],
+        'form-action': ["'self'"],
+        # Matches X_FRAME_OPTIONS = 'DENY' above — belt and suspenders.
+        'frame-ancestors': ["'none'"],
+    }
+}
 
 
 if 'test' in sys.argv:

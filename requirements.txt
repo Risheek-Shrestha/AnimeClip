@@ -33,5 +33,8 @@ django-celery-beat>=2.6.0
 # Brute-force login protection
 django-axes>=6.4.0
 
+# Content-Security-Policy headers
+django-csp>=4.0
+
 # Code quality
 ruff>=0.4.0
