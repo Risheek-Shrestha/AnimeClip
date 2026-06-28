@@ -139,6 +139,12 @@ STORAGES = {
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# Opt into Django 6.0's forms.URLField default now (assume https, not http,
+# when a submitted URL has no scheme) — every URLField here (trailer_url,
+# video_url, file_url) is always an https Cloudinary/YouTube URL anyway, and
+# this silences a RemovedInDjango60Warning ahead of that upgrade.
+FORMS_URLFIELD_ASSUME_HTTPS = True
+
 # Email — set EMAIL_HOST / EMAIL_HOST_USER / EMAIL_HOST_PASSWORD in production
 if os.getenv('EMAIL_HOST'):
     EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
