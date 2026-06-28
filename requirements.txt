@@ -1,9 +1,9 @@
 # Core
-Django>=4.2,<4.3   # 4.2 LTS — receives security patches until April 2026
+Django>=5.2,<5.3   # 5.2 LTS — supported until April 2028
 python-dotenv>=1.0.0
 
 # Database
-psycopg2-binary>=2.9.9
+psycopg2>=2.9.9    # use the source package in production (not -binary)
 
 # Media / Static
 cloudinary>=1.36.0
