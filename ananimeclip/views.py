@@ -925,6 +925,23 @@ def like_comment(request, comment_id):
     return JsonResponse({'liked': liked, 'total_likes': comment.total_likes()})
 
 
+@login_required
+@require_POST
+def delete_comment(request, comment_id):
+    """Users can delete their own comments; staff can delete any comment."""
+    comment = get_object_or_404(Comment, id=comment_id)
+    if comment.user != request.user and not request.user.is_staff:
+        return JsonResponse({'error': 'Forbidden'}, status=403)
+    episode_id = comment.episode_id
+    movie_id = comment.movie_id
+    comment.delete()
+    if episode_id:
+        safe_cache_delete(f'streaming:episode:{episode_id}')
+    if movie_id:
+        safe_cache_delete(f'streaming:movie:{movie_id}')
+    return JsonResponse({'deleted': True})
+
+
 # ============================================================
 # FOLLOW / FAVOURITES
 # ============================================================

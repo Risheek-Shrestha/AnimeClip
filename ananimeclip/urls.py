@@ -15,6 +15,7 @@ urlpatterns = [
     # comment actions
     path('episode/<int:episode_id>/comment/', views.add_comment, name='add_comment'),
     path('comment/<int:comment_id>/like/', views.like_comment, name='like_comment'),
+    path('comment/<int:comment_id>/delete/', views.delete_comment, name='delete_comment'),
     path('movie/<int:movie_id>/comment/', views.add_movie_comment, name='add_movie_comment'),
     path('logout/', auth_views.LogoutView.as_view(next_page='index'), name='logout'),
     path('profile/', views.profile, name='profile'),

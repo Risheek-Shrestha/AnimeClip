@@ -77,6 +77,12 @@ class Anime(models.Model):
     age_rating = models.CharField(max_length=10, choices=AGE_CHOICES, default='pg13')
     is_featured = models.BooleanField(default=False)
     is_popular = models.BooleanField(default=False)
+    trailer_url = models.URLField(
+        max_length=500,
+        blank=True,
+        default='',
+        help_text='YouTube embed URL for the trailer, e.g. https://www.youtube.com/embed/VIDEO_ID',
+    )
 
     def __str__(self):
         return self.title
@@ -143,6 +149,12 @@ class Movie(models.Model):
     is_featured = models.BooleanField(default=False)
     is_popular = models.BooleanField(default=False)
     duration_mins = models.PositiveIntegerField(default=0)
+    trailer_url = models.URLField(
+        max_length=500,
+        blank=True,
+        default='',
+        help_text='YouTube embed URL for the trailer, e.g. https://www.youtube.com/embed/VIDEO_ID',
+    )
     release_notified = models.BooleanField(
         default=False,
         help_text='Set once followers have been notified that this movie is out. '
@@ -226,6 +238,14 @@ class Episode(models.Model):
     release_day = models.CharField(max_length=10, choices=DAY_CHOICES, blank=True)
     release_time = models.TimeField(null=True, blank=True)
     duration_mins = models.PositiveIntegerField(default=0)
+    # Skip Intro — set by content admins once the op/intro timestamp is known.
+    # intro_start_seconds=0 + intro_end_seconds=0 means "no skip button shown".
+    intro_start_seconds = models.PositiveIntegerField(
+        default=0, help_text='Second at which the opening/intro begins (0 = disable skip intro button).'
+    )
+    intro_end_seconds = models.PositiveIntegerField(
+        default=0, help_text='Second at which the opening/intro ends; player jumps here on Skip.'
+    )
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
