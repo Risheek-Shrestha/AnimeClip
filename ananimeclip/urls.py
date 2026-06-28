@@ -4,6 +4,8 @@ from django.urls import path
 from ananimeclip import views
 
 urlpatterns = [
+    path('healthz/', views.healthz, name='healthz'),
+    path('robots.txt', views.robots_txt, name='robots_txt'),
     path('', views.index, name='index'),
     path('login/', views.login_view, name='login'),
     path('signup/', views.signup, name='signup'),

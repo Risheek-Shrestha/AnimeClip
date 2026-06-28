@@ -269,6 +269,10 @@ class Comment(models.Model):
 
     class Meta:
         ordering = ['created_at']
+        indexes = [
+            models.Index(fields=['episode', 'created_at'], name='comment_episode_created_idx'),
+            models.Index(fields=['movie', 'created_at'], name='comment_movie_created_idx'),
+        ]
 
     def __str__(self):
         return f'Comment by {self.user.username}'
@@ -356,6 +360,11 @@ class MediaImage(models.Model):
 
 class WatchHistory(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='watch_history')
+    # Which Netflix-style sub-profile was watching. NULL means the entry was
+    # created before sub-profiles existed; all new writes must set this.
+    subprofile = models.ForeignKey(
+        'SubProfile', null=True, blank=True, on_delete=models.CASCADE, related_name='watch_history'
+    )
     episode = models.ForeignKey(Episode, null=True, blank=True, on_delete=models.CASCADE)
     movie = models.ForeignKey(Movie, null=True, blank=True, on_delete=models.CASCADE)
     progress_seconds = models.PositiveIntegerField(default=0)  # how far they watched
@@ -363,7 +372,13 @@ class WatchHistory(models.Model):
 
     class Meta:
         ordering = ['-updated_at']
-        unique_together = [['user', 'episode'], ['user', 'movie']]
+        # Unique per sub-profile so two profiles on the same account can each
+        # have independent progress on the same episode/movie.
+        unique_together = [['subprofile', 'episode'], ['subprofile', 'movie']]
+        indexes = [
+            models.Index(fields=['subprofile', '-updated_at'], name='wh_subprofile_updated_idx'),
+            models.Index(fields=['user', '-updated_at'], name='wh_user_updated_idx'),
+        ]
 
     def __str__(self):
         return f'{self.user.username} - {self.episode or self.movie}'
@@ -371,13 +386,16 @@ class WatchHistory(models.Model):
 
 class WatchLater(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='watch_later')
+    subprofile = models.ForeignKey(
+        'SubProfile', null=True, blank=True, on_delete=models.CASCADE, related_name='watch_later'
+    )
     episode = models.ForeignKey(Episode, null=True, blank=True, on_delete=models.CASCADE)
     movie = models.ForeignKey(Movie, null=True, blank=True, on_delete=models.CASCADE)
     added_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ['-added_at']
-        unique_together = [['user', 'episode'], ['user', 'movie']]
+        unique_together = [['subprofile', 'episode'], ['subprofile', 'movie']]
 
     def __str__(self):
         return f'{self.user.username} - {self.episode or self.movie}'
@@ -467,6 +485,11 @@ class Notification(models.Model):
 
     class Meta:
         ordering = ['-created_at']
+        indexes = [
+            # Unread notification count is fetched on every page load via the
+            # context processor — this index makes it a fast index-only scan.
+            models.Index(fields=['user', 'is_read', '-created_at'], name='notif_user_read_created_idx'),
+        ]
 
     def __str__(self):
         return f'{self.user.username} — {self.message}'

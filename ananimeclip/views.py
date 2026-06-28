@@ -6,6 +6,7 @@ from django.contrib import messages
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
+from django.contrib.postgres.search import SearchQuery, SearchRank, SearchVector
 from django.core.cache import cache
 from django.db.models import Max, Prefetch, Q
 from django.http import Http404, JsonResponse
@@ -96,6 +97,27 @@ def safe_cache_delete(key):
     except Exception:
         logger.warning('Cache DELETE failed for key: %s', key, exc_info=True)
 
+
+
+
+def get_active_subprofile(request):
+    """
+    Return the SubProfile currently active in the session, or None.
+
+    Used to scope WatchHistory / WatchLater queries so each sub-profile on an
+    account has independent watch progress — exactly like Netflix profiles.
+    Falls back gracefully when no sub-profile is active (e.g. the user hasn't
+    selected one yet, or they're on a legacy session).
+    """
+    if not request.user.is_authenticated:
+        return None
+    sp_id = request.session.get('active_subprofile_id')
+    if not sp_id:
+        return None
+    try:
+        return SubProfile.objects.get(pk=sp_id, user=request.user)
+    except SubProfile.DoesNotExist:
+        return None
 
 # ============================================================
 # INDEX
@@ -231,14 +253,16 @@ def index(request):
     recommended_animes = []
 
     if request.user.is_authenticated:
+        _sp = get_active_subprofile(request)
+        _wh_filter = {'subprofile': _sp} if _sp else {'user': request.user}
         user_history = list(
-            WatchHistory.objects.filter(user=request.user)
+            WatchHistory.objects.filter(**_wh_filter)
             .select_related('episode__season__anime', 'movie')
             .prefetch_related('episode__season__anime__media_images', 'movie__media_images')
             .order_by('-updated_at')[:8]
         )
         user_watch_later = list(
-            WatchLater.objects.filter(user=request.user)
+            WatchLater.objects.filter(**_wh_filter)
             .select_related('episode__season__anime', 'movie')
             .prefetch_related('episode__season__anime__media_images', 'movie__media_images')
             .order_by('-added_at')[:8]
@@ -305,14 +329,16 @@ def movies(request):
     user_watch_later = []
     recommended_movies = []
     if request.user.is_authenticated:
+        _sp = get_active_subprofile(request)
+        _wh_filter = {'subprofile': _sp} if _sp else {'user': request.user}
         user_history = list(
-            WatchHistory.objects.filter(user=request.user, movie__isnull=False)
+            WatchHistory.objects.filter(**_wh_filter, movie__isnull=False)
             .select_related('movie')
             .prefetch_related('movie__media_images')
             .order_by('-updated_at')[:8]
         )
         user_watch_later = list(
-            WatchLater.objects.filter(user=request.user, movie__isnull=False)
+            WatchLater.objects.filter(**_wh_filter, movie__isnull=False)
             .select_related('movie')
             .prefetch_related('movie__media_images')
             .order_by('-added_at')[:8]
@@ -343,13 +369,15 @@ def movies(request):
 
 @login_required
 def profile(request):
+    _sp = get_active_subprofile(request)
+    _wh_filter = {'subprofile': _sp} if _sp else {'user': request.user}
     history = (
-        WatchHistory.objects.filter(user=request.user)
+        WatchHistory.objects.filter(**_wh_filter)
         .select_related('episode__season__anime', 'movie')
         .prefetch_related('episode__season__anime__media_images', 'movie__media_images')
         .order_by('-updated_at')[:20]
     )
-    watch_later_count = WatchLater.objects.filter(user=request.user).count()
+    watch_later_count = WatchLater.objects.filter(**_wh_filter).count()
     follow_count = Follow.objects.filter(user=request.user).count()
     playlists = Playlist.objects.filter(user=request.user).prefetch_related('items')
     return render(
@@ -628,8 +656,10 @@ def streaming(request, episode_id):
         except UserRating.DoesNotExist:
             pass
         is_following = Follow.objects.filter(user=request.user, anime=anime).exists()
+        _sp = get_active_subprofile(request)
+        _wh_lookup = {'subprofile': _sp, 'episode': episode} if _sp else {'user': request.user, 'episode': episode}
         try:
-            history_entry = WatchHistory.objects.get(user=request.user, episode=episode)
+            history_entry = WatchHistory.objects.get(**_wh_lookup)
             resume_seconds = history_entry.progress_seconds
         except WatchHistory.DoesNotExist:
             pass
@@ -719,8 +749,10 @@ def streaming_movie(request, movie_id):
         except UserRating.DoesNotExist:
             pass
         is_following = Follow.objects.filter(user=request.user, movie=movie).exists()
+        _sp = get_active_subprofile(request)
+        _wh_lookup = {'subprofile': _sp, 'movie': movie} if _sp else {'user': request.user, 'movie': movie}
         try:
-            history_entry = WatchHistory.objects.get(user=request.user, movie=movie)
+            history_entry = WatchHistory.objects.get(**_wh_lookup)
             resume_seconds = history_entry.progress_seconds
         except WatchHistory.DoesNotExist:
             pass
@@ -1037,13 +1069,33 @@ def live_search(request):
         return JsonResponse({'results': cached})
 
     results = []
-    movie_qs = filter_age_appropriate(Movie.objects.filter(title__icontains=query), request)
+    # Use PostgreSQL full-text search for relevance ranking; fall back to
+    # icontains if the pg extension isn't available (e.g. SQLite in tests).
+    try:
+        title_vec = SearchVector('title', weight='A')
+        sq = SearchQuery(query)
+        movie_qs = filter_age_appropriate(
+            Movie.objects.annotate(rank=SearchRank(title_vec, sq)).filter(rank__gt=0).order_by('-rank'),
+            request,
+        )
+    except Exception:
+        movie_qs = filter_age_appropriate(Movie.objects.filter(title__icontains=query), request)
+
     for movie in movie_qs[:5]:
         results.append({'id': movie.id, 'title': movie.title, 'type': 'movie'})
 
-    anime_qs = filter_age_appropriate(Anime.objects.filter(title__icontains=query), request).prefetch_related(
-        Prefetch('seasons', queryset=Season.objects.prefetch_related('episodes'))
-    )[:5]
+    try:
+        anime_qs = filter_age_appropriate(
+            Anime.objects.annotate(rank=SearchRank(SearchVector('title', weight='A'), SearchQuery(query)))
+            .filter(rank__gt=0)
+            .order_by('-rank')
+            .prefetch_related(Prefetch('seasons', queryset=Season.objects.prefetch_related('episodes'))),
+            request,
+        )[:5]
+    except Exception:
+        anime_qs = filter_age_appropriate(Anime.objects.filter(title__icontains=query), request).prefetch_related(
+            Prefetch('seasons', queryset=Season.objects.prefetch_related('episodes'))
+        )[:5]
     for a in anime_qs:
         seasons = list(a.seasons.all())
         first_episode = None
@@ -1094,9 +1146,18 @@ def search_results(request):
         movie_qs = filter_age_appropriate(Movie.objects.all(), request)
         anime_qs = filter_age_appropriate(Anime.objects.all(), request)
 
-        # ── Text search ──────────────────────────────────────────────────────
-        movie_qs = movie_qs.filter(Q(title__icontains=query) | Q(description__icontains=query))
-        anime_qs = anime_qs.filter(Q(title__icontains=query) | Q(description__icontains=query))
+        # ── Text search ─────────────────────────────────────────────────────
+        # PostgreSQL full-text search with title (A) weighted above description
+        # (B) so a title match ranks higher than a description-only match.
+        # Falls back to icontains for non-PostgreSQL environments (e.g. tests).
+        try:
+            fts_vector = SearchVector('title', weight='A') + SearchVector('description', weight='B')
+            fts_query = SearchQuery(query)
+            movie_qs = movie_qs.annotate(rank=SearchRank(fts_vector, fts_query)).filter(rank__gt=0)
+            anime_qs = anime_qs.annotate(rank=SearchRank(fts_vector, fts_query)).filter(rank__gt=0)
+        except Exception:
+            movie_qs = movie_qs.filter(Q(title__icontains=query) | Q(description__icontains=query))
+            anime_qs = anime_qs.filter(Q(title__icontains=query) | Q(description__icontains=query))
 
         # ── Genre filter ─────────────────────────────────────────────────────
         if genre:
@@ -1117,7 +1178,7 @@ def search_results(request):
         elif lang == 'sub':
             anime_qs = anime_qs.filter(seasons__episodes__sources__language__iexact='sub')
 
-        # ── Sort ─────────────────────────────────────────────────────────────
+        # ── Sort — 'relevance' uses FTS rank when available ─────────────────────
         sort_map = {
             'rating': '-average_rating',
             'newest': '-release_date',
@@ -1190,19 +1251,20 @@ def update_watch_history(request):
     except (TypeError, ValueError):
         return JsonResponse({'error': 'Invalid progress_seconds value'}, status=400)
 
+    _sp = get_active_subprofile(request)
     if episode_id:
         episode = get_object_or_404(Episode, id=episode_id)
+        lookup = {'subprofile': _sp, 'episode': episode} if _sp else {'user': request.user, 'episode': episode}
         WatchHistory.objects.update_or_create(
-            user=request.user,
-            episode=episode,
-            defaults={'progress_seconds': progress, 'movie': None},
+            **lookup,
+            defaults={'user': request.user, 'progress_seconds': progress, 'movie': None},
         )
     elif movie_id:
         movie = get_object_or_404(Movie, id=movie_id)
+        lookup = {'subprofile': _sp, 'movie': movie} if _sp else {'user': request.user, 'movie': movie}
         WatchHistory.objects.update_or_create(
-            user=request.user,
-            movie=movie,
-            defaults={'progress_seconds': progress, 'episode': None},
+            **lookup,
+            defaults={'user': request.user, 'progress_seconds': progress, 'episode': None},
         )
     else:
         return JsonResponse({'error': 'No episode or movie id'}, status=400)
@@ -1212,8 +1274,10 @@ def update_watch_history(request):
 @login_required
 @never_cache
 def continue_watching(request):
+    _sp = get_active_subprofile(request)
+    _wh_filter = {'subprofile': _sp} if _sp else {'user': request.user}
     history = list(
-        WatchHistory.objects.filter(user=request.user)
+        WatchHistory.objects.filter(**_wh_filter)
         .order_by('-updated_at')
         .select_related('episode__season__anime', 'movie')
         .prefetch_related('episode__season__anime__media_images', 'movie__media_images')[:20]
@@ -1626,6 +1690,38 @@ def profile_delete(request, subprofile_id):
         del request.session[SESSION_KEY]
     sp.delete()
     return redirect('profile_select')
+
+
+
+
+# ============================================================
+# HEALTH CHECK + ROBOTS
+# ============================================================
+
+
+def healthz(request):
+    """Minimal liveness probe for Docker / load-balancer health checks."""
+    return JsonResponse({'status': 'ok'})
+
+
+def robots_txt(request):
+    """Serve a robots.txt that blocks bots from private / API paths."""
+    from django.http import HttpResponse
+    lines = [
+        'User-agent: *',
+        'Disallow: /admin/',
+        'Disallow: /api/',
+        'Disallow: /watch/',
+        'Disallow: /dl/',
+        'Disallow: /download/',
+        'Disallow: /watch-history/',
+        'Disallow: /profiles/',
+        'Allow: /',
+        '',
+        '# Update this URL to match your real domain before deploying.',
+        'Sitemap: https://animeclip.example.com/sitemap.xml',
+    ]
+    return HttpResponse('\n'.join(lines), content_type='text/plain')
 
 
 # ============================================================

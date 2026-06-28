@@ -1,0 +1,34 @@
+fix: resolve 16 failing tests (missing title context, regex bug, unpatchable imports)
+
+- views.py: pass 'title' in context for search_results, category_page,
+  and continue_watching. base.html's og:title tag uses
+  {{ og_title|default:title }}, and a missing filter argument
+  (unlike a missing top-level variable) raises VariableDoesNotExist
+  instead of failing silently.
+
+- transcoding.py: drop the greedy "transformation segment" group from
+  _PUBLIC_ID_RE. It couldn't distinguish a folder segment from a
+  transform string and was swallowing folder names in public_ids
+  (my_folder/clip.mp4 -> "clip" instead of "my_folder/clip").
+
+  Also hoist the cloudinary.uploader import to module level so
+  transcoding.cloudinary exists as a patchable attribute for tests.
+  Importing the package doesn't require credentials -- those are
+  only checked on an actual API call -- so this preserves the
+  original intent of letting the module import cleanly in
+  credential-less test environments.
+
+- signals.py: import request_eager_transcoding at module level (same
+  patchability issue as above) and call it synchronously instead of
+  via an unjoined threading.Thread. The signal tests assert the call
+  immediately after .objects.create() with no thread join, so the
+  background-thread dispatch made the call non-deterministic from
+  the test's perspective.
+
+  Note: this trades away the non-blocking save behavior the thread
+  was there for. If that's a real production concern, route this
+  through Celery (already a project dependency) instead of plain
+  threading, and update the tests to mock the task dispatch rather
+  than the function call.
+
+Verified: full ananimeclip test suite (138 tests) passes locally.

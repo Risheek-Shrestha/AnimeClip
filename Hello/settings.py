@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     'cloudinary_storage',
     'analytics',
     'django_celery_beat',
+    'axes',
 ]
 
 MIDDLEWARE = [
@@ -46,6 +47,8 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    # axes must come after AuthenticationMiddleware
+    'axes.middleware.AxesMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -190,6 +193,21 @@ if 'test' in sys.argv:
     STORAGES['staticfiles'] = {
         'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage',
     }
+
+# ============================================================
+# AXES — brute-force login protection
+# ============================================================
+# Lock out an IP after 5 failed attempts within a 1-hour window.
+# On lockout, axes raises PermissionDenied so Django returns 403.
+AUTHENTICATION_BACKENDS = [
+    'axes.backends.AxesStandaloneBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]
+AXES_FAILURE_LIMIT = 5
+AXES_COOLOFF_TIME = 1          # hours until lockout is lifted automatically
+AXES_LOCKOUT_PARAMETERS = ['ip_address']   # lock by IP (add 'username' for extra strictness)
+AXES_RESET_ON_SUCCESS = True   # clear failure count on successful login
+AXES_HANDLER = 'axes.handlers.cache.AxesCacheHandler'  # use Redis for fast counter storage
 
 # ============================================================
 # LOGGING

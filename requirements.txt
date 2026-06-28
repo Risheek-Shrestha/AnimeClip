@@ -30,5 +30,8 @@ celery>=5.3.0
 celery[redis]>=5.3.0
 django-celery-beat>=2.6.0
 
+# Brute-force login protection
+django-axes>=6.4.0
+
 # Code quality
 ruff>=0.4.0
