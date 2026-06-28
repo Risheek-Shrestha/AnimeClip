@@ -31,7 +31,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.db.utils import IntegrityError
 
@@ -39,7 +39,7 @@ from ananimeclip.models import Anime, Genre, Movie
 
 logger = logging.getLogger(__name__)
 
-JIKAN_BASE = "https://api.jikan.moe/v4"
+JIKAN_BASE = 'https://api.jikan.moe/v4'
 REQUEST_DELAY_SECONDS = 1.0
 
 
@@ -47,13 +47,13 @@ def _http_get_json(url: str, retries: int = 3) -> dict:
     last_error = None
     for attempt in range(retries):
         try:
-            req = urllib.request.Request(url, headers={"User-Agent": "AnimeClip-Importer/1.0"})
-            with urllib.request.urlopen(req, timeout=15) as resp:
-                return json.loads(resp.read().decode("utf-8"))
+            req = urllib.request.Request(url, headers={'User-Agent': 'AnimeClip-Importer/1.0'})  # noqa: S310
+            with urllib.request.urlopen(req, timeout=15) as resp:  # noqa: S310
+                return json.loads(resp.read().decode('utf-8'))
         except urllib.error.HTTPError as e:
             last_error = e
             if e.code == 429 and attempt < retries - 1:
-                time.sleep(int(e.headers.get("Retry-After", 5)))
+                time.sleep(int(e.headers.get('Retry-After', 5)))
                 continue
             raise
         except urllib.error.URLError as e:
@@ -68,7 +68,7 @@ def _http_get_json(url: str, retries: int = 3) -> dict:
 def _get_or_create_genres(genre_dicts) -> list:
     genres = []
     for g in genre_dicts or []:
-        name = (g.get("name") or "").strip().lower()
+        name = (g.get('name') or '').strip().lower()
         if not name:
             continue
         genre, _ = Genre.objects.get_or_create(name=name)
@@ -77,36 +77,35 @@ def _get_or_create_genres(genre_dicts) -> list:
 
 
 class Command(BaseCommand):
-    help = "Link hand-entered Anime/Movie rows to a MAL id by exact title match, non-destructively."
+    help = 'Link hand-entered Anime/Movie rows to a MAL id by exact title match, non-destructively.'
 
     def add_arguments(self, parser):
-        parser.add_argument("--type", choices=["anime", "movie"], required=True)
+        parser.add_argument('--type', choices=['anime', 'movie'], required=True)
         parser.add_argument(
-            "--dry-run", action="store_true",
+            '--dry-run',
+            action='store_true',
             help="Only print matches/candidates, don't write anything.",
         )
 
     def handle(self, *args, **options):
-        media_type = options["type"]
-        dry_run = options["dry_run"]
-        model_cls = Anime if media_type == "anime" else Movie
-        expected_jikan_type = "tv" if media_type == "anime" else "movie"
+        media_type = options['type']
+        dry_run = options['dry_run']
+        model_cls = Anime if media_type == 'anime' else Movie
+        expected_jikan_type = 'tv' if media_type == 'anime' else 'movie'
 
         unlinked = model_cls.objects.filter(mal_id__isnull=True)
         total = unlinked.count()
         if total == 0:
-            self.stdout.write(self.style.SUCCESS(
-                f"Nothing to backfill — every {media_type} already has a mal_id."
-            ))
+            self.stdout.write(self.style.SUCCESS(f'Nothing to backfill — every {media_type} already has a mal_id.'))
             return
 
-        self.stdout.write(f"Searching Jikan for {total} unlinked {media_type} entries …")
+        self.stdout.write(f'Searching Jikan for {total} unlinked {media_type} entries …')
 
         linked = needs_review = conflicts = 0
 
         for obj in unlinked:
             query = urllib.parse.quote(obj.title)
-            url = f"{JIKAN_BASE}/anime?q={query}&type={expected_jikan_type}&sfw=true&limit=5"
+            url = f'{JIKAN_BASE}/anime?q={query}&type={expected_jikan_type}&sfw=true&limit=5'
             try:
                 payload = _http_get_json(url)
             except Exception as exc:
@@ -115,7 +114,7 @@ class Command(BaseCommand):
                 time.sleep(REQUEST_DELAY_SECONDS)
                 continue
 
-            candidates = (payload or {}).get("data", [])
+            candidates = (payload or {}).get('data', [])
             match = self._find_exact_match(obj.title, candidates)
 
             if not match:
@@ -146,12 +145,12 @@ class Command(BaseCommand):
                 with transaction.atomic():
                     self._apply_match(obj, match)
             except IntegrityError:
-                existing = model_cls.objects.filter(mal_id=match["mal_id"]).exclude(pk=obj.pk).first()
-                existing_note = f" ('{existing.title}', id={existing.pk})" if existing else ""
+                existing = model_cls.objects.filter(mal_id=match['mal_id']).exclude(pk=obj.pk).first()
+                existing_note = f" ('{existing.title}', id={existing.pk})" if existing else ''
                 self.stderr.write(
                     f"  ! '{obj.title}' -> mal_id={match['mal_id']} conflicts with an "
-                    f"existing row{existing_note} — likely a duplicate already imported "
-                    f"separately. Skipped; not linked."
+                    f'existing row{existing_note} — likely a duplicate already imported '
+                    f'separately. Skipped; not linked.'
                 )
                 conflicts += 1
                 time.sleep(REQUEST_DELAY_SECONDS)
@@ -161,24 +160,26 @@ class Command(BaseCommand):
             linked += 1
             time.sleep(REQUEST_DELAY_SECONDS)
 
-        verb = "Would link" if dry_run else "Linked"
-        self.stdout.write(self.style.SUCCESS(
-            f"{verb} {linked} entries; {needs_review} need manual review "
-            f"(title mismatch or no results); {conflicts} skipped due to mal_id "
-            f"conflicts with an existing duplicate row."
-        ))
+        verb = 'Would link' if dry_run else 'Linked'
+        self.stdout.write(
+            self.style.SUCCESS(
+                f'{verb} {linked} entries; {needs_review} need manual review '
+                f'(title mismatch or no results); {conflicts} skipped due to mal_id '
+                f'conflicts with an existing duplicate row.'
+            )
+        )
 
     def _apply_match(self, obj, match: dict) -> None:
         """Non-destructive: only fills mal_id, and studio/genres if currently empty."""
-        obj.mal_id = match["mal_id"]
+        obj.mal_id = match['mal_id']
         if not obj.studio:
-            studios = match.get("studios") or []
+            studios = match.get('studios') or []
             if studios:
-                obj.studio = studios[0].get("name", "")[:100]
-        obj.save(update_fields=["mal_id", "studio"])
+                obj.studio = studios[0].get('name', '')[:100]
+        obj.save(update_fields=['mal_id', 'studio'])
 
         if obj.genres.count() == 0:
-            genres_data = (match.get("genres") or []) + (match.get("explicit_genres") or [])
+            genres_data = (match.get('genres') or []) + (match.get('explicit_genres') or [])
             obj.genres.set(_get_or_create_genres(genres_data))
 
     @staticmethod
@@ -186,8 +187,8 @@ class Command(BaseCommand):
         target = title.strip().lower()
         for c in candidates:
             names = {
-                (c.get("title") or "").strip().lower(),
-                (c.get("title_english") or "").strip().lower(),
+                (c.get('title') or '').strip().lower(),
+                (c.get('title_english') or '').strip().lower(),
             }
             if target in names:
                 return c

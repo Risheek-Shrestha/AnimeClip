@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('ananimeclip', '0008_remove_anime_status_season_status'),
     ]

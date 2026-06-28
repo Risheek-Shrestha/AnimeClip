@@ -22,11 +22,12 @@ def warm_recommendations(self):
     """
     try:
         from django.core.management import call_command
+
         call_command('warm_recommendations')
         logger.info('warm_recommendations task completed successfully.')
     except Exception as exc:
         logger.exception('warm_recommendations task failed: %s', exc)
-        raise self.retry(exc=exc, countdown=60 * 10)  # retry in 10 min
+        raise self.retry(exc=exc, countdown=60 * 10) from None  # retry in 10 min
 
 
 @shared_task(bind=True, name='ananimeclip.tasks.notify_movie_releases', max_retries=2)
@@ -38,8 +39,9 @@ def notify_movie_releases(self):
     """
     try:
         from django.core.management import call_command
+
         call_command('notify_movie_releases')
         logger.info('notify_movie_releases task completed successfully.')
     except Exception as exc:
         logger.exception('notify_movie_releases task failed: %s', exc)
-        raise self.retry(exc=exc, countdown=60 * 5)   # retry in 5 min
+        raise self.retry(exc=exc, countdown=60 * 5) from None  # retry in 5 min

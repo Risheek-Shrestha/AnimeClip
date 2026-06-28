@@ -5,7 +5,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('ananimeclip', '0003_episode_genre_movie_remove_anime_genre_and_more'),
     ]
@@ -14,7 +13,9 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='anime',
             name='age_rating',
-            field=models.CharField(choices=[('pg', 'PG'), ('pg13', 'PG-13'), ('r', '18+')], default='pg13', max_length=10),
+            field=models.CharField(
+                choices=[('pg', 'PG'), ('pg13', 'PG-13'), ('r', '18+')], default='pg13', max_length=10
+            ),
         ),
         migrations.AddField(
             model_name='anime',
@@ -24,7 +25,19 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='anime',
             name='release_day',
-            field=models.CharField(blank=True, choices=[('Sunday', 'Sunday'), ('Monday', 'Monday'), ('Tuesday', 'Tuesday'), ('Wednesday', 'Wednesday'), ('Thursday', 'Thursday'), ('Friday', 'Friday'), ('Saturday', 'Saturday')], max_length=10),
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ('Sunday', 'Sunday'),
+                    ('Monday', 'Monday'),
+                    ('Tuesday', 'Tuesday'),
+                    ('Wednesday', 'Wednesday'),
+                    ('Thursday', 'Thursday'),
+                    ('Friday', 'Friday'),
+                    ('Saturday', 'Saturday'),
+                ],
+                max_length=10,
+            ),
         ),
         migrations.AddField(
             model_name='anime',
@@ -39,7 +52,19 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='movie',
             name='release_day',
-            field=models.CharField(blank=True, choices=[('Sunday', 'Sunday'), ('Monday', 'Monday'), ('Tuesday', 'Tuesday'), ('Wednesday', 'Wednesday'), ('Thursday', 'Thursday'), ('Friday', 'Friday'), ('Saturday', 'Saturday')], max_length=10),
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ('Sunday', 'Sunday'),
+                    ('Monday', 'Monday'),
+                    ('Tuesday', 'Tuesday'),
+                    ('Wednesday', 'Wednesday'),
+                    ('Thursday', 'Thursday'),
+                    ('Friday', 'Friday'),
+                    ('Saturday', 'Saturday'),
+                ],
+                max_length=10,
+            ),
         ),
         migrations.AddField(
             model_name='movie',
@@ -49,16 +74,30 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='anime',
             name='rating',
-            field=models.DecimalField(decimal_places=1, default=0, max_digits=3, validators=[django.core.validators.MinValueValidator(0), django.core.validators.MaxValueValidator(10)]),
+            field=models.DecimalField(
+                decimal_places=1,
+                default=0,
+                max_digits=3,
+                validators=[django.core.validators.MinValueValidator(0), django.core.validators.MaxValueValidator(10)],
+            ),
         ),
         migrations.AlterField(
             model_name='anime',
             name='status',
-            field=models.CharField(choices=[('ongoing', 'Ongoing'), ('completed', 'Completed'), ('upcoming', 'Upcoming')], default='ongoing', max_length=20),
+            field=models.CharField(
+                choices=[('ongoing', 'Ongoing'), ('completed', 'Completed'), ('upcoming', 'Upcoming')],
+                default='ongoing',
+                max_length=20,
+            ),
         ),
         migrations.AlterField(
             model_name='movie',
             name='rating',
-            field=models.DecimalField(decimal_places=1, default=0, max_digits=3, validators=[django.core.validators.MinValueValidator(0), django.core.validators.MaxValueValidator(10)]),
+            field=models.DecimalField(
+                decimal_places=1,
+                default=0,
+                max_digits=3,
+                validators=[django.core.validators.MinValueValidator(0), django.core.validators.MaxValueValidator(10)],
+            ),
         ),
     ]

@@ -53,16 +53,16 @@ from ananimeclip.models import Anime, Genre, MediaImage, Movie
 
 logger = logging.getLogger(__name__)
 
-JIKAN_BASE = "https://api.jikan.moe/v4"
+JIKAN_BASE = 'https://api.jikan.moe/v4'
 REQUEST_DELAY_SECONDS = 1.0  # stay well under Jikan's published rate limit
 
 AGE_RATING_MAP = {
-    "G": "pg",
-    "PG": "pg",
-    "PG-13": "pg13",
-    "R": "r",
-    "R+": "r",
-    "Rx": "r",
+    'G': 'pg',
+    'PG': 'pg',
+    'PG-13': 'pg13',
+    'R': 'r',
+    'R+': 'r',
+    'Rx': 'r',
 }
 
 
@@ -71,13 +71,13 @@ def _http_get_json(url: str, retries: int = 3) -> dict:
     last_error = None
     for attempt in range(retries):
         try:
-            req = urllib.request.Request(url, headers={"User-Agent": "AnimeClip-Importer/1.0"})
-            with urllib.request.urlopen(req, timeout=15) as resp:
-                return json.loads(resp.read().decode("utf-8"))
+            req = urllib.request.Request(url, headers={'User-Agent': 'AnimeClip-Importer/1.0'})  # noqa: S310
+            with urllib.request.urlopen(req, timeout=15) as resp:  # noqa: S310
+                return json.loads(resp.read().decode('utf-8'))
         except urllib.error.HTTPError as e:
             last_error = e
             if e.code == 429 and attempt < retries - 1:
-                wait = int(e.headers.get("Retry-After", 5))
+                wait = int(e.headers.get('Retry-After', 5))
                 time.sleep(wait)
                 continue
             raise
@@ -91,24 +91,24 @@ def _http_get_json(url: str, retries: int = 3) -> dict:
 
 
 def _download_bytes(url: str) -> bytes:
-    req = urllib.request.Request(url, headers={"User-Agent": "AnimeClip-Importer/1.0"})
-    with urllib.request.urlopen(req, timeout=15) as resp:
+    req = urllib.request.Request(url, headers={'User-Agent': 'AnimeClip-Importer/1.0'})  # noqa: S310
+    with urllib.request.urlopen(req, timeout=15) as resp:  # noqa: S310
         return resp.read()
 
 
 def _parse_age_rating(raw: str | None) -> str:
     if not raw:
-        return "pg13"
-    code = raw.split(" - ")[0].strip()
-    return AGE_RATING_MAP.get(code, "pg13")
+        return 'pg13'
+    code = raw.split(' - ')[0].strip()
+    return AGE_RATING_MAP.get(code, 'pg13')
 
 
 def _parse_duration_minutes(raw: str | None) -> int:
     """Parse Jikan's free-text duration ('2 hr 15 min', '24 min per ep') into minutes."""
     if not raw:
         return 0
-    hours = re.search(r"(\d+)\s*hr", raw)
-    minutes = re.search(r"(\d+)\s*min", raw)
+    hours = re.search(r'(\d+)\s*hr', raw)
+    minutes = re.search(r'(\d+)\s*min', raw)
     total = 0
     if hours:
         total += int(hours.group(1)) * 60
@@ -120,7 +120,7 @@ def _parse_duration_minutes(raw: str | None) -> int:
 def _get_or_create_genres(genre_dicts) -> list:
     genres = []
     for g in genre_dicts or []:
-        name = (g.get("name") or "").strip().lower()
+        name = (g.get('name') or '').strip().lower()
         if not name:
             continue
         genre, _ = Genre.objects.get_or_create(name=name)
@@ -129,62 +129,67 @@ def _get_or_create_genres(genre_dicts) -> list:
 
 
 class Command(BaseCommand):
-    help = "Import anime/movie catalog metadata from the Jikan (MyAnimeList) API."
+    help = 'Import anime/movie catalog metadata from the Jikan (MyAnimeList) API.'
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "--type", choices=["anime", "movie"], required=True,
+            '--type',
+            choices=['anime', 'movie'],
+            required=True,
             help="Which model to import into: 'anime' or 'movie'.",
         )
         parser.add_argument(
-            "--jikan-type", choices=["tv", "ova", "ona", "special", "movie"], default=None,
+            '--jikan-type',
+            choices=['tv', 'ova', 'ona', 'special', 'movie'],
+            default=None,
             help="Override which Jikan content type to pull. Defaults to 'tv' for "
-                 "--type anime, 'movie' for --type movie. Use 'ova'/'ona'/'special' "
-                 "with --type anime to pull short-form anime into the Anime model "
-                 "(--type movie only accepts the default 'movie').",
+            "--type anime, 'movie' for --type movie. Use 'ova'/'ona'/'special' "
+            'with --type anime to pull short-form anime into the Anime model '
+            "(--type movie only accepts the default 'movie').",
         )
         parser.add_argument(
-            "--count", type=int, default=25,
-            help="How many items to import (default: 25).",
+            '--count',
+            type=int,
+            default=25,
+            help='How many items to import (default: 25).',
         )
         parser.add_argument(
-            "--with-images", action="store_true",
-            help="Also download and attach poster art as a MediaImage. "
-                 "Requires your storage backend (Cloudinary) to be configured.",
+            '--with-images',
+            action='store_true',
+            help='Also download and attach poster art as a MediaImage. '
+            'Requires your storage backend (Cloudinary) to be configured.',
         )
         parser.add_argument(
-            "--dry-run", action="store_true",
-            help="Print what would be imported without writing to the database.",
+            '--dry-run',
+            action='store_true',
+            help='Print what would be imported without writing to the database.',
         )
 
     def handle(self, *args, **options):
-        media_type  = options["type"]
-        count       = options["count"]
-        with_images = options["with_images"]
-        dry_run     = options["dry_run"]
+        media_type = options['type']
+        count = options['count']
+        with_images = options['with_images']
+        dry_run = options['dry_run']
 
-        jikan_type = options["jikan_type"] or ("tv" if media_type == "anime" else "movie")
-        if media_type == "movie" and jikan_type != "movie":
-            raise CommandError("--type movie only supports --jikan-type movie (or omit --jikan-type).")
-        model_cls  = Anime if media_type == "anime" else Movie
+        jikan_type = options['jikan_type'] or ('tv' if media_type == 'anime' else 'movie')
+        if media_type == 'movie' and jikan_type != 'movie':
+            raise CommandError('--type movie only supports --jikan-type movie (or omit --jikan-type).')
+        model_cls = Anime if media_type == 'anime' else Movie
 
         created_count = updated_count = skipped_count = 0
         page = 1
 
         while created_count + updated_count < count:
-            url = (
-                f"{JIKAN_BASE}/top/anime"
-                f"?type={jikan_type}&filter=bypopularity&sfw=true&page={page}"
-            )
-            self.stdout.write(f"Fetching {url} …")
+            url = f'{JIKAN_BASE}/top/anime?type={jikan_type}&filter=bypopularity&sfw=true&page={page}'
+            self.stdout.write(f'Fetching {url} …')
             try:
                 payload = _http_get_json(url)
             except Exception as exc:
-                raise CommandError(f"Failed to reach Jikan API: {exc}")
+                raise CommandError(f'Failed to reach Jikan API: {exc}') from exc
 
-            entries = (payload or {}).get("data", [])
+            entries = (payload or {}).get('data', [])
             if not entries:
-                self.stdout.write("No more results from Jikan.")
+                self.stdout.write('No more results from Jikan.')
                 break
 
             for entry in entries:
@@ -193,7 +198,7 @@ class Command(BaseCommand):
                 try:
                     result = self._import_entry(entry, model_cls, media_type, with_images, dry_run)
                 except Exception:
-                    logger.exception("Failed to import mal_id=%s", entry.get("mal_id"))
+                    logger.exception('Failed to import mal_id=%s', entry.get('mal_id'))
                     result = None
 
                 if result is True:
@@ -203,53 +208,55 @@ class Command(BaseCommand):
                 else:
                     skipped_count += 1
 
-            if not (payload.get("pagination") or {}).get("has_next_page"):
-                self.stdout.write("Reached the last page of results.")
+            if not (payload.get('pagination') or {}).get('has_next_page'):
+                self.stdout.write('Reached the last page of results.')
                 break
 
             page += 1
             time.sleep(REQUEST_DELAY_SECONDS)
 
-        verb = "Would import" if dry_run else "Imported"
-        self.stdout.write(self.style.SUCCESS(
-            f"{verb} {created_count} new + updated {updated_count} existing "
-            f"{media_type} entries ({skipped_count} skipped)."
-        ))
+        verb = 'Would import' if dry_run else 'Imported'
+        self.stdout.write(
+            self.style.SUCCESS(
+                f'{verb} {created_count} new + updated {updated_count} existing '
+                f'{media_type} entries ({skipped_count} skipped).'
+            )
+        )
 
     def _import_entry(self, entry: dict, model_cls, media_type: str, with_images: bool, dry_run: bool):
         """Returns True (created), False (updated), or None (skipped)."""
-        mal_id = entry.get("mal_id")
-        title = entry.get("title_english") or entry.get("title") or ""
+        mal_id = entry.get('mal_id')
+        title = entry.get('title_english') or entry.get('title') or ''
         if not mal_id or not title:
             return None
 
-        genres_data = (entry.get("genres") or []) + (entry.get("explicit_genres") or [])
-        studios = entry.get("studios") or []
-        studio = studios[0].get("name", "") if studios else ""
+        genres_data = (entry.get('genres') or []) + (entry.get('explicit_genres') or [])
+        studios = entry.get('studios') or []
+        studio = studios[0].get('name', '') if studios else ''
 
         defaults = {
-            "title": title[:100],
-            "description": (entry.get("synopsis") or "")[:5000],
-            "studio": studio[:100],
-            "country": "Japan",
+            'title': title[:100],
+            'description': (entry.get('synopsis') or '')[:5000],
+            'studio': studio[:100],
+            'country': 'Japan',
         }
 
-        score = entry.get("score")
+        score = entry.get('score')
         if score:
-            defaults["rating"] = round(score, 1)
+            defaults['rating'] = round(score, 1)
 
-        if media_type == "anime":
-            defaults["age_rating"] = _parse_age_rating(entry.get("rating"))
+        if media_type == 'anime':
+            defaults['age_rating'] = _parse_age_rating(entry.get('rating'))
         else:
-            duration_mins = _parse_duration_minutes(entry.get("duration"))
+            duration_mins = _parse_duration_minutes(entry.get('duration'))
             if duration_mins:
-                defaults["duration_mins"] = duration_mins
-            aired_from = (entry.get("aired") or {}).get("from")
+                defaults['duration_mins'] = duration_mins
+            aired_from = (entry.get('aired') or {}).get('from')
             if aired_from:
-                defaults["release_date"] = aired_from[:10]
+                defaults['release_date'] = aired_from[:10]
 
         if dry_run:
-            self.stdout.write(f"  [dry-run] {model_cls.__name__}: {title} (mal_id={mal_id})")
+            self.stdout.write(f'  [dry-run] {model_cls.__name__}: {title} (mal_id={mal_id})')
             return None
 
         obj, created = model_cls.objects.update_or_create(mal_id=mal_id, defaults=defaults)
@@ -258,26 +265,26 @@ class Command(BaseCommand):
         if with_images:
             self._attach_poster(entry, obj, media_type)
 
-        self.stdout.write(f"  {'created' if created else 'updated'}: {title}")
+        self.stdout.write(f'  {"created" if created else "updated"}: {title}')
         return created
 
     def _attach_poster(self, entry: dict, obj, media_type: str) -> None:
         if obj.media_images.filter(type='poster').exists():
             return  # already has one, don't re-download every run
 
-        images = (entry.get("images") or {}).get("jpg") or {}
-        image_url = images.get("large_image_url") or images.get("image_url")
+        images = (entry.get('images') or {}).get('jpg') or {}
+        image_url = images.get('large_image_url') or images.get('image_url')
         if not image_url:
             return
 
         try:
             content = _download_bytes(image_url)
             media_image = MediaImage(type='poster')
-            if media_type == "anime":
+            if media_type == 'anime':
                 media_image.anime = obj
             else:
                 media_image.movie = obj
-            filename = f"{slugify(obj.title)}-poster.jpg"
+            filename = f'{slugify(obj.title)}-poster.jpg'
             media_image.image.save(filename, ContentFile(content), save=True)
         except Exception:
-            logger.exception("Failed to download/store poster for %s", obj.title)
+            logger.exception('Failed to download/store poster for %s', obj.title)

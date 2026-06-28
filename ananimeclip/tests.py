@@ -1,18 +1,32 @@
-from django.test import TestCase, Client, override_settings
 from django.contrib.auth.models import User
-from django.urls import reverse
 from django.core.exceptions import ValidationError
-from .models import (
-    Profile, Genre, Anime, Movie, Season, Episode,
-    WatchHistory, WatchLater, Playlist, PlaylistItem,
-    VideoSource, MovieSource, SubProfile, Follow, Notification, Subtitle,
-)
-from .video_access import sign_video_url, unsign_video_url, to_hls_url
+from django.test import Client, TestCase, override_settings
+from django.urls import reverse
 
+from .models import (
+    Anime,
+    Episode,
+    Follow,
+    Genre,
+    Movie,
+    MovieSource,
+    Notification,
+    Playlist,
+    PlaylistItem,
+    Profile,
+    Season,
+    SubProfile,
+    Subtitle,
+    VideoSource,
+    WatchHistory,
+    WatchLater,
+)
+from .video_access import sign_video_url, to_hls_url, unsign_video_url
 
 # ──────────────────────────────────────────────────────────────
 # Helpers
 # ──────────────────────────────────────────────────────────────
+
 
 def make_user(username='testuser', password='pass1234', age=25):
     user = User.objects.create_user(username=username, password=password, email=f'{username}@test.com')
@@ -36,6 +50,7 @@ def make_episode(anime, season_num=1, ep_num=1, duration_mins=24):
 # ──────────────────────────────────────────────────────────────
 # Model tests
 # ──────────────────────────────────────────────────────────────
+
 
 class ProfileModelTest(TestCase):
     def test_profile_created_with_valid_age(self):
@@ -76,6 +91,7 @@ class WatchHistoryModelTest(TestCase):
 
     def test_unique_per_episode(self):
         from django.db import IntegrityError
+
         user = make_user()
         anime = make_anime()
         ep = make_episode(anime)
@@ -88,20 +104,25 @@ class WatchHistoryModelTest(TestCase):
 # View tests — Authentication
 # ──────────────────────────────────────────────────────────────
 
+
 class AuthViewTest(TestCase):
     def setUp(self):
         self.client = Client()
         from django.core.cache import cache
+
         cache.clear()
 
     def test_signup_valid_age(self):
-        resp = self.client.post(reverse('signup'), {
-            'name': 'Alice',
-            'email': 'alice@test.com',
-            'password': 'secret123',
-            'confirm_password': 'secret123',
-            'age': 22,
-        })
+        resp = self.client.post(
+            reverse('signup'),
+            {
+                'name': 'Alice',
+                'email': 'alice@test.com',
+                'password': 'secret123',
+                'confirm_password': 'secret123',
+                'age': 22,
+            },
+        )
         # Email verification flow: signup shows a "check your email" page
         # rather than logging the user in immediately.
         self.assertEqual(resp.status_code, 200)
@@ -111,71 +132,95 @@ class AuthViewTest(TestCase):
         self.assertFalse(user.is_active)
 
     def test_signup_age_too_low_rejected(self):
-        resp = self.client.post(reverse('signup'), {
-            'name': 'Baby',
-            'email': 'baby@test.com',
-            'password': 'secret123',
-            'confirm_password': 'secret123',
-            'age': 5,
-        })
+        resp = self.client.post(
+            reverse('signup'),
+            {
+                'name': 'Baby',
+                'email': 'baby@test.com',
+                'password': 'secret123',
+                'confirm_password': 'secret123',
+                'age': 5,
+            },
+        )
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, 'Age must be')
         self.assertFalse(User.objects.filter(username='baby@test.com').exists())
 
     def test_signup_age_too_high_rejected(self):
-        resp = self.client.post(reverse('signup'), {
-            'name': 'Elder',
-            'email': 'elder@test.com',
-            'password': 'secret123',
-            'confirm_password': 'secret123',
-            'age': 90,
-        })
+        resp = self.client.post(
+            reverse('signup'),
+            {
+                'name': 'Elder',
+                'email': 'elder@test.com',
+                'password': 'secret123',
+                'confirm_password': 'secret123',
+                'age': 90,
+            },
+        )
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, 'Age must be')
 
     def test_signup_non_integer_age_rejected(self):
-        resp = self.client.post(reverse('signup'), {
-            'name': 'Hacker',
-            'email': 'hack@test.com',
-            'password': 'secret123',
-            'confirm_password': 'secret123',
-            'age': 'abc',
-        })
+        resp = self.client.post(
+            reverse('signup'),
+            {
+                'name': 'Hacker',
+                'email': 'hack@test.com',
+                'password': 'secret123',
+                'confirm_password': 'secret123',
+                'age': 'abc',
+            },
+        )
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, 'Age must be')
 
     def test_signup_password_mismatch(self):
-        resp = self.client.post(reverse('signup'), {
-            'name': 'Bob',
-            'email': 'bob@test.com',
-            'password': 'secret123',
-            'confirm_password': 'wrong',
-            'age': 25,
-        })
+        resp = self.client.post(
+            reverse('signup'),
+            {
+                'name': 'Bob',
+                'email': 'bob@test.com',
+                'password': 'secret123',
+                'confirm_password': 'wrong',
+                'age': 25,
+            },
+        )
         self.assertEqual(resp.status_code, 200)
         self.assertFalse(User.objects.filter(username='bob@test.com').exists())
 
     def test_login_redirects_on_success(self):
         make_user(username='loginuser@test.com', password='pass1234')
-        resp = self.client.post(reverse('login'), {
-            'email': 'loginuser@test.com',
-            'password': 'pass1234',
-        })
+        resp = self.client.post(
+            reverse('login'),
+            {
+                'email': 'loginuser@test.com',
+                'password': 'pass1234',
+            },
+        )
         self.assertRedirects(resp, reverse('index'))
 
     def test_login_fails_bad_password(self):
         make_user(username='loginuser2@test.com', password='pass1234')
-        resp = self.client.post(reverse('login'), {
-            'email': 'loginuser2@test.com',
-            'password': 'wrongpassword',
-        })
+        resp = self.client.post(
+            reverse('login'),
+            {
+                'email': 'loginuser2@test.com',
+                'password': 'wrongpassword',
+            },
+        )
         self.assertEqual(resp.status_code, 200)
 
     def test_verify_email_activates_account(self):
-        self.client.post(reverse('signup'), {
-            'name': 'Carol', 'email': 'carol@test.com',
-            'password': 'secret123', 'confirm_password': 'secret123', 'age': 22,
-        })
+        self.client.post(
+            reverse('signup'),
+            {
+                'name': 'Carol',
+                'email': 'carol@test.com',
+                'password': 'secret123',
+                'confirm_password': 'secret123',
+                'age': 22,
+            },
+        )
         user = User.objects.get(username='carol@test.com')
         token = user.profile.verification_token
         resp = self.client.get(reverse('verify_email', args=[token]))
@@ -187,11 +232,19 @@ class AuthViewTest(TestCase):
 
     def test_verify_email_expired_link_rejected(self):
         from datetime import timedelta
+
         from django.utils import timezone
-        self.client.post(reverse('signup'), {
-            'name': 'Dave', 'email': 'dave@test.com',
-            'password': 'secret123', 'confirm_password': 'secret123', 'age': 22,
-        })
+
+        self.client.post(
+            reverse('signup'),
+            {
+                'name': 'Dave',
+                'email': 'dave@test.com',
+                'password': 'secret123',
+                'confirm_password': 'secret123',
+                'age': 22,
+            },
+        )
         user = User.objects.get(username='dave@test.com')
         profile = user.profile
         token = profile.verification_token
@@ -238,24 +291,35 @@ class RateLimitFailsOpenTest(TestCase):
         self.client = Client()
 
     def test_signup_proceeds_when_cache_unreachable(self):
-        resp = self.client.post(reverse('signup'), {
-            'name': 'Eve', 'email': 'eve@test.com',
-            'password': 'secret123', 'confirm_password': 'secret123', 'age': 22,
-        })
+        resp = self.client.post(
+            reverse('signup'),
+            {
+                'name': 'Eve',
+                'email': 'eve@test.com',
+                'password': 'secret123',
+                'confirm_password': 'secret123',
+                'age': 22,
+            },
+        )
         self.assertTemplateUsed(resp, 'verify_pending.html')
         self.assertTrue(User.objects.filter(username='eve@test.com').exists())
 
     def test_login_proceeds_when_cache_unreachable(self):
         make_user(username='cachefail@test.com', password='pass1234')
-        resp = self.client.post(reverse('login'), {
-            'email': 'cachefail@test.com', 'password': 'pass1234',
-        })
+        resp = self.client.post(
+            reverse('login'),
+            {
+                'email': 'cachefail@test.com',
+                'password': 'pass1234',
+            },
+        )
         self.assertRedirects(resp, reverse('index'))
 
 
 # ──────────────────────────────────────────────────────────────
 # View tests — Watch History
 # ──────────────────────────────────────────────────────────────
+
 
 class UpdateWatchHistoryViewTest(TestCase):
     def setUp(self):
@@ -268,28 +332,37 @@ class UpdateWatchHistoryViewTest(TestCase):
         self.url = reverse('update_watch_history')
 
     def test_saves_episode_progress(self):
-        resp = self.client.post(self.url, {
-            'episode_id': self.ep.id,
-            'progress_seconds': 300,
-        })
+        resp = self.client.post(
+            self.url,
+            {
+                'episode_id': self.ep.id,
+                'progress_seconds': 300,
+            },
+        )
         self.assertEqual(resp.status_code, 200)
         wh = WatchHistory.objects.get(user=self.user, episode=self.ep)
         self.assertEqual(wh.progress_seconds, 300)
 
     def test_saves_movie_progress(self):
-        resp = self.client.post(self.url, {
-            'movie_id': self.movie.id,
-            'progress_seconds': 600,
-        })
+        resp = self.client.post(
+            self.url,
+            {
+                'movie_id': self.movie.id,
+                'progress_seconds': 600,
+            },
+        )
         self.assertEqual(resp.status_code, 200)
         wh = WatchHistory.objects.get(user=self.user, movie=self.movie)
         self.assertEqual(wh.progress_seconds, 600)
 
     def test_malformed_progress_returns_400(self):
-        resp = self.client.post(self.url, {
-            'episode_id': self.ep.id,
-            'progress_seconds': 'not_a_number',
-        })
+        resp = self.client.post(
+            self.url,
+            {
+                'episode_id': self.ep.id,
+                'progress_seconds': 'not_a_number',
+            },
+        )
         self.assertEqual(resp.status_code, 400)
 
     def test_missing_id_returns_400(self):
@@ -298,16 +371,20 @@ class UpdateWatchHistoryViewTest(TestCase):
 
     def test_requires_login(self):
         self.client.logout()
-        resp = self.client.post(self.url, {
-            'episode_id': self.ep.id,
-            'progress_seconds': 100,
-        })
+        resp = self.client.post(
+            self.url,
+            {
+                'episode_id': self.ep.id,
+                'progress_seconds': 100,
+            },
+        )
         self.assertEqual(resp.status_code, 302)
 
 
 # ──────────────────────────────────────────────────────────────
 # View tests — Continue Watching progress percentage
 # ──────────────────────────────────────────────────────────────
+
 
 class ContinueWatchingProgressTest(TestCase):
     def setUp(self):
@@ -352,6 +429,7 @@ class ContinueWatchingProgressTest(TestCase):
 # View tests — Watch Later
 # ──────────────────────────────────────────────────────────────
 
+
 class WatchLaterViewTest(TestCase):
     def setUp(self):
         self.client = Client()
@@ -362,18 +440,24 @@ class WatchLaterViewTest(TestCase):
         self.movie = make_movie()
 
     def test_toggle_adds_episode(self):
-        resp = self.client.post(reverse('toggle_watch_later'), {
-            'episode_id': self.ep.id,
-        })
+        resp = self.client.post(
+            reverse('toggle_watch_later'),
+            {
+                'episode_id': self.ep.id,
+            },
+        )
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json()['status'], 'added')
         self.assertTrue(WatchLater.objects.filter(user=self.user, episode=self.ep).exists())
 
     def test_toggle_removes_episode(self):
         WatchLater.objects.create(user=self.user, episode=self.ep)
-        resp = self.client.post(reverse('toggle_watch_later'), {
-            'episode_id': self.ep.id,
-        })
+        resp = self.client.post(
+            reverse('toggle_watch_later'),
+            {
+                'episode_id': self.ep.id,
+            },
+        )
         self.assertEqual(resp.json()['status'], 'removed')
         self.assertFalse(WatchLater.objects.filter(user=self.user, episode=self.ep).exists())
 
@@ -385,6 +469,7 @@ class WatchLaterViewTest(TestCase):
 # ──────────────────────────────────────────────────────────────
 # View tests — Playlists
 # ──────────────────────────────────────────────────────────────
+
 
 class PlaylistViewTest(TestCase):
     def setUp(self):
@@ -402,19 +487,25 @@ class PlaylistViewTest(TestCase):
 
     def test_add_episode_to_playlist(self):
         pl = Playlist.objects.create(user=self.user, name='Favs')
-        resp = self.client.post(reverse('add_to_playlist'), {
-            'playlist_id': pl.id,
-            'episode_id': self.ep.id,
-        })
+        resp = self.client.post(
+            reverse('add_to_playlist'),
+            {
+                'playlist_id': pl.id,
+                'episode_id': self.ep.id,
+            },
+        )
         self.assertEqual(resp.status_code, 200)
         self.assertTrue(PlaylistItem.objects.filter(playlist=pl, episode=self.ep).exists())
 
     def test_add_movie_to_playlist(self):
         pl = Playlist.objects.create(user=self.user, name='Favs')
-        resp = self.client.post(reverse('add_to_playlist'), {
-            'playlist_id': pl.id,
-            'movie_id': self.movie.id,
-        })
+        resp = self.client.post(
+            reverse('add_to_playlist'),
+            {
+                'playlist_id': pl.id,
+                'movie_id': self.movie.id,
+            },
+        )
         self.assertEqual(resp.status_code, 200)
         self.assertTrue(PlaylistItem.objects.filter(playlist=pl, movie=self.movie).exists())
 
@@ -434,10 +525,13 @@ class PlaylistViewTest(TestCase):
     def test_cannot_add_to_other_users_playlist(self):
         other = make_user(username='other@test.com')
         pl = Playlist.objects.create(user=other, name='Private')
-        resp = self.client.post(reverse('add_to_playlist'), {
-            'playlist_id': pl.id,
-            'episode_id': self.ep.id,
-        })
+        resp = self.client.post(
+            reverse('add_to_playlist'),
+            {
+                'playlist_id': pl.id,
+                'episode_id': self.ep.id,
+            },
+        )
         # Should be 403/404, not silently succeed
         self.assertIn(resp.status_code, [403, 404])
 
@@ -451,6 +545,7 @@ class PlaylistViewTest(TestCase):
 # ──────────────────────────────────────────────────────────────
 # View tests — Index / Personalised Recommendations
 # ──────────────────────────────────────────────────────────────
+
 
 class IndexRecommendationsTest(TestCase):
     def setUp(self):
@@ -500,6 +595,7 @@ class IndexRecommendationsTest(TestCase):
 # (regression: a stray {% endif %} previously made this 500 always)
 # ──────────────────────────────────────────────────────────────
 
+
 class SearchResultsViewTest(TestCase):
     def setUp(self):
         self.client = Client()
@@ -527,6 +623,7 @@ class SearchResultsViewTest(TestCase):
 # (regression: these included "_browse_filters.html", a file that
 # didn't exist — the real file was named "browse_filters.html")
 # ──────────────────────────────────────────────────────────────
+
 
 class BrowseAllPagesViewTest(TestCase):
     def setUp(self):
@@ -556,6 +653,7 @@ class BrowseAllPagesViewTest(TestCase):
 # pages all ignored age_rating entirely)
 # ──────────────────────────────────────────────────────────────
 
+
 class AgeGateTest(TestCase):
     def setUp(self):
         self.client = Client()
@@ -564,20 +662,28 @@ class AgeGateTest(TestCase):
 
         self.genre = Genre.objects.create(name='Action')
         self.adult_anime = Anime.objects.create(
-            title='Adult Anime', description='d', age_rating='r',
+            title='Adult Anime',
+            description='d',
+            age_rating='r',
         )
         self.adult_anime.genres.add(self.genre)
         self.episode = make_episode(self.adult_anime)
         VideoSource.objects.create(
-            episode=self.episode, label='1080p', type='sub',
+            episode=self.episode,
+            label='1080p',
+            type='sub',
             video_url='https://example.com/v.mp4',
         )
 
         self.adult_movie = Movie.objects.create(
-            title='Adult Movie', description='d', age_rating='r',
+            title='Adult Movie',
+            description='d',
+            age_rating='r',
         )
         MovieSource.objects.create(
-            movie=self.adult_movie, label='1080p', type='sub',
+            movie=self.adult_movie,
+            label='1080p',
+            type='sub',
             video_url='https://example.com/m.mp4',
         )
 
@@ -646,6 +752,7 @@ class AgeGateTest(TestCase):
 # movie's release_date actually arrives.)
 # ──────────────────────────────────────────────────────────────
 
+
 class MovieFollowTest(TestCase):
     def setUp(self):
         self.client = Client()
@@ -679,7 +786,8 @@ class NotifyMovieReleasesCommandTest(TestCase):
 
         user = make_user(username='waiting_fan', age=25)
         movie = Movie.objects.create(
-            title='Just Released', description='d',
+            title='Just Released',
+            description='d',
             release_date=timezone.now().date(),
         )
         Follow.objects.create(user=user, movie=movie)
@@ -688,24 +796,22 @@ class NotifyMovieReleasesCommandTest(TestCase):
 
         movie.refresh_from_db()
         self.assertTrue(movie.release_notified)
-        self.assertTrue(
-            Notification.objects.filter(user=user, movie=movie, notif_type='new_movie').exists()
-        )
+        self.assertTrue(Notification.objects.filter(user=user, movie=movie, notif_type='new_movie').exists())
 
         # Running it again shouldn't duplicate the notification.
         call_command('notify_movie_releases')
-        self.assertEqual(
-            Notification.objects.filter(user=user, movie=movie).count(), 1
-        )
+        self.assertEqual(Notification.objects.filter(user=user, movie=movie).count(), 1)
 
     def test_does_not_notify_for_future_releases(self):
-        from django.core.management import call_command
         from datetime import timedelta
+
+        from django.core.management import call_command
         from django.utils import timezone
 
         user = make_user(username='early_follower', age=25)
         movie = Movie.objects.create(
-            title='Not Out Yet', description='d',
+            title='Not Out Yet',
+            description='d',
             release_date=timezone.now().date() + timedelta(days=30),
         )
         Follow.objects.create(user=user, movie=movie)
@@ -716,9 +822,11 @@ class NotifyMovieReleasesCommandTest(TestCase):
         self.assertFalse(movie.release_notified)
         self.assertFalse(Notification.objects.filter(user=user, movie=movie).exists())
 
+
 # ──────────────────────────────────────────────────────────────
 # Signed video playback links (video_access.py)
 # ──────────────────────────────────────────────────────────────
+
 
 class VideoAccessTokenTest(TestCase):
     def test_roundtrip(self):
@@ -773,17 +881,22 @@ class StreamRedirectViewTest(TestCase):
 # Streaming pages: source switching + signed URLs + subtitles
 # ──────────────────────────────────────────────────────────────
 
+
 class StreamingSourceSwitchingTest(TestCase):
     def setUp(self):
         self.user = make_user(username='switcher', age=25)
         self.anime = make_anime()
         self.episode = make_episode(self.anime)
         self.sub_source = VideoSource.objects.create(
-            episode=self.episode, label='1080p', type='sub',
+            episode=self.episode,
+            label='1080p',
+            type='sub',
             video_url='https://example.com/sub.mp4',
         )
         self.dub_source = VideoSource.objects.create(
-            episode=self.episode, label='1080p', type='dub',
+            episode=self.episode,
+            label='1080p',
+            type='dub',
             video_url='https://example.com/dub.mp4',
         )
         self.client.force_login(self.user)
@@ -793,15 +906,11 @@ class StreamingSourceSwitchingTest(TestCase):
         self.assertEqual(resp.context['current_source'].pk, self.sub_source.pk)
 
     def test_source_query_param_switches_source(self):
-        resp = self.client.get(
-            reverse('streaming', args=[self.episode.id]), {'source': self.dub_source.pk}
-        )
+        resp = self.client.get(reverse('streaming', args=[self.episode.id]), {'source': self.dub_source.pk})
         self.assertEqual(resp.context['current_source'].pk, self.dub_source.pk)
 
     def test_invalid_source_param_falls_back_to_first(self):
-        resp = self.client.get(
-            reverse('streaming', args=[self.episode.id]), {'source': 999999}
-        )
+        resp = self.client.get(reverse('streaming', args=[self.episode.id]), {'source': 999999})
         self.assertEqual(resp.context['current_source'].pk, self.sub_source.pk)
 
     def test_raw_video_url_never_appears_in_response(self):
@@ -828,7 +937,9 @@ class MovieStreamingSourceSwitchingTest(TestCase):
         self.user = make_user(username='movie_switcher', age=25)
         self.movie = make_movie()
         self.source = MovieSource.objects.create(
-            movie=self.movie, label='1080p', type='sub',
+            movie=self.movie,
+            label='1080p',
+            type='sub',
             video_url='https://example.com/movie.mp4',
         )
         self.client.force_login(self.user)
@@ -842,6 +953,7 @@ class MovieStreamingSourceSwitchingTest(TestCase):
 # ──────────────────────────────────────────────────────────────
 # Adaptive bitrate (HLS) streaming via Cloudinary's sp_auto profile
 # ──────────────────────────────────────────────────────────────
+
 
 class ToHlsUrlTest(TestCase):
     def test_cloudinary_video_url_converted(self):
@@ -879,7 +991,9 @@ class HlsStreamingViewTest(TestCase):
 
     def test_cloudinary_source_exposes_hls_url(self):
         VideoSource.objects.create(
-            episode=self.episode, label='1080p', type='sub',
+            episode=self.episode,
+            label='1080p',
+            type='sub',
             video_url='https://res.cloudinary.com/demo/video/upload/v1/anime/clip.mp4',
         )
         resp = self.client.get(reverse('streaming', args=[self.episode.id]))
@@ -889,7 +1003,9 @@ class HlsStreamingViewTest(TestCase):
 
     def test_non_cloudinary_source_has_no_hls_url(self):
         VideoSource.objects.create(
-            episode=self.episode, label='1080p', type='sub',
+            episode=self.episode,
+            label='1080p',
+            type='sub',
             video_url='https://example.com/clip.mp4',
         )
         resp = self.client.get(reverse('streaming', args=[self.episode.id]))
@@ -932,12 +1048,17 @@ class SubtitleRenderingTest(TestCase):
         self.anime = make_anime()
         self.episode = make_episode(self.anime)
         self.source = VideoSource.objects.create(
-            episode=self.episode, label='1080p', type='sub',
+            episode=self.episode,
+            label='1080p',
+            type='sub',
             video_url='https://example.com/v.mp4',
         )
         Subtitle.objects.create(
-            video_source=self.source, language_code='en', label='English',
-            file_url='https://example.com/captions/en.vtt', is_default=True,
+            video_source=self.source,
+            language_code='en',
+            label='English',
+            file_url='https://example.com/captions/en.vtt',
+            is_default=True,
         )
         self.client.force_login(self.user)
 
@@ -952,18 +1073,23 @@ class SubtitleRenderingTest(TestCase):
 # Subtitle model
 # ──────────────────────────────────────────────────────────────
 
+
 class SubtitleModelTest(TestCase):
     def setUp(self):
         anime = make_anime()
         episode = make_episode(anime)
         self.source = VideoSource.objects.create(
-            episode=episode, label='1080p', type='sub',
+            episode=episode,
+            label='1080p',
+            type='sub',
             video_url='https://example.com/v.mp4',
         )
 
     def test_valid_subtitle_passes_clean(self):
         sub = Subtitle(
-            video_source=self.source, language_code='en', label='English',
+            video_source=self.source,
+            language_code='en',
+            label='English',
             file_url='https://example.com/en.vtt',
         )
         sub.full_clean()  # should not raise
@@ -975,12 +1101,17 @@ class SubtitleModelTest(TestCase):
 
     def test_clean_rejects_both_sources_set(self):
         movie_source = MovieSource.objects.create(
-            movie=make_movie(), label='1080p', type='sub',
+            movie=make_movie(),
+            label='1080p',
+            type='sub',
             video_url='https://example.com/m.mp4',
         )
         sub = Subtitle(
-            video_source=self.source, movie_source=movie_source,
-            language_code='en', label='English', file_url='https://example.com/en.vtt',
+            video_source=self.source,
+            movie_source=movie_source,
+            language_code='en',
+            label='English',
+            file_url='https://example.com/en.vtt',
         )
         with self.assertRaises(ValidationError):
             sub.clean()
@@ -990,50 +1121,56 @@ class SubtitleModelTest(TestCase):
 # Transcoding pipeline tests
 # ──────────────────────────────────────────────────────────────
 
-from unittest.mock import patch, MagicMock
-from .transcoding import _extract_public_id, get_rendition_url, request_eager_transcoding, EAGER_TRANSFORMS
+from unittest.mock import patch  # noqa: E402
+
+from .transcoding import (  # noqa: E402
+    EAGER_TRANSFORMS,
+    _extract_public_id,
+    get_rendition_url,
+    request_eager_transcoding,
+)
 
 
 class TranscodingPublicIdTest(TestCase):
     """Unit tests for the Cloudinary public_id extractor."""
 
     def test_extracts_public_id_with_version(self):
-        url = "https://res.cloudinary.com/demo/video/upload/v1234567890/sample.mp4"
-        self.assertEqual(_extract_public_id(url), "sample")
+        url = 'https://res.cloudinary.com/demo/video/upload/v1234567890/sample.mp4'
+        self.assertEqual(_extract_public_id(url), 'sample')
 
     def test_extracts_public_id_without_version(self):
-        url = "https://res.cloudinary.com/demo/video/upload/my_folder/clip.mp4"
-        self.assertEqual(_extract_public_id(url), "my_folder/clip")
+        url = 'https://res.cloudinary.com/demo/video/upload/my_folder/clip.mp4'
+        self.assertEqual(_extract_public_id(url), 'my_folder/clip')
 
     def test_returns_none_for_non_cloudinary_url(self):
-        self.assertIsNone(_extract_public_id("https://example.com/video.mp4"))
+        self.assertIsNone(_extract_public_id('https://example.com/video.mp4'))
 
     def test_returns_none_for_image_resource(self):
         # image/ not video/
-        url = "https://res.cloudinary.com/demo/image/upload/v1/sample.jpg"
+        url = 'https://res.cloudinary.com/demo/image/upload/v1/sample.jpg'
         self.assertIsNone(_extract_public_id(url))
 
     def test_returns_none_for_empty(self):
-        self.assertIsNone(_extract_public_id(""))
+        self.assertIsNone(_extract_public_id(''))
         self.assertIsNone(_extract_public_id(None))
 
 
 class TranscodingRenditionUrlTest(TestCase):
     """Unit tests for get_rendition_url()."""
 
-    CL_URL = "https://res.cloudinary.com/demo/video/upload/v1/sample.mp4"
+    CL_URL = 'https://res.cloudinary.com/demo/video/upload/v1/sample.mp4'
 
     def test_720p_mp4_url_contains_transform(self):
-        url = get_rendition_url(self.CL_URL, 720, "mp4")
-        self.assertIn("h_720", url)
-        self.assertTrue(url.endswith(".mp4"))
+        url = get_rendition_url(self.CL_URL, 720, 'mp4')
+        self.assertIn('h_720', url)
+        self.assertTrue(url.endswith('.mp4'))
 
     def test_360p_mp4_url(self):
-        url = get_rendition_url(self.CL_URL, 360, "mp4")
-        self.assertIn("h_360", url)
+        url = get_rendition_url(self.CL_URL, 360, 'mp4')
+        self.assertIn('h_360', url)
 
     def test_non_cloudinary_returns_none(self):
-        self.assertIsNone(get_rendition_url("https://example.com/v.mp4", 720))
+        self.assertIsNone(get_rendition_url('https://example.com/v.mp4', 720))
 
     def test_none_url_returns_none(self):
         self.assertIsNone(get_rendition_url(None, 720))
@@ -1046,7 +1183,7 @@ class EagerTransformListTest(TestCase):
         # Should have at least one transform for each canonical height
         heights = {t.get('height') for t in EAGER_TRANSFORMS if 'height' in t}
         for h in (360, 480, 720, 1080):
-            self.assertIn(h, heights, f"Missing eager transform for {h}p")
+            self.assertIn(h, heights, f'Missing eager transform for {h}p')
 
     def test_includes_m3u8_format(self):
         formats = {t.get('format') for t in EAGER_TRANSFORMS}
@@ -1060,29 +1197,29 @@ class EagerTransformListTest(TestCase):
 class RequestEagerTranscodingTest(TestCase):
     """request_eager_transcoding() integration (Cloudinary SDK mocked)."""
 
-    CL_URL = "https://res.cloudinary.com/demo/video/upload/v1/anime_ep1.mp4"
-    NON_CL_URL = "https://example.com/video.mp4"
+    CL_URL = 'https://res.cloudinary.com/demo/video/upload/v1/anime_ep1.mp4'
+    NON_CL_URL = 'https://example.com/video.mp4'
 
-    @patch("ananimeclip.transcoding.cloudinary")
+    @patch('ananimeclip.transcoding.cloudinary')
     def test_calls_explicit_for_cloudinary_url(self, mock_cl):
-        mock_cl.uploader.explicit.return_value = {"version": 1}
+        mock_cl.uploader.explicit.return_value = {'version': 1}
         result = request_eager_transcoding(self.CL_URL)
         self.assertTrue(result)
         mock_cl.uploader.explicit.assert_called_once()
         call_kwargs = mock_cl.uploader.explicit.call_args
-        self.assertEqual(call_kwargs.kwargs.get("resource_type"), "video")
-        self.assertTrue(call_kwargs.kwargs.get("eager_async"))
+        self.assertEqual(call_kwargs.kwargs.get('resource_type'), 'video')
+        self.assertTrue(call_kwargs.kwargs.get('eager_async'))
 
     def test_returns_false_for_non_cloudinary_url(self):
         result = request_eager_transcoding(self.NON_CL_URL)
         self.assertFalse(result)
 
     def test_returns_false_for_empty_url(self):
-        self.assertFalse(request_eager_transcoding(""))
+        self.assertFalse(request_eager_transcoding(''))
 
-    @patch("ananimeclip.transcoding.cloudinary")
+    @patch('ananimeclip.transcoding.cloudinary')
     def test_returns_false_on_api_error(self, mock_cl):
-        mock_cl.uploader.explicit.side_effect = Exception("API error")
+        mock_cl.uploader.explicit.side_effect = Exception('API error')
         result = request_eager_transcoding(self.CL_URL)
         self.assertFalse(result)
 
@@ -1090,38 +1227,34 @@ class RequestEagerTranscodingTest(TestCase):
 class TranscodingSignalTest(TestCase):
     """Signals trigger transcoding when a VideoSource / MovieSource is saved."""
 
-    CL_URL = "https://res.cloudinary.com/demo/video/upload/v1/ep1.mp4"
+    CL_URL = 'https://res.cloudinary.com/demo/video/upload/v1/ep1.mp4'
 
     def _make_episode_source(self):
         anime = make_anime()
         episode = make_episode(anime)
         return episode
 
-    @patch("ananimeclip.signals.request_eager_transcoding")
+    @patch('ananimeclip.signals.request_eager_transcoding')
     def test_video_source_save_triggers_transcoding(self, mock_transcode):
         episode = self._make_episode_source()
         VideoSource.objects.create(
             episode=episode,
-            label="Server 1",
-            type="sub",
+            label='Server 1',
+            type='sub',
             video_url=self.CL_URL,
         )
         mock_transcode.assert_called_once_with(self.CL_URL)
 
-    @patch("ananimeclip.signals.request_eager_transcoding")
+    @patch('ananimeclip.signals.request_eager_transcoding')
     def test_video_source_without_url_does_not_transcode(self, mock_transcode):
         episode = self._make_episode_source()
-        VideoSource.objects.create(
-            episode=episode, label="Server 1", type="sub", video_url=None
-        )
+        VideoSource.objects.create(episode=episode, label='Server 1', type='sub', video_url=None)
         mock_transcode.assert_not_called()
 
-    @patch("ananimeclip.signals.request_eager_transcoding")
+    @patch('ananimeclip.signals.request_eager_transcoding')
     def test_movie_source_save_triggers_transcoding(self, mock_transcode):
         movie = make_movie()
-        MovieSource.objects.create(
-            movie=movie, label="Server 1", type="sub", video_url=self.CL_URL
-        )
+        MovieSource.objects.create(movie=movie, label='Server 1', type='sub', video_url=self.CL_URL)
         mock_transcode.assert_called_once_with(self.CL_URL)
 
 
@@ -1129,16 +1262,19 @@ class TranscodingSignalTest(TestCase):
 # Offline download tests
 # ──────────────────────────────────────────────────────────────
 
-from .offline_downloads import (
-    generate_download_token, validate_download_token,
-    build_download_url, ALLOWED_HEIGHTS, QUALITY_OPTIONS,
+from .offline_downloads import (  # noqa: E402
+    ALLOWED_HEIGHTS,
+    QUALITY_OPTIONS,
+    build_download_url,
+    generate_download_token,
+    validate_download_token,
 )
 
 
 class DownloadTokenTest(TestCase):
     """Unit tests for generate_download_token / validate_download_token."""
 
-    def _gen(self, height=720, user_pk=1, source_pk=42, source_type="episode"):
+    def _gen(self, height=720, user_pk=1, source_pk=42, source_type='episode'):
         return generate_download_token(
             source_pk=source_pk,
             source_type=source_type,
@@ -1161,11 +1297,11 @@ class DownloadTokenTest(TestCase):
         self.assertIsNone(token)
 
     def test_empty_token_returns_none(self):
-        self.assertIsNone(validate_download_token("", requesting_user_pk=1))
+        self.assertIsNone(validate_download_token('', requesting_user_pk=1))
 
     def test_tampered_token_returns_none(self):
         token = self._gen()
-        tampered = token[:-4] + "xxxx"
+        tampered = token[:-4] + 'xxxx'
         self.assertIsNone(validate_download_token(tampered, requesting_user_pk=1))
 
     def test_wrong_user_returns_none(self):
@@ -1175,30 +1311,30 @@ class DownloadTokenTest(TestCase):
 
     def test_all_allowed_heights_produce_tokens(self):
         for h in ALLOWED_HEIGHTS:
-            self.assertIsNotNone(self._gen(height=h), f"Failed for height={h}")
+            self.assertIsNotNone(self._gen(height=h), f'Failed for height={h}')
 
 
 class BuildDownloadUrlTest(TestCase):
     """Unit tests for build_download_url()."""
 
-    CL_URL = "https://res.cloudinary.com/demo/video/upload/v1/sample.mp4"
+    CL_URL = 'https://res.cloudinary.com/demo/video/upload/v1/sample.mp4'
 
     def test_720p_url_contains_transform(self):
         url = build_download_url(self.CL_URL, 720)
-        self.assertIn("h_720", url)
-        self.assertIn("vc_h264", url)
-        self.assertTrue(url.endswith(".mp4"))
+        self.assertIn('h_720', url)
+        self.assertIn('vc_h264', url)
+        self.assertTrue(url.endswith('.mp4'))
 
     def test_1080p_uses_h265(self):
         url = build_download_url(self.CL_URL, 1080)
-        self.assertIn("vc_h265", url)
+        self.assertIn('vc_h265', url)
 
     def test_360p_uses_eco_quality(self):
         url = build_download_url(self.CL_URL, 360)
-        self.assertIn("q_auto:eco", url)
+        self.assertIn('q_auto:eco', url)
 
     def test_non_cloudinary_returns_none(self):
-        self.assertIsNone(build_download_url("https://example.com/v.mp4", 720))
+        self.assertIsNone(build_download_url('https://example.com/v.mp4', 720))
 
     def test_none_returns_none(self):
         self.assertIsNone(build_download_url(None, 720))
@@ -1222,7 +1358,7 @@ class QualityOptionsTest(TestCase):
 class EpisodeDownloadViewTest(TestCase):
     """Integration tests for the episode download request view."""
 
-    CL_URL = "https://res.cloudinary.com/demo/video/upload/v1/ep1.mp4"
+    CL_URL = 'https://res.cloudinary.com/demo/video/upload/v1/ep1.mp4'
 
     def setUp(self):
         self.client = Client()
@@ -1230,12 +1366,11 @@ class EpisodeDownloadViewTest(TestCase):
         self.client.force_login(self.user)
         self.anime = make_anime(title='DL Anime')
         self.episode = make_episode(self.anime)
-        self.source = VideoSource.objects.create(
-            episode=self.episode, label='S1', type='sub', video_url=self.CL_URL
-        )
+        self.source = VideoSource.objects.create(episode=self.episode, label='S1', type='sub', video_url=self.CL_URL)
 
     def _post(self, height=720, source_id=None):
         import json
+
         url = reverse('request_episode_download', args=[self.episode.pk])
         payload = {'height': height}
         if source_id:
@@ -1271,25 +1406,24 @@ class EpisodeDownloadViewTest(TestCase):
     def test_all_quality_options_produce_url(self):
         for h in (360, 480, 720, 1080):
             resp = self._post(height=h)
-            self.assertEqual(resp.status_code, 200, f"Failed for height={h}")
+            self.assertEqual(resp.status_code, 200, f'Failed for height={h}')
 
 
 class MovieDownloadViewTest(TestCase):
     """Integration tests for the movie download request view."""
 
-    CL_URL = "https://res.cloudinary.com/demo/video/upload/v1/movie1.mp4"
+    CL_URL = 'https://res.cloudinary.com/demo/video/upload/v1/movie1.mp4'
 
     def setUp(self):
         self.client = Client()
         self.user = make_user(username='dlmovieuser')
         self.client.force_login(self.user)
         self.movie = make_movie(title='DL Movie')
-        self.source = MovieSource.objects.create(
-            movie=self.movie, label='S1', type='sub', video_url=self.CL_URL
-        )
+        self.source = MovieSource.objects.create(movie=self.movie, label='S1', type='sub', video_url=self.CL_URL)
 
     def _post(self, height=720):
         import json
+
         url = reverse('request_movie_download', args=[self.movie.pk])
         return self.client.post(
             url,
@@ -1315,7 +1449,7 @@ class MovieDownloadViewTest(TestCase):
 class ServeDownloadViewTest(TestCase):
     """Integration tests for the serve_download redirect view."""
 
-    CL_URL = "https://res.cloudinary.com/demo/video/upload/v1/ep1.mp4"
+    CL_URL = 'https://res.cloudinary.com/demo/video/upload/v1/ep1.mp4'
 
     def setUp(self):
         self.client = Client()
@@ -1323,9 +1457,7 @@ class ServeDownloadViewTest(TestCase):
         self.client.force_login(self.user)
         self.anime = make_anime(title='Serve DL Anime')
         self.episode = make_episode(self.anime)
-        self.source = VideoSource.objects.create(
-            episode=self.episode, label='S1', type='sub', video_url=self.CL_URL
-        )
+        self.source = VideoSource.objects.create(episode=self.episode, label='S1', type='sub', video_url=self.CL_URL)
 
     def _get_token(self, height=720):
         return generate_download_token(
@@ -1360,7 +1492,7 @@ class ServeDownloadViewTest(TestCase):
             source_pk=self.source.pk,
             source_type='episode',
             height=720,
-            user_pk=other.pk,          # token belongs to 'other'
+            user_pk=other.pk,  # token belongs to 'other'
         )
         # self.user (not 'other') tries to use it
         resp = self.client.get(reverse('serve_download', args=[token]))

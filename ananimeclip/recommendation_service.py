@@ -37,8 +37,7 @@ STALE_AFTER = timedelta(hours=6)
 def get_recommendations(user, limit: int = 20) -> dict:
     """Returns {"animes": [...], "movies": [...]} for the given user."""
     rows = list(
-        Recommendation.objects
-        .filter(user=user)
+        Recommendation.objects.filter(user=user)
         .order_by('rank')
         .values_list('anime_id', 'movie_id', 'reason', 'generated_at')
     )
@@ -54,13 +53,9 @@ def get_recommendations(user, limit: int = 20) -> dict:
         movie_reasons = dict(movie_entries)
 
         animes = list(
-            Anime.objects.filter(pk__in=anime_ids)
-            .prefetch_related('genres', 'media_images', 'seasons__episodes')
+            Anime.objects.filter(pk__in=anime_ids).prefetch_related('genres', 'media_images', 'seasons__episodes')
         )
-        movies = list(
-            Movie.objects.filter(pk__in=movie_ids)
-            .prefetch_related('genres', 'media_images')
-        )
+        movies = list(Movie.objects.filter(pk__in=movie_ids).prefetch_related('genres', 'media_images'))
 
         anime_order = {pk: i for i, pk in enumerate(anime_ids)}
         movie_order = {pk: i for i, pk in enumerate(movie_ids)}
@@ -69,18 +64,18 @@ def get_recommendations(user, limit: int = 20) -> dict:
 
         _attach_reasons(animes, anime_reasons)
         _attach_reasons(movies, movie_reasons)
-        return {"animes": animes, "movies": movies}
+        return {'animes': animes, 'movies': movies}
 
     # Cold start, or stale: compute fresh and persist.
     try:
         engine = RecommendationEngine(user)
         results = engine.recommend(limit=limit)
         save_recommendations(user, results)
-        _attach_reasons(results["animes"], results.get("anime_reasons", {}))
-        _attach_reasons(results["movies"], results.get("movie_reasons", {}))
-        return {"animes": results["animes"], "movies": results["movies"]}
+        _attach_reasons(results['animes'], results.get('anime_reasons', {}))
+        _attach_reasons(results['movies'], results.get('movie_reasons', {}))
+        return {'animes': results['animes'], 'movies': results['movies']}
     except Exception:
-        logger.exception("RecommendationEngine failed for user %s", user.pk)
+        logger.exception('RecommendationEngine failed for user %s', user.pk)
         return _popular_fallback(limit)
 
 
@@ -94,25 +89,29 @@ def save_recommendations(user, results: dict) -> None:
     Anime and movies are ranked independently (rank 1 = best anime pick,
     rank 1 = best movie pick — they don't compete against each other).
     """
-    anime_scores  = results.get("anime_scores", {})
-    movie_scores  = results.get("movie_scores", {})
-    anime_reasons = results.get("anime_reasons", {})
-    movie_reasons = results.get("movie_reasons", {})
+    anime_scores = results.get('anime_scores', {})
+    movie_scores = results.get('movie_scores', {})
+    anime_reasons = results.get('anime_reasons', {})
+    movie_reasons = results.get('movie_reasons', {})
 
     rows = [
         Recommendation(
-            user=user, anime=anime, rank=i,
+            user=user,
+            anime=anime,
+            rank=i,
             score=anime_scores.get(anime.pk, 0.0),
             reason=anime_reasons.get(anime.pk, ''),
         )
-        for i, anime in enumerate(results.get("animes", []), start=1)
+        for i, anime in enumerate(results.get('animes', []), start=1)
     ] + [
         Recommendation(
-            user=user, movie=movie, rank=i,
+            user=user,
+            movie=movie,
+            rank=i,
             score=movie_scores.get(movie.pk, 0.0),
             reason=movie_reasons.get(movie.pk, ''),
         )
-        for i, movie in enumerate(results.get("movies", []), start=1)
+        for i, movie in enumerate(results.get('movies', []), start=1)
     ]
 
     with transaction.atomic():
@@ -129,18 +128,17 @@ def _attach_reasons(items, reasons: dict) -> None:
 def _popular_fallback(limit: int) -> dict:
     """Last-resort: return highest-rated content when everything else fails."""
     animes = list(
-        Anime.objects.order_by("-rating", "-is_popular")[:limit]
-        .prefetch_related("genres", "media_images", "seasons__episodes")
+        Anime.objects.order_by('-rating', '-is_popular')[:limit].prefetch_related(
+            'genres', 'media_images', 'seasons__episodes'
+        )
     )
-    movies = list(
-        Movie.objects.order_by("-rating", "-is_popular")[:limit]
-        .prefetch_related("genres", "media_images")
-    )
+    movies = list(Movie.objects.order_by('-rating', '-is_popular')[:limit].prefetch_related('genres', 'media_images'))
     for a in animes:
-        a.recommend_reason = "Popular right now"
+        a.recommend_reason = 'Popular right now'
     for m in movies:
-        m.recommend_reason = "Popular right now"
-    return {"animes": animes, "movies": movies}
+        m.recommend_reason = 'Popular right now'
+    return {'animes': animes, 'movies': movies}
+
 
 def get_similar(item, limit: int = 6):
     """
@@ -149,38 +147,44 @@ def get_similar(item, limit: int = 6):
     Returns a list with a .recommend_reason attribute set on each result.
     """
     genre_ids = list(item.genres.values_list('pk', flat=True))
-    is_anime  = isinstance(item, Anime)
+    is_anime = isinstance(item, Anime)
 
     if not genre_ids:
         # No genres — fall back to popular of the same type
         if is_anime:
-            results = list(Anime.objects.exclude(pk=item.pk)
-                           .order_by('-rating', '-is_popular')
-                           .prefetch_related('genres', 'media_images', 'seasons__episodes')[:limit])
+            results = list(
+                Anime.objects.exclude(pk=item.pk)
+                .order_by('-rating', '-is_popular')
+                .prefetch_related('genres', 'media_images', 'seasons__episodes')[:limit]
+            )
         else:
-            results = list(Movie.objects.exclude(pk=item.pk)
-                           .order_by('-rating', '-is_popular')
-                           .prefetch_related('genres', 'media_images')[:limit])
+            results = list(
+                Movie.objects.exclude(pk=item.pk)
+                .order_by('-rating', '-is_popular')
+                .prefetch_related('genres', 'media_images')[:limit]
+            )
         for r in results:
             r.recommend_reason = 'Popular right now'
         return results
 
     if is_anime:
-        qs = (Anime.objects
-              .exclude(pk=item.pk)
-              .filter(genres__pk__in=genre_ids)
-              .annotate(shared=Count('genres', filter=Q(genres__pk__in=genre_ids)))
-              .order_by('-shared', '-rating')
-              .prefetch_related('genres', 'media_images', 'seasons__episodes')
-              .distinct()[:limit])
+        qs = (
+            Anime.objects.exclude(pk=item.pk)
+            .filter(genres__pk__in=genre_ids)
+            .annotate(shared=Count('genres', filter=Q(genres__pk__in=genre_ids)))
+            .order_by('-shared', '-rating')
+            .prefetch_related('genres', 'media_images', 'seasons__episodes')
+            .distinct()[:limit]
+        )
     else:
-        qs = (Movie.objects
-              .exclude(pk=item.pk)
-              .filter(genres__pk__in=genre_ids)
-              .annotate(shared=Count('genres', filter=Q(genres__pk__in=genre_ids)))
-              .order_by('-shared', '-rating')
-              .prefetch_related('genres', 'media_images')
-              .distinct()[:limit])
+        qs = (
+            Movie.objects.exclude(pk=item.pk)
+            .filter(genres__pk__in=genre_ids)
+            .annotate(shared=Count('genres', filter=Q(genres__pk__in=genre_ids)))
+            .order_by('-shared', '-rating')
+            .prefetch_related('genres', 'media_images')
+            .distinct()[:limit]
+        )
 
     results = list(qs)
     genre_names = list(item.genres.values_list('name', flat=True)[:3])

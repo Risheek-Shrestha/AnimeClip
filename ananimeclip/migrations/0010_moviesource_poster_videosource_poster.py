@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('ananimeclip', '0009_remove_moviesource_url_remove_videosource_url_and_more'),
     ]

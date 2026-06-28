@@ -14,11 +14,11 @@ Movie.release_notified.
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
-from ...models import Movie, Follow, Notification
+from ...models import Follow, Movie, Notification
 
 
 class Command(BaseCommand):
-    help = "Notify followers of movies whose release date has arrived."
+    help = 'Notify followers of movies whose release date has arrived.'
 
     def handle(self, *args, **options):
         today = timezone.now().date()
@@ -29,13 +29,11 @@ class Command(BaseCommand):
         )
 
         total = released.count()
-        self.stdout.write(f"Checking {total} newly-released movie(s) …")
+        self.stdout.write(f'Checking {total} newly-released movie(s) …')
 
         notified_movies = 0
         for movie in released.iterator():
-            follower_ids = list(
-                Follow.objects.filter(movie=movie).values_list('user_id', flat=True)
-            )
+            follower_ids = list(Follow.objects.filter(movie=movie).values_list('user_id', flat=True))
             if follower_ids:
                 Notification.objects.bulk_create(
                     [
@@ -43,7 +41,7 @@ class Command(BaseCommand):
                             user_id=user_id,
                             notif_type='new_movie',
                             movie=movie,
-                            message=f"Now available: {movie.title}",
+                            message=f'Now available: {movie.title}',
                         )
                         for user_id in follower_ids
                     ],
@@ -53,6 +51,4 @@ class Command(BaseCommand):
             movie.save(update_fields=['release_notified'])
             notified_movies += 1
 
-        self.stdout.write(
-            self.style.SUCCESS(f"Done — processed {notified_movies} movie(s).")
-        )
+        self.stdout.write(self.style.SUCCESS(f'Done — processed {notified_movies} movie(s).'))

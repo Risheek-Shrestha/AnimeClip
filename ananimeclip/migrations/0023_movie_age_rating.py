@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('ananimeclip', '0022_rename_avatars_subprofile_avatar'),
     ]
@@ -13,6 +12,8 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='movie',
             name='age_rating',
-            field=models.CharField(choices=[('pg', 'PG'), ('pg13', 'PG-13'), ('r', '18+')], default='pg13', max_length=10),
+            field=models.CharField(
+                choices=[('pg', 'PG'), ('pg13', 'PG-13'), ('r', '18+')], default='pg13', max_length=10
+            ),
         ),
     ]

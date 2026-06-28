@@ -31,12 +31,14 @@ Cloudinary auth_token to the URL so even the raw Cloudinary link itself
 expires and requires a valid token — making it impossible to use a captured
 redirect target as a permanent link.
 """
-from django.core import signing
-from django.conf import settings
+
 import hashlib
 import hmac
 import re
 import time
+
+from django.conf import settings
+from django.core import signing
 
 SALT = 'ananimeclip.video-stream'
 DEFAULT_MAX_AGE = 4 * 60 * 60  # 4 hours
@@ -45,9 +47,7 @@ DEFAULT_MAX_AGE = 4 * 60 * 60  # 4 hours
 #   https://res.cloudinary.com/<cloud>/video/upload/v123/some_id.mp4
 # Capturing the bit right after "/upload/" lets us insert a streaming-profile
 # transformation (sp_auto) without disturbing the version/public_id that follow.
-_CLOUDINARY_VIDEO_UPLOAD_RE = re.compile(
-    r'^(https?://res\.cloudinary\.com/[^/]+/video/upload/)(.+)\.[A-Za-z0-9]+$'
-)
+_CLOUDINARY_VIDEO_UPLOAD_RE = re.compile(r'^(https?://res\.cloudinary\.com/[^/]+/video/upload/)(.+)\.[A-Za-z0-9]+$')
 
 
 def _build_cloudinary_auth_token(url: str, expiry: int) -> str | None:
@@ -70,12 +70,10 @@ def _build_cloudinary_auth_token(url: str, expiry: int) -> str | None:
     exp = int(time.time()) + expiry
     # Cloudinary token auth spec: HMAC-SHA256 over "expiry<url_path>"
     url_path = re.sub(r'^https?://[^/]+', '', url)
-    to_sign = f"exp={exp}\nurl={url_path}"
-    digest = hmac.new(
-        bytes.fromhex(key_hex), to_sign.encode(), hashlib.sha256
-    ).hexdigest()
+    to_sign = f'exp={exp}\nurl={url_path}'
+    digest = hmac.new(bytes.fromhex(key_hex), to_sign.encode(), hashlib.sha256).hexdigest()
     sep = '&' if '?' in url else '?'
-    return f"{url}{sep}__cld_token__=exp={exp}~hmac={digest}"
+    return f'{url}{sep}__cld_token__=exp={exp}~hmac={digest}'
 
 
 def sign_video_url(raw_url: str) -> str:

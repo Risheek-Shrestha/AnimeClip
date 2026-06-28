@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('ananimeclip', '0024_alter_follow_unique_together_follow_movie_and_more'),
     ]
@@ -13,6 +12,9 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='movie',
             name='release_notified',
-            field=models.BooleanField(default=False, help_text='Set once followers have been notified that this movie is out. Used by the notify_movie_releases command to avoid duplicate notifications.'),
+            field=models.BooleanField(
+                default=False,
+                help_text='Set once followers have been notified that this movie is out. Used by the notify_movie_releases command to avoid duplicate notifications.',
+            ),
         ),
     ]

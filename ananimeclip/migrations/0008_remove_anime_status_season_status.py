@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('ananimeclip', '0007_remove_anime_release_date_remove_anime_release_day_and_more'),
     ]
@@ -17,6 +16,10 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='season',
             name='status',
-            field=models.CharField(choices=[('ongoing', 'Ongoing'), ('completed', 'Completed'), ('upcoming', 'Upcoming')], default='ongoing', max_length=20),
+            field=models.CharField(
+                choices=[('ongoing', 'Ongoing'), ('completed', 'Completed'), ('upcoming', 'Upcoming')],
+                default='ongoing',
+                max_length=20,
+            ),
         ),
     ]

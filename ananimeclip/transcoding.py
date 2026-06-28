@@ -43,7 +43,6 @@ returns the full asset metadata including the eager URLs.
 
 import logging
 import re
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -61,15 +60,15 @@ logger = logging.getLogger(__name__)
 # Capturing group 2: the public_id (no extension)
 _PUBLIC_ID_RE = re.compile(
     r'https?://res\.cloudinary\.com/[^/]+/video/upload/'
-    r'(?:[^/]+/)*'           # optional transformation segments (greedy, each ends with /)
-    r'(?:v\d+/)?'            # optional version segment  v123/
-    r'([^.]+)'               # public_id (no extension)
-    r'\.[A-Za-z0-9]+'        # extension
+    r'(?:[^/]+/)*'  # optional transformation segments (greedy, each ends with /)
+    r'(?:v\d+/)?'  # optional version segment  v123/
+    r'([^.]+)'  # public_id (no extension)
+    r'\.[A-Za-z0-9]+'  # extension
     r'$'
 )
 
 
-def _extract_public_id(cloudinary_url: str) -> Optional[str]:
+def _extract_public_id(cloudinary_url: str) -> str | None:
     """
     Pull the Cloudinary public_id out of a delivery URL.
 
@@ -95,31 +94,24 @@ def _extract_public_id(cloudinary_url: str) -> Optional[str]:
 #: always has a warm manifest to fetch.
 EAGER_TRANSFORMS = [
     # 1080p — best quality, H.265 where supported
-    {"streaming_profile": "full_hd", "format": "m3u8"},
-    {"width": 1920, "height": 1080, "crop": "limit", "video_codec": "h265",
-     "quality": "auto:best", "format": "mp4"},
-
+    {'streaming_profile': 'full_hd', 'format': 'm3u8'},
+    {'width': 1920, 'height': 1080, 'crop': 'limit', 'video_codec': 'h265', 'quality': 'auto:best', 'format': 'mp4'},
     # 720p — primary HLS rung, H.264 for broad device compatibility
-    {"streaming_profile": "hd", "format": "m3u8"},
-    {"width": 1280, "height": 720, "crop": "limit", "video_codec": "h264",
-     "quality": "auto:good", "format": "mp4"},
-
+    {'streaming_profile': 'hd', 'format': 'm3u8'},
+    {'width': 1280, 'height': 720, 'crop': 'limit', 'video_codec': 'h264', 'quality': 'auto:good', 'format': 'mp4'},
     # 480p
-    {"width": 854, "height": 480, "crop": "limit", "video_codec": "h264",
-     "quality": "auto:good", "format": "mp4"},
-
+    {'width': 854, 'height': 480, 'crop': 'limit', 'video_codec': 'h264', 'quality': 'auto:good', 'format': 'mp4'},
     # 360p — low-bandwidth / mobile
-    {"width": 640, "height": 360, "crop": "limit", "video_codec": "h264",
-     "quality": "auto:eco", "format": "mp4"},
-
+    {'width': 640, 'height': 360, 'crop': 'limit', 'video_codec': 'h264', 'quality': 'auto:eco', 'format': 'mp4'},
     # Adaptive HLS master manifest (Cloudinary picks the right rungs)
-    {"streaming_profile": "auto", "format": "m3u8"},
+    {'streaming_profile': 'auto', 'format': 'm3u8'},
 ]
 
 
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
+
 
 def request_eager_transcoding(video_url: str) -> bool:
     """
@@ -137,8 +129,8 @@ def request_eager_transcoding(video_url: str) -> bool:
     public_id = _extract_public_id(video_url)
     if not public_id:
         logger.warning(
-            "transcoding: skipping eager transforms — URL does not look like "
-            "a Cloudinary video upload URL: %s", video_url
+            'transcoding: skipping eager transforms — URL does not look like a Cloudinary video upload URL: %s',
+            video_url,
         )
         return False
 
@@ -147,29 +139,26 @@ def request_eager_transcoding(video_url: str) -> bool:
 
         result = cloudinary.uploader.explicit(
             public_id,
-            type="upload",
-            resource_type="video",
+            type='upload',
+            resource_type='video',
             eager=EAGER_TRANSFORMS,
-            eager_async=True,          # don't block the web request
-            eager_notification_url="",  # set via CLOUDINARY_NOTIFICATION_URL env var if needed
+            eager_async=True,  # don't block the web request
+            eager_notification_url='',  # set via CLOUDINARY_NOTIFICATION_URL env var if needed
         )
         logger.info(
-            "transcoding: eager job queued for public_id=%r (%d transforms). "
-            "Cloudinary response version=%s",
+            'transcoding: eager job queued for public_id=%r (%d transforms). Cloudinary response version=%s',
             public_id,
             len(EAGER_TRANSFORMS),
-            result.get("version", "?"),
+            result.get('version', '?'),
         )
         return True
 
     except Exception:  # noqa: BLE001 — log and degrade gracefully
-        logger.exception(
-            "transcoding: failed to queue eager transforms for public_id=%r", public_id
-        )
+        logger.exception('transcoding: failed to queue eager transforms for public_id=%r', public_id)
         return False
 
 
-def get_rendition_url(video_url: str, height: int, fmt: str = "mp4") -> Optional[str]:
+def get_rendition_url(video_url: str, height: int, fmt: str = 'mp4') -> str | None:
     """
     Build the Cloudinary delivery URL for a specific pre-generated rendition.
 
@@ -191,5 +180,5 @@ def get_rendition_url(video_url: str, height: int, fmt: str = "mp4") -> Optional
     if not m:
         return None
     base, public_id = m.group(1), m.group(2)
-    transform = f"h_{height},c_limit,vc_h264,q_auto"
-    return f"{base}{transform}/{public_id}.{fmt}"
+    transform = f'h_{height},c_limit,vc_h264,q_auto'
+    return f'{base}{transform}/{public_id}.{fmt}'

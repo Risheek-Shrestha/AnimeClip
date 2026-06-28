@@ -18,11 +18,12 @@ quality renditions (1080p, 720p, 480p, 360p as mp4 + HLS) via
 side (``eager_async=True``) so the save does not block.
 """
 
-from django.db.models.signals import post_save
-from django.dispatch import receiver
 import threading
 
-from .models import Episode, Notification, WatchLater, WatchHistory, Follow, VideoSource, MovieSource
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+
+from .models import Episode, Follow, MovieSource, Notification, VideoSource, WatchHistory, WatchLater
 
 
 def _users_interested_in_anime(anime):
@@ -32,6 +33,7 @@ def _users_interested_in_anime(anime):
     wh_ids = set(WatchHistory.objects.filter(episode__season__anime=anime).values_list('user_id', flat=True))
     ids = follow_ids | wl_ids | wh_ids
     from django.contrib.auth.models import User
+
     return User.objects.filter(pk__in=ids)
 
 
@@ -41,10 +43,10 @@ def notify_new_episode(sender, instance, created, **kwargs):
         return
     anime = instance.season.anime
     users = _users_interested_in_anime(anime)
-    ep_label = f"Episode {instance.number}"
+    ep_label = f'Episode {instance.number}'
     if instance.title:
-        ep_label += f" — {instance.title}"
-    message = f"New episode available: {anime.title} · {ep_label}"
+        ep_label += f' — {instance.title}'
+    message = f'New episode available: {anime.title} · {ep_label}'
     notifications = [
         Notification(
             user=user,
@@ -63,6 +65,7 @@ def notify_new_episode(sender, instance, created, **kwargs):
 # Eager transcoding — triggered whenever a video source URL changes
 # ---------------------------------------------------------------------------
 
+
 def _should_transcode(instance, update_fields):
     """
     Return True if we should queue a transcoding job for *instance*.
@@ -76,7 +79,7 @@ def _should_transcode(instance, update_fields):
     """
     if update_fields is None:
         return True  # full save — always check
-    return "video_url" in update_fields
+    return 'video_url' in update_fields
 
 
 @receiver(post_save, sender=VideoSource)
@@ -97,6 +100,7 @@ def trigger_source_transcoding(sender, instance, created, update_fields, **kwarg
     # a Cloudinary API call. request_eager_transcoding already handles its own
     # exceptions and logs them, so the thread is fire-and-forget safe.
     from .transcoding import request_eager_transcoding  # noqa: PLC0415
+
     url = instance.video_url
     threading.Thread(target=request_eager_transcoding, args=(url,), daemon=True).start()
 
@@ -110,5 +114,6 @@ def trigger_movie_source_transcoding(sender, instance, created, update_fields, *
         return
 
     from .transcoding import request_eager_transcoding  # noqa: PLC0415
+
     url = instance.video_url
     threading.Thread(target=request_eager_transcoding, args=(url,), daemon=True).start()

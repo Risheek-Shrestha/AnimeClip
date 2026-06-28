@@ -9,6 +9,7 @@ still open an 18+ episode by visiting its URL directly. This module
 is the single place that decides "is this viewer allowed to see this
 content?", so every entry point enforces the same rule.
 """
+
 from .models import SubProfile
 
 ADULT_RATING = 'r'
@@ -87,18 +88,14 @@ def filter_index_context(ctx, request):
     if not restricted_to_pg13(request):
         return ctx
     ctx = dict(ctx)
-    for key in ('featured_animes', 'Recent_animes', 'Popular_animes',
-                'top_animes', 'new_animes', 'completed_animes'):
+    for key in ('featured_animes', 'Recent_animes', 'Popular_animes', 'top_animes', 'new_animes', 'completed_animes'):
         if key in ctx:
             ctx[key] = _drop_adult(ctx[key])
     if ctx.get('coming_soon_season') is not None:
         if getattr(ctx['coming_soon_season'].anime, 'age_rating', None) == ADULT_RATING:
             ctx['coming_soon_season'] = None
     if 'week_days' in ctx:
-        ctx['week_days'] = [
-            {**day, 'animes': _drop_adult(day.get('animes', []))}
-            for day in ctx['week_days']
-        ]
+        ctx['week_days'] = [{**day, 'animes': _drop_adult(day.get('animes', []))} for day in ctx['week_days']]
     return ctx
 
 

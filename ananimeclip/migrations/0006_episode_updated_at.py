@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('ananimeclip', '0005_remove_anime_banner_remove_anime_thumbnail_and_more'),
     ]

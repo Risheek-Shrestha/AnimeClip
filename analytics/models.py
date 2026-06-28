@@ -1,5 +1,5 @@
-from django.db import models
 from django.conf import settings
+from django.db import models
 
 
 class WatchEvent(models.Model):
@@ -10,7 +10,7 @@ class WatchEvent(models.Model):
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
-        related_name="watch_events",
+        related_name='watch_events',
     )
     anime_slug = models.SlugField(max_length=200)
     anime_title = models.CharField(max_length=200)
@@ -22,14 +22,14 @@ class WatchEvent(models.Model):
 
     class Meta:
         indexes = [
-            models.Index(fields=["watched_at"]),
-            models.Index(fields=["anime_slug"]),
-            models.Index(fields=["user", "watched_at"]),
+            models.Index(fields=['watched_at']),
+            models.Index(fields=['anime_slug']),
+            models.Index(fields=['user', 'watched_at']),
         ]
-        ordering = ["-watched_at"]
+        ordering = ['-watched_at']
 
     def __str__(self):
-        return f"{self.anime_title} – ep{self.episode_number} @ {self.watched_at:%Y-%m-%d}"
+        return f'{self.anime_title} – ep{self.episode_number} @ {self.watched_at:%Y-%m-%d}'
 
 
 class SearchEvent(models.Model):
@@ -46,5 +46,8 @@ class SearchEvent(models.Model):
     searched_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        indexes = [models.Index(fields=["searched_at"])]
-        ordering = ["-searched_at"]
+        indexes = [models.Index(fields=['searched_at'])]
+        ordering = ['-searched_at']
+
+    def __str__(self):
+        return f'SearchEvent({self.query!r}, {self.searched_at})'

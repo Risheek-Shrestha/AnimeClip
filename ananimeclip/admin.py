@@ -1,15 +1,27 @@
-from django.contrib import admin
-from django import forms
-from .models import (
-    Profile, Anime, Movie, Genre, Season, Episode,
-    VideoSource, MovieSource, Comment, CommentLike, MediaImage,
-    Recommendation, Subtitle
-)
-from .widgets import CloudinaryVideoWidget
 import os
 
+from django import forms
+from django.contrib import admin
+
+from .models import (
+    Anime,
+    Comment,
+    CommentLike,
+    Episode,
+    Genre,
+    MediaImage,
+    Movie,
+    MovieSource,
+    Profile,
+    Recommendation,
+    Season,
+    Subtitle,
+    VideoSource,
+)
+from .widgets import CloudinaryVideoWidget
 
 # ── Subtitle (inlined under VideoSource / MovieSource) ─────────────────────────
+
 
 class SubtitleInline(admin.TabularInline):
     model = Subtitle
@@ -19,10 +31,11 @@ class SubtitleInline(admin.TabularInline):
 
 # ── VideoSource ────────────────────────────────────────────────────────────────
 
+
 class VideoSourceForm(forms.ModelForm):
     class Meta:
         model = VideoSource
-        fields = '__all__'
+        fields = ['episode', 'label', 'type', 'video_url', 'poster']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -40,10 +53,11 @@ class VideoSourceAdmin(admin.ModelAdmin):
 
 # ── MovieSource ────────────────────────────────────────────────────────────────
 
+
 class MovieSourceForm(forms.ModelForm):
     class Meta:
         model = MovieSource
-        fields = '__all__'
+        fields = ['movie', 'label', 'type', 'video_url', 'poster']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -61,6 +75,7 @@ class MovieSourceAdmin(admin.ModelAdmin):
 
 # ── Recommendation (machine-generated — view only, don't hand-edit) ───────────
 
+
 @admin.register(Recommendation)
 class RecommendationAdmin(admin.ModelAdmin):
     list_display = ('user', 'anime', 'movie', 'score', 'rank', 'generated_at')
@@ -76,6 +91,7 @@ class RecommendationAdmin(admin.ModelAdmin):
 
 
 # ── Everything else ────────────────────────────────────────────────────────────
+
 
 @admin.register(Genre)
 class GenreAdmin(admin.ModelAdmin):
@@ -147,6 +163,7 @@ class CommentAdmin(admin.ModelAdmin):
 
     def body_preview(self, obj):
         return obj.body[:60] + ('…' if len(obj.body) > 60 else '')
+
     body_preview.short_description = 'Body'
 
 
@@ -176,9 +193,11 @@ class SubtitleAdmin(admin.ModelAdmin):
     list_filter = ('language_code', 'is_default')
     search_fields = ('label', 'video_source__episode__season__anime__title', 'movie_source__movie__title')
 
+
 # ============================================================
 # Transcoding admin actions
 # ============================================================
+
 
 def trigger_transcoding_action(modeladmin, request, queryset):
     """
@@ -205,14 +224,11 @@ def trigger_transcoding_action(modeladmin, request, queryset):
 
     modeladmin.message_user(
         request,
-        f"Queued eager transcoding for {queued} source(s). "
-        f"{skipped} skipped (no URL or non-Cloudinary URL).",
+        f'Queued eager transcoding for {queued} source(s). {skipped} skipped (no URL or non-Cloudinary URL).',
     )
 
 
-trigger_transcoding_action.short_description = (
-    "Queue eager Cloudinary transcoding (1080p / 720p / 480p / 360p + HLS)"
-)
+trigger_transcoding_action.short_description = 'Queue eager Cloudinary transcoding (1080p / 720p / 480p / 360p + HLS)'
 
 
 # Attach the action to the existing VideoSource and MovieSource admins.
@@ -230,7 +246,8 @@ def _patch_admin_actions(model, action):
         pass  # model not registered — nothing to patch
 
 
-from .models import VideoSource as _VS, MovieSource as _MS  # noqa: E402
+from .models import MovieSource as _MS  # noqa: E402
+from .models import VideoSource as _VS  # noqa: E402
 
 _patch_admin_actions(_VS, trigger_transcoding_action)
 _patch_admin_actions(_MS, trigger_transcoding_action)

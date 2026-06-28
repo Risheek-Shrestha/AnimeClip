@@ -5,7 +5,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('ananimeclip', '0001_initial'),
     ]
@@ -17,7 +16,24 @@ class Migration(migrations.Migration):
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('title', models.CharField(max_length=200)),
                 ('description', models.TextField()),
-                ('genre', models.CharField(choices=[('action', 'Action'), ('romance', 'Romance'), ('sci-fi', 'Sci-Fi'), ('adventure', 'Adventure'), ('fantasy', 'Fantasy'), ('horror', 'Horror'), ('comedy', 'Comedy'), ('drama', 'Drama'), ('isekai', 'Isekai'), ('slice of life', 'Slice of Life')], max_length=50)),
+                (
+                    'genre',
+                    models.CharField(
+                        choices=[
+                            ('action', 'Action'),
+                            ('romance', 'Romance'),
+                            ('sci-fi', 'Sci-Fi'),
+                            ('adventure', 'Adventure'),
+                            ('fantasy', 'Fantasy'),
+                            ('horror', 'Horror'),
+                            ('comedy', 'Comedy'),
+                            ('drama', 'Drama'),
+                            ('isekai', 'Isekai'),
+                            ('slice of life', 'Slice of Life'),
+                        ],
+                        max_length=50,
+                    ),
+                ),
                 ('release_date', models.DateField()),
                 ('rating', models.DecimalField(decimal_places=1, max_digits=3)),
                 ('thumbnail', models.ImageField(upload_to='anime/thumbnails/')),
@@ -29,6 +45,8 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='profile',
             name='age',
-            field=models.IntegerField(validators=[django.core.validators.MinValueValidator(10), django.core.validators.MaxValueValidator(80)]),
+            field=models.IntegerField(
+                validators=[django.core.validators.MinValueValidator(10), django.core.validators.MaxValueValidator(80)]
+            ),
         ),
     ]

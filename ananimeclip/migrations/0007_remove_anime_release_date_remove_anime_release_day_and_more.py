@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('ananimeclip', '0006_episode_updated_at'),
     ]
@@ -30,7 +29,19 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='episode',
             name='release_day',
-            field=models.CharField(blank=True, choices=[('Sunday', 'Sunday'), ('Monday', 'Monday'), ('Tuesday', 'Tuesday'), ('Wednesday', 'Wednesday'), ('Thursday', 'Thursday'), ('Friday', 'Friday'), ('Saturday', 'Saturday')], max_length=10),
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ('Sunday', 'Sunday'),
+                    ('Monday', 'Monday'),
+                    ('Tuesday', 'Tuesday'),
+                    ('Wednesday', 'Wednesday'),
+                    ('Thursday', 'Thursday'),
+                    ('Friday', 'Friday'),
+                    ('Saturday', 'Saturday'),
+                ],
+                max_length=10,
+            ),
         ),
         migrations.AddField(
             model_name='episode',
@@ -45,7 +56,19 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='season',
             name='release_day',
-            field=models.CharField(blank=True, choices=[('Sunday', 'Sunday'), ('Monday', 'Monday'), ('Tuesday', 'Tuesday'), ('Wednesday', 'Wednesday'), ('Thursday', 'Thursday'), ('Friday', 'Friday'), ('Saturday', 'Saturday')], max_length=10),
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ('Sunday', 'Sunday'),
+                    ('Monday', 'Monday'),
+                    ('Tuesday', 'Tuesday'),
+                    ('Wednesday', 'Wednesday'),
+                    ('Thursday', 'Thursday'),
+                    ('Friday', 'Friday'),
+                    ('Saturday', 'Saturday'),
+                ],
+                max_length=10,
+            ),
         ),
         migrations.AddField(
             model_name='season',

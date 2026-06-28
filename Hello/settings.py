@@ -1,8 +1,8 @@
-from pathlib import Path
-from dotenv import load_dotenv
 import os
 import sys
+from pathlib import Path
 
+from dotenv import load_dotenv
 
 load_dotenv()
 
@@ -12,11 +12,10 @@ _secret_key = os.getenv('SECRET_KEY')
 if not _secret_key:
     if os.getenv('DEBUG', 'False') == 'True':
         # Local dev only — never reaches production because DEBUG is False there
-        _secret_key = 'django-insecure-local-dev-only-do-not-use-in-production'
+        _secret_key = 'django-insecure-local-dev-only-do-not-use-in-production'  # noqa: S105
     else:
         raise RuntimeError(
-            'SECRET_KEY environment variable is not set. '
-            'Set it before starting the server in production.'
+            'SECRET_KEY environment variable is not set. Set it before starting the server in production.'
         )
 SECRET_KEY = _secret_key
 
@@ -187,7 +186,6 @@ if not DEBUG:
     SESSION_COOKIE_SECURE = True
 
 
-
 if 'test' in sys.argv:
     STORAGES['staticfiles'] = {
         'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage',
@@ -269,6 +267,7 @@ CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
 # Periodic jobs previously run as bare management commands with no scheduler.
 # They are now scheduled here so `celery -A Hello beat` picks them up automatically.
 from celery.schedules import crontab  # noqa: E402
+
 CELERY_BEAT_SCHEDULE = {
     # Warm collaborative-filtering recommendations at 3 AM every day.
     'warm-recommendations-daily': {

@@ -44,23 +44,22 @@ back to generating it on-the-fly (a one-time delay).
 """
 
 import logging
-from typing import Optional
 
 from django.core import signing
 
 logger = logging.getLogger(__name__)
 
-SALT = "ananimeclip.offline-download"
+SALT = 'ananimeclip.offline-download'
 DOWNLOAD_TOKEN_MAX_AGE = 60 * 60  # 1 hour
 
 ALLOWED_HEIGHTS = {360, 480, 720, 1080}
 
 # Map height → (video_codec, quality) — mirrors EAGER_TRANSFORMS in transcoding.py
 _HEIGHT_PARAMS = {
-    1080: ("h265", "auto:best"),
-    720:  ("h264", "auto:good"),
-    480:  ("h264", "auto:good"),
-    360:  ("h264", "auto:eco"),
+    1080: ('h265', 'auto:best'),
+    720: ('h264', 'auto:good'),
+    480: ('h264', 'auto:good'),
+    360: ('h264', 'auto:eco'),
 }
 
 
@@ -68,13 +67,14 @@ _HEIGHT_PARAMS = {
 # Token helpers
 # ---------------------------------------------------------------------------
 
+
 def generate_download_token(
     *,
     source_pk: int,
-    source_type: str,   # "episode" | "movie"
+    source_type: str,  # "episode" | "movie"
     height: int,
     user_pk: int,
-) -> Optional[str]:
+) -> str | None:
     """
     Return a signed token embedding all the information needed to serve
     the download later.  Returns None if *height* is not one of the
@@ -82,21 +82,22 @@ def generate_download_token(
     """
     if height not in ALLOWED_HEIGHTS:
         logger.warning(
-            "download: rejected token request for unsupported height=%d (user=%d)",
-            height, user_pk,
+            'download: rejected token request for unsupported height=%d (user=%d)',
+            height,
+            user_pk,
         )
         return None
 
     payload = {
-        "spk": source_pk,
-        "st":  source_type,
-        "h":   height,
-        "uid": user_pk,
+        'spk': source_pk,
+        'st': source_type,
+        'h': height,
+        'uid': user_pk,
     }
     return signing.dumps(payload, salt=SALT, compress=True)
 
 
-def validate_download_token(token: str, requesting_user_pk: int) -> Optional[dict]:
+def validate_download_token(token: str, requesting_user_pk: int) -> dict | None:
     """
     Validate *token* and return the decoded payload dict, or None if the
     token is missing / expired / tampered / belongs to a different user.
@@ -108,13 +109,14 @@ def validate_download_token(token: str, requesting_user_pk: int) -> Optional[dic
     try:
         payload = signing.loads(token, salt=SALT, max_age=DOWNLOAD_TOKEN_MAX_AGE)
     except signing.BadSignature:
-        logger.debug("download: bad/expired token (user=%d)", requesting_user_pk)
+        logger.debug('download: bad/expired token (user=%d)', requesting_user_pk)
         return None
 
-    if payload.get("uid") != requesting_user_pk:
+    if payload.get('uid') != requesting_user_pk:
         logger.warning(
-            "download: token uid=%s does not match requesting user=%d — possible sharing",
-            payload.get("uid"), requesting_user_pk,
+            'download: token uid=%s does not match requesting user=%d — possible sharing',
+            payload.get('uid'),
+            requesting_user_pk,
         )
         return None
 
@@ -134,7 +136,7 @@ _CL_VIDEO_RE = re.compile(
 )
 
 
-def build_download_url(raw_video_url: str, height: int) -> Optional[str]:
+def build_download_url(raw_video_url: str, height: int) -> str | None:
     """
     Construct the Cloudinary delivery URL for a specific quality rendition
     of *raw_video_url* as a progressive-download mp4.
@@ -151,8 +153,8 @@ def build_download_url(raw_video_url: str, height: int) -> Optional[str]:
     base, public_id = m.group(1), m.group(2)
     vc, q = _HEIGHT_PARAMS[height]
     # Cloudinary transformation: resize to height (maintain aspect), codec, quality
-    transform = f"h_{height},c_limit,vc_{vc},q_{q}"
-    return f"{base}{transform}/{public_id}.mp4"
+    transform = f'h_{height},c_limit,vc_{vc},q_{q}'
+    return f'{base}{transform}/{public_id}.mp4'
 
 
 # ---------------------------------------------------------------------------
@@ -160,8 +162,8 @@ def build_download_url(raw_video_url: str, height: int) -> Optional[str]:
 # ---------------------------------------------------------------------------
 
 QUALITY_OPTIONS = [
-    {"height": 1080, "label": "1080p (Full HD)", "size_hint": "~800 MB/hr"},
-    {"height": 720,  "label": "720p (HD)",       "size_hint": "~400 MB/hr"},
-    {"height": 480,  "label": "480p (SD)",        "size_hint": "~200 MB/hr"},
-    {"height": 360,  "label": "360p (Low)",       "size_hint": "~100 MB/hr"},
+    {'height': 1080, 'label': '1080p (Full HD)', 'size_hint': '~800 MB/hr'},
+    {'height': 720, 'label': '720p (HD)', 'size_hint': '~400 MB/hr'},
+    {'height': 480, 'label': '480p (SD)', 'size_hint': '~200 MB/hr'},
+    {'height': 360, 'label': '360p (Low)', 'size_hint': '~100 MB/hr'},
 ]

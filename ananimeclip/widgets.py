@@ -1,5 +1,6 @@
 from django import forms
 
+
 class CloudinaryVideoWidget(forms.Widget):
     """
     Renders a Cloudinary Upload Widget button.
@@ -33,7 +34,7 @@ class CloudinaryVideoWidget(forms.Widget):
                     style="padding:8px 16px; background:#4CAF50;
                            color:white; border:none; border-radius:4px;
                            cursor:pointer; font-size:14px;">
-                {"Replace Video" if current_value else "Upload Video"}
+                {'Replace Video' if current_value else 'Upload Video'}
             </button>
             <script
                 src="https://upload-widget.cloudinary.com/global/all.js"

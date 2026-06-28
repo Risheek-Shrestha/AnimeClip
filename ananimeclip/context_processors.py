@@ -14,6 +14,7 @@ def active_subprofile(request):
     if not request.user.is_authenticated:
         return {'active_subprofile': None}
     from .models import SubProfile
+
     if not hasattr(request, 'session'):
         return {'active_subprofile': None}
     sp_id = request.session.get('active_subprofile_id')

@@ -4,42 +4,41 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ("ananimeclip", "0027_add_performance_indexes"),
+        ('ananimeclip', '0027_add_performance_indexes'),
     ]
 
     operations = [
         migrations.RemoveIndex(
-            model_name="anime",
-            name="anime_is_featured_idx",
+            model_name='anime',
+            name='anime_is_featured_idx',
         ),
         migrations.RemoveIndex(
-            model_name="anime",
-            name="anime_is_popular_idx",
+            model_name='anime',
+            name='anime_is_popular_idx',
         ),
         migrations.RemoveIndex(
-            model_name="movie",
-            name="movie_is_featured_idx",
+            model_name='movie',
+            name='movie_is_featured_idx',
         ),
         migrations.RemoveIndex(
-            model_name="movie",
-            name="movie_is_popular_idx",
+            model_name='movie',
+            name='movie_is_popular_idx',
         ),
         migrations.RemoveIndex(
-            model_name="movie",
-            name="movie_release_date_idx",
+            model_name='movie',
+            name='movie_release_date_idx',
         ),
         migrations.RemoveIndex(
-            model_name="notification",
-            name="notification_user_is_read_idx",
+            model_name='notification',
+            name='notification_user_is_read_idx',
         ),
         migrations.RemoveIndex(
-            model_name="season",
-            name="season_status_idx",
+            model_name='season',
+            name='season_status_idx',
         ),
         migrations.RemoveIndex(
-            model_name="watchhistory",
-            name="watchhistory_user_updated_idx",
+            model_name='watchhistory',
+            name='watchhistory_user_updated_idx',
         ),
     ]

@@ -22,21 +22,22 @@ logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
-    help = "Pre-compute and persist recommendations for active users."
+    help = 'Pre-compute and persist recommendations for active users.'
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "--limit", type=int, default=20,
-            help="Number of recommendations per user, per media type (default: 20)"
+            '--limit', type=int, default=20, help='Number of recommendations per user, per media type (default: 20)'
         )
         parser.add_argument(
-            "--users", nargs="*", type=int,
-            help="Specific user IDs to warm (default: all active users with watch history)"
+            '--users',
+            nargs='*',
+            type=int,
+            help='Specific user IDs to warm (default: all active users with watch history)',
         )
 
     def handle(self, *args, **options):
-        limit = options["limit"]
-        user_ids = options["users"]
+        limit = options['limit']
+        user_ids = options['users']
 
         if user_ids:
             users = User.objects.filter(pk__in=user_ids, is_active=True)
@@ -48,7 +49,7 @@ class Command(BaseCommand):
             ).distinct()
 
         total = users.count()
-        self.stdout.write(f"Warming recommendations for {total} users …")
+        self.stdout.write(f'Warming recommendations for {total} users …')
 
         success = failed = 0
         for user in users.iterator(chunk_size=50):
@@ -58,11 +59,7 @@ class Command(BaseCommand):
                 save_recommendations(user, results)
                 success += 1
             except Exception:
-                logger.exception("Failed to warm recs for user %s", user.pk)
+                logger.exception('Failed to warm recs for user %s', user.pk)
                 failed += 1
 
-        self.stdout.write(
-            self.style.SUCCESS(
-                f"Done — {success} succeeded, {failed} failed."
-            )
-        )
+        self.stdout.write(self.style.SUCCESS(f'Done — {success} succeeded, {failed} failed.'))
