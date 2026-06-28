@@ -85,6 +85,10 @@ DATABASES = {
         'HOST': os.getenv('DB_HOST'),
         'PORT': os.getenv('DB_PORT'),
         'CONN_MAX_AGE': 60,
+        # Django 4.1+: test the connection before reuse so stale sockets
+        # (e.g. after a DB restart or Gunicorn --preload fork) don't surface
+        # as 500 errors on the first request to a worker.
+        'CONN_HEALTH_CHECKS': True,
         'OPTIONS': {
             'connect_timeout': 5,
             'options': '-c statement_timeout=5000',
@@ -187,6 +191,14 @@ if not DEBUG:
     SECURE_HSTS_PRELOAD = True
     CSRF_COOKIE_SECURE = True
     SESSION_COOKIE_SECURE = True
+    # Belt-and-suspenders: cookies must be HttpOnly and SameSite=Lax so they
+    # can't be read by JS and are not sent on cross-site top-level navigations.
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = 'Lax'
+    CSRF_COOKIE_HTTPONLY = False   # Django default; keep False so JS can read it for AJAX
+    CSRF_COOKIE_SAMESITE = 'Lax'
+    # Tell Django we're behind an SSL-terminating nginx proxy.
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 
 if 'test' in sys.argv:
@@ -282,19 +294,22 @@ CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = TIME_ZONE
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
 
-# Periodic jobs previously run as bare management commands with no scheduler.
-# They are now scheduled here so `celery -A Hello beat` picks them up automatically.
-from celery.schedules import crontab  # noqa: E402
+# Periodic jobs — the `crontab` import is deferred inside the dict so
+# `settings.py` doesn't hard-import Celery at startup (which would fail if
+# Celery isn't installed in a lightweight test environment).
+def _celery_beat_schedule():
+    from celery.schedules import crontab  # noqa: PLC0415
+    return {
+        # Warm collaborative-filtering recommendations at 3 AM every day.
+        'warm-recommendations-daily': {
+            'task': 'ananimeclip.tasks.warm_recommendations',
+            'schedule': crontab(hour=3, minute=0),
+        },
+        # Notify movie-release followers daily at 8 AM.
+        'notify-movie-releases-daily': {
+            'task': 'ananimeclip.tasks.notify_movie_releases',
+            'schedule': crontab(hour=8, minute=0),
+        },
+    }
 
-CELERY_BEAT_SCHEDULE = {
-    # Warm collaborative-filtering recommendations at 3 AM every day.
-    'warm-recommendations-daily': {
-        'task': 'ananimeclip.tasks.warm_recommendations',
-        'schedule': crontab(hour=3, minute=0),
-    },
-    # Notify movie-release followers daily at 8 AM.
-    'notify-movie-releases-daily': {
-        'task': 'ananimeclip.tasks.notify_movie_releases',
-        'schedule': crontab(hour=8, minute=0),
-    },
-}
+CELERY_BEAT_SCHEDULE = _celery_beat_schedule()

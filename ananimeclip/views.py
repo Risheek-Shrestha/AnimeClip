@@ -1056,7 +1056,10 @@ def unread_notification_count(request):
 # ============================================================
 
 
+@ratelimit(key='ip', rate='30/m', method='GET', block=False)
 def live_search(request):
+    if getattr(request, 'limited', False):
+        return JsonResponse({'error': 'Too many requests'}, status=429)
     query = request.GET.get('q', '').strip()
     if not query:
         return JsonResponse({'results': []})
@@ -1305,13 +1308,16 @@ def continue_watching(request):
 def toggle_watch_later(request):
     episode_id = request.POST.get('episode_id')
     movie_id = request.POST.get('movie_id')
+    _sp = get_active_subprofile(request)
 
     if episode_id:
         episode = get_object_or_404(Episode, id=episode_id)
-        obj, created = WatchLater.objects.get_or_create(user=request.user, episode=episode)
+        lookup = {'subprofile': _sp, 'episode': episode} if _sp else {'user': request.user, 'episode': episode}
+        obj, created = WatchLater.objects.get_or_create(**lookup, defaults={'user': request.user})
     elif movie_id:
         movie = get_object_or_404(Movie, id=movie_id)
-        obj, created = WatchLater.objects.get_or_create(user=request.user, movie=movie)
+        lookup = {'subprofile': _sp, 'movie': movie} if _sp else {'user': request.user, 'movie': movie}
+        obj, created = WatchLater.objects.get_or_create(**lookup, defaults={'user': request.user})
     else:
         return JsonResponse({'error': 'No id provided'}, status=400)
 
@@ -1324,8 +1330,10 @@ def toggle_watch_later(request):
 @login_required
 @never_cache
 def watch_later(request):
+    _sp = get_active_subprofile(request)
+    _wl_filter = {'subprofile': _sp} if _sp else {'user': request.user}
     items = (
-        WatchLater.objects.filter(user=request.user)
+        WatchLater.objects.filter(**_wl_filter)
         .select_related('episode__season__anime', 'movie')
         .prefetch_related('episode__season__anime__media_images', 'movie__media_images')
     )

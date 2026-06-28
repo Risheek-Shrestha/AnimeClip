@@ -18,8 +18,15 @@ services:
   redis:
     image: redis:7-alpine
     restart: unless-stopped
+    # Require a password even inside the Docker network — an attacker who
+    # reaches the redis port (e.g. via a compromised container) can otherwise
+    # flush the session store or manipulate Celery queues without credentials.
+    command: >
+      redis-server
+        --requirepass ${REDIS_PASSWORD:?REDIS_PASSWORD must be set in .env}
+        --appendonly yes
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -30,6 +37,8 @@ services:
     # No longer exposed directly — nginx is the public entry point.
     expose:
       - "8000"
+    volumes:
+      - staticfiles:/app/staticfiles   # collectstatic writes here; nginx reads it
     env_file:
       - .env
     environment:

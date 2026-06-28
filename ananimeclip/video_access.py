@@ -68,9 +68,11 @@ def _build_cloudinary_auth_token(url: str, expiry: int) -> str | None:
         return None
 
     exp = int(time.time()) + expiry
-    # Cloudinary token auth spec: HMAC-SHA256 over "expiry<url_path>"
+    # Cloudinary token auth spec:
+    #   HMAC-SHA256 over "exp=<expiry>~url=<url_path>" (tilde-separated)
+    # See: https://cloudinary.com/documentation/video_player_token_authentication
     url_path = re.sub(r'^https?://[^/]+', '', url)
-    to_sign = f'exp={exp}\nurl={url_path}'
+    to_sign = f'exp={exp}~url={url_path}'
     digest = hmac.new(bytes.fromhex(key_hex), to_sign.encode(), hashlib.sha256).hexdigest()
     sep = '&' if '?' in url else '?'
     return f'{url}{sep}__cld_token__=exp={exp}~hmac={digest}'
