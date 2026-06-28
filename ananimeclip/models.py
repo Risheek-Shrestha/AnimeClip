@@ -330,7 +330,7 @@ class UserRating(models.Model):
         unique_together = [['user', 'anime'], ['user', 'movie']]
         constraints = [
             models.CheckConstraint(
-                check=(
+                condition=(
                     models.Q(anime__isnull=False, movie__isnull=True)
                     | models.Q(anime__isnull=True, movie__isnull=False)
                 ),
@@ -448,7 +448,7 @@ class Recommendation(models.Model):
             # so the "exactly one of anime/movie" rule needs a real DB constraint
             # too, or it's only enforced when something calls full_clean().
             models.CheckConstraint(
-                check=(
+                condition=(
                     models.Q(anime__isnull=False, movie__isnull=True)
                     | models.Q(anime__isnull=True, movie__isnull=False)
                 ),
@@ -528,7 +528,7 @@ class Follow(models.Model):
             models.UniqueConstraint(fields=['user', 'anime'], name='unique_follow_user_anime'),
             models.UniqueConstraint(fields=['user', 'movie'], name='unique_follow_user_movie'),
             models.CheckConstraint(
-                check=(
+                condition=(
                     models.Q(anime__isnull=False, movie__isnull=True)
                     | models.Q(anime__isnull=True, movie__isnull=False)
                 ),
@@ -565,7 +565,7 @@ class Subtitle(models.Model):
         ordering = ['label']
         constraints = [
             models.CheckConstraint(
-                check=(
+                condition=(
                     models.Q(video_source__isnull=False, movie_source__isnull=True)
                     | models.Q(video_source__isnull=True, movie_source__isnull=False)
                 ),
