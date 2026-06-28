@@ -78,15 +78,15 @@ class EpisodeDurationTest(TestCase):
 class WatchHistoryModelTest(TestCase):
     def test_create_episode_history(self):
         user = make_user()
-        anime = make_anime()
-        ep = make_episode(anime)
-        wh = WatchHistory.objects.create(user=user, episode=ep, progress_seconds=120)
+        sp = SubProfile.objects.create(user=user, name='Main')
+        ep = make_episode(make_anime())
+        wh = WatchHistory.objects.create(user=user, subprofile=sp, episode=ep, progress_seconds=120)
         self.assertEqual(wh.progress_seconds, 120)
 
     def test_create_movie_history(self):
         user = make_user()
-        movie = make_movie()
-        wh = WatchHistory.objects.create(user=user, movie=movie, progress_seconds=600)
+        sp = SubProfile.objects.create(user=user, name='Main')
+        wh = WatchHistory.objects.create(user=user, subprofile=sp, movie=make_movie(), progress_seconds=600)
         self.assertEqual(wh.progress_seconds, 600)
 
     def test_unique_per_episode(self):
@@ -95,9 +95,10 @@ class WatchHistoryModelTest(TestCase):
         user = make_user()
         anime = make_anime()
         ep = make_episode(anime)
-        WatchHistory.objects.create(user=user, episode=ep, progress_seconds=10)
+        sp = SubProfile.objects.create(user=user, name='Main')  # <-- add this
+        WatchHistory.objects.create(user=user, subprofile=sp, episode=ep, progress_seconds=10)
         with self.assertRaises(IntegrityError):
-            WatchHistory.objects.create(user=user, episode=ep, progress_seconds=20)
+            WatchHistory.objects.create(user=user, subprofile=sp, episode=ep, progress_seconds=20)
 
 
 # ──────────────────────────────────────────────────────────────
