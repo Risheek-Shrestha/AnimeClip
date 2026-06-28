@@ -593,6 +593,13 @@ def streaming(request, episode_id):
         'hls_url': hls_url,
         'similar': similar,
         'quality_options': QUALITY_OPTIONS,
+        # Open Graph / social sharing
+        'og_title': f"{anime.title} — Episode {episode.number}" + (f": {episode.title}" if episode.title else ""),
+        'og_description': (anime.description or '')[:200],
+        'og_type': 'video.episode',
+        'og_image': next(
+            (img.image.url for img in anime.media_images.all() if img.image), None
+        ),
     })
 
 
@@ -972,22 +979,72 @@ def category_page(request, genre):
 
 
 def search_results(request):
-    query = request.GET.get('q', '').strip()
+    query  = request.GET.get('q', '').strip()
+    genre  = request.GET.get('genre', '').strip()
+    year_from = request.GET.get('year_from', '').strip()
+    year_to   = request.GET.get('year_to', '').strip()
+    sort   = request.GET.get('sort', 'relevance')   # relevance | rating | newest | oldest
+    lang   = request.GET.get('lang', '')            # sub | dub | ''
+
     movies = []
     anime_list = []
     if query:
+        movie_qs = filter_age_appropriate(Movie.objects.all(), request)
+        anime_qs = filter_age_appropriate(Anime.objects.all(), request)
+
+        # ── Text search ──────────────────────────────────────────────────────
+        movie_qs = movie_qs.filter(
+            Q(title__icontains=query) | Q(description__icontains=query)
+        )
+        anime_qs = anime_qs.filter(
+            Q(title__icontains=query) | Q(description__icontains=query)
+        )
+
+        # ── Genre filter ─────────────────────────────────────────────────────
+        if genre:
+            movie_qs = movie_qs.filter(genres__name__iexact=genre)
+            anime_qs = anime_qs.filter(genres__name__iexact=genre)
+
+        # ── Year range ───────────────────────────────────────────────────────
+        if year_from.isdigit():
+            movie_qs = movie_qs.filter(release_date__year__gte=int(year_from))
+            anime_qs = anime_qs.filter(release_date__year__gte=int(year_from))
+        if year_to.isdigit():
+            movie_qs = movie_qs.filter(release_date__year__lte=int(year_to))
+            anime_qs = anime_qs.filter(release_date__year__lte=int(year_to))
+
+        # ── Dub / Sub filter (anime only — checks VideoSource.language) ──────
+        if lang == 'dub':
+            anime_qs = anime_qs.filter(
+                seasons__episodes__sources__language__iexact='dub'
+            )
+        elif lang == 'sub':
+            anime_qs = anime_qs.filter(
+                seasons__episodes__sources__language__iexact='sub'
+            )
+
+        # ── Sort ─────────────────────────────────────────────────────────────
+        sort_map = {
+            'rating':   '-average_rating',
+            'newest':   '-release_date',
+            'oldest':   'release_date',
+            'relevance': 'title',
+        }
+        order_field = sort_map.get(sort, 'title')
+        movie_qs = movie_qs.order_by(order_field)
+        anime_qs = anime_qs.order_by(order_field)
+
         movies = list(
-            filter_age_appropriate(Movie.objects.filter(title__icontains=query), request)
-            .prefetch_related('media_images')
+            movie_qs.prefetch_related('media_images').distinct()
         )
         anime_list = list(
-            filter_age_appropriate(Anime.objects.filter(title__icontains=query), request)
-            .prefetch_related(
+            anime_qs.prefetch_related(
                 'media_images',
                 Prefetch('seasons', queryset=Season.objects.prefetch_related('episodes')),
-            )
+            ).distinct()
         )
         attach_episode_info(anime_list)
+
         try:
             SearchEvent.objects.create(
                 user=request.user if request.user.is_authenticated else None,
@@ -996,8 +1053,18 @@ def search_results(request):
             )
         except Exception:
             logger.warning('Failed to record SearchEvent for query: %s', query, exc_info=True)
+
     return render(request, 'search_results.html', {
-        'query': query, 'movies': movies, 'anime_list': anime_list,
+        'query': query,
+        'movies': movies,
+        'anime_list': anime_list,
+        # Filter state — passed back so the template can re-populate the form
+        'filter_genre':     genre,
+        'filter_year_from': year_from,
+        'filter_year_to':   year_to,
+        'filter_sort':      sort,
+        'filter_lang':      lang,
+        'all_genres':       _all_genre_names(),
     })
 
 

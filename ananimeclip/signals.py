@@ -20,6 +20,7 @@ side (``eager_async=True``) so the save does not block.
 
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+import threading
 
 from .models import Episode, Notification, WatchLater, WatchHistory, Follow, VideoSource, MovieSource
 
@@ -92,9 +93,12 @@ def trigger_source_transcoding(sender, instance, created, update_fields, **kwarg
     if not created and not _should_transcode(instance, update_fields):
         return
 
-    # Late import so tests without Cloudinary creds don't blow up at import time.
+    # Run in a background thread so the admin save response is never blocked by
+    # a Cloudinary API call. request_eager_transcoding already handles its own
+    # exceptions and logs them, so the thread is fire-and-forget safe.
     from .transcoding import request_eager_transcoding  # noqa: PLC0415
-    request_eager_transcoding(instance.video_url)
+    url = instance.video_url
+    threading.Thread(target=request_eager_transcoding, args=(url,), daemon=True).start()
 
 
 @receiver(post_save, sender=MovieSource)
@@ -106,4 +110,5 @@ def trigger_movie_source_transcoding(sender, instance, created, update_fields, *
         return
 
     from .transcoding import request_eager_transcoding  # noqa: PLC0415
-    request_eager_transcoding(instance.video_url)
+    url = instance.video_url
+    threading.Thread(target=request_eager_transcoding, args=(url,), daemon=True).start()

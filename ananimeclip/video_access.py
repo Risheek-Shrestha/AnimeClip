@@ -16,14 +16,27 @@ request is funnelled back through this app's own access checks, and a
 copied/leaked link stops working after DEFAULT_MAX_AGE instead of working
 forever.
 
-This is NOT the same as real CDN-level DRM/token-authenticated delivery
-(that would require switching the Cloudinary delivery type to
-"authenticated" and enabling token auth on the account — an account-level
-change, not something this code change can do on its own). Treat this as
-raising the bar, not as airtight content protection.
+CDN-level token authentication (CLOUDINARY_AUTH_TOKEN)
+-------------------------------------------------------
+For *real* CDN-enforced protection set the following in your Cloudinary
+account dashboard:
+
+  1. Change the delivery type of video assets to "authenticated".
+  2. Enable "Token-based access control" on your account.
+  3. Set CLOUDINARY_AUTH_TOKEN_KEY in your .env to the signing key provided
+     by Cloudinary.
+
+When CLOUDINARY_AUTH_TOKEN_KEY is present, ``sign_video_url`` will append a
+Cloudinary auth_token to the URL so even the raw Cloudinary link itself
+expires and requires a valid token — making it impossible to use a captured
+redirect target as a permanent link.
 """
 from django.core import signing
+from django.conf import settings
+import hashlib
+import hmac
 import re
+import time
 
 SALT = 'ananimeclip.video-stream'
 DEFAULT_MAX_AGE = 4 * 60 * 60  # 4 hours
@@ -37,8 +50,36 @@ _CLOUDINARY_VIDEO_UPLOAD_RE = re.compile(
 )
 
 
-def sign_video_url(raw_url):
-    """Wrap a raw video URL in a signed, time-limited token."""
+def _build_cloudinary_auth_token(url: str, expiry: int) -> str | None:
+    """
+    Append a Cloudinary token-auth query string to *url* so that Cloudinary's
+    CDN edge enforces expiry — meaning even a leaked raw Cloudinary URL stops
+    working after *expiry* seconds from now.
+
+    Requires:
+      - CLOUDINARY_AUTH_TOKEN_KEY set in settings / .env
+      - Assets uploaded as delivery_type="authenticated" on the Cloudinary side
+
+    Returns None (no-op) when the key is absent so the app degrades gracefully
+    to Django-layer signing only.
+    """
+    key_hex = getattr(settings, 'CLOUDINARY_AUTH_TOKEN_KEY', None)
+    if not key_hex:
+        return None
+
+    exp = int(time.time()) + expiry
+    # Cloudinary token auth spec: HMAC-SHA256 over "expiry<url_path>"
+    url_path = re.sub(r'^https?://[^/]+', '', url)
+    to_sign = f"exp={exp}\nurl={url_path}"
+    digest = hmac.new(
+        bytes.fromhex(key_hex), to_sign.encode(), hashlib.sha256
+    ).hexdigest()
+    sep = '&' if '?' in url else '?'
+    return f"{url}{sep}__cld_token__=exp={exp}~hmac={digest}"
+
+
+def sign_video_url(raw_url: str) -> str:
+    """Wrap a raw video URL in a signed, time-limited Django token."""
     return signing.dumps(raw_url, salt=SALT, compress=True)
 
 
@@ -46,13 +87,20 @@ def unsign_video_url(token, max_age=DEFAULT_MAX_AGE):
     """
     Recover the raw URL from a token, or return None if the token is
     missing, tampered with, malformed, or older than max_age seconds.
+
+    If CLOUDINARY_AUTH_TOKEN_KEY is configured, also returns a Cloudinary
+    CDN-signed URL so the redirect target itself expires at the CDN edge.
     """
     if not token:
         return None
     try:
-        return signing.loads(token, salt=SALT, max_age=max_age)
+        raw_url = signing.loads(token, salt=SALT, max_age=max_age)
     except signing.BadSignature:
         return None
+
+    # Upgrade to CDN-signed URL when token auth is configured.
+    cdn_url = _build_cloudinary_auth_token(raw_url, expiry=DEFAULT_MAX_AGE)
+    return cdn_url if cdn_url else raw_url
 
 
 def to_hls_url(raw_url):

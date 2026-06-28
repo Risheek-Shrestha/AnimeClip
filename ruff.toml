@@ -1,0 +1,33 @@
+# ruff.toml — Enforced linting configuration for AnimeClip
+# Run: ruff check .
+# Fix:  ruff check --fix .
+
+line-length = 119
+target-version = "py311"
+
+[lint]
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "I",    # isort
+    "B",    # flake8-bugbear
+    "C4",   # flake8-comprehensions
+    "UP",   # pyupgrade
+    "DJ",   # flake8-django
+    "S",    # flake8-bandit (security)
+]
+ignore = [
+    "S101",   # assert used — fine in tests
+    "DJ001",  # avoid null=True on string fields — we have legacy ones
+    "E501",   # line too long — handled by formatter
+]
+
+[lint.per-file-ignores]
+"*/migrations/*.py" = ["E501", "F401"]
+"*/tests/*.py"      = ["S", "B"]
+"*/tests.py"        = ["S", "B"]
+
+[format]
+quote-style = "single"
+indent-style = "space"

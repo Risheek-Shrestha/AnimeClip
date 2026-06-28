@@ -3,23 +3,28 @@ from datetime import timedelta
 
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth import get_user_model
+from django.contrib.auth.decorators import login_required
 from django.db.models import Count, Avg
 from django.db.models.functions import TruncDate
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
-from django.views.decorators.csrf import csrf_exempt
+from django_ratelimit.decorators import ratelimit
 
 from .models import WatchEvent, SearchEvent
 
 User = get_user_model()
 
 
-# ── Public API: record events ────────────────────────────────────────────────
+# ── Authenticated API: record events ────────────────────────────────────────
+# Previously used @csrf_exempt with no auth — anyone could POST fake events and
+# corrupt the recommendation engine. Now requires a logged-in session (which
+# carries a CSRF cookie automatically) and rate-limited to prevent spam.
 
-@csrf_exempt
+@login_required
 @require_POST
+@ratelimit(key='user', rate='120/m', method='POST', block=True)
 def record_watch(request):
     try:
         data = json.loads(request.body)
@@ -27,7 +32,7 @@ def record_watch(request):
         return JsonResponse({"error": "bad payload"}, status=400)
 
     WatchEvent.objects.create(
-        user=request.user if request.user.is_authenticated else None,
+        user=request.user,
         anime_slug=data.get("anime_slug", ""),
         anime_title=data.get("anime_title", ""),
         episode_number=data.get("episode_number"),
@@ -38,8 +43,9 @@ def record_watch(request):
     return JsonResponse({"status": "ok"})
 
 
-@csrf_exempt
+@login_required
 @require_POST
+@ratelimit(key='user', rate='60/m', method='POST', block=True)
 def record_search(request):
     try:
         data = json.loads(request.body)
@@ -47,7 +53,7 @@ def record_search(request):
         return JsonResponse({"error": "bad payload"}, status=400)
 
     SearchEvent.objects.create(
-        user=request.user if request.user.is_authenticated else None,
+        user=request.user,
         query=data.get("query", "")[:300],
         results_count=data.get("results_count", 0),
     )

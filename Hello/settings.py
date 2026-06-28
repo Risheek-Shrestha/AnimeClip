@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     'cloudinary',
     'cloudinary_storage',
     'analytics',
+    'django_celery_beat',
 ]
 
 MIDDLEWARE = [
@@ -253,3 +254,30 @@ if _sentry_dsn:
         send_default_pii=False,
         environment='production' if not DEBUG else 'development',
     )
+
+# ============================================================
+# CELERY — async task queue + periodic scheduler
+# ============================================================
+CELERY_BROKER_URL = os.getenv('REDIS_URL', 'redis://127.0.0.1:6379/0')
+CELERY_RESULT_BACKEND = os.getenv('REDIS_URL', 'redis://127.0.0.1:6379/0')
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+
+# Periodic jobs previously run as bare management commands with no scheduler.
+# They are now scheduled here so `celery -A Hello beat` picks them up automatically.
+from celery.schedules import crontab  # noqa: E402
+CELERY_BEAT_SCHEDULE = {
+    # Warm collaborative-filtering recommendations at 3 AM every day.
+    'warm-recommendations-daily': {
+        'task': 'ananimeclip.tasks.warm_recommendations',
+        'schedule': crontab(hour=3, minute=0),
+    },
+    # Notify movie-release followers daily at 8 AM.
+    'notify-movie-releases-daily': {
+        'task': 'ananimeclip.tasks.notify_movie_releases',
+        'schedule': crontab(hour=8, minute=0),
+    },
+}
