@@ -513,7 +513,7 @@ class PlaylistItem(models.Model):
     class Meta:
         ordering = ['added_at']
         indexes = [
-            models.Index(fields=['playlist', 'added_at'], name='playlist_item_playlist_added_idx'),
+            models.Index(fields=['playlist', 'added_at'], name='pi_playlist_added_idx'),
         ]
 
     def __str__(self):

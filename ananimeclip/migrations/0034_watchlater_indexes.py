@@ -26,7 +26,7 @@ class Migration(migrations.Migration):
             model_name='playlistitem',
             index=models.Index(
                 fields=['playlist', 'added_at'],
-                name='playlist_item_playlist_added_idx',
+                name='pi_playlist_added_idx',
             ),
         ),
     ]
