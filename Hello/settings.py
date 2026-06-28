@@ -367,7 +367,10 @@ if _sentry_dsn:
 # CELERY — async task queue + periodic scheduler
 # ============================================================
 CELERY_BROKER_URL = os.getenv('REDIS_URL', 'redis://127.0.0.1:6379/0')
-CELERY_RESULT_BACKEND = os.getenv('REDIS_URL', 'redis://127.0.0.1:6379/0')
+# Use a separate Redis DB for task results (DB 2) so broker keys (DB 0)
+# and result keys don't collide and flush each other under MAXMEMORY eviction.
+_redis_result_url = os.getenv('REDIS_RESULT_URL') or os.getenv('REDIS_URL', 'redis://127.0.0.1:6379/0').rstrip('/0123456789') + '/2'
+CELERY_RESULT_BACKEND = _redis_result_url
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'

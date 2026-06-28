@@ -83,6 +83,25 @@ class Anime(models.Model):
         default='',
         help_text='YouTube embed URL for the trailer, e.g. https://www.youtube.com/embed/VIDEO_ID',
     )
+    slug = models.SlugField(
+        max_length=120,
+        unique=True,
+        blank=True,
+        help_text='URL-safe identifier; auto-populated from title on save.',
+    )
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            from django.utils.text import slugify
+            base = slugify(self.title) or f'anime-{self.pk or 0}'
+            slug = base
+            n = 1
+            qs = Anime.objects.exclude(pk=self.pk) if self.pk else Anime.objects.all()
+            while qs.filter(slug=slug).exists():
+                slug = f'{base}-{n}'
+                n += 1
+            self.slug = slug
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.title
@@ -245,6 +264,12 @@ class Episode(models.Model):
     )
     intro_end_seconds = models.PositiveIntegerField(
         default=0, help_text='Second at which the opening/intro ends; player jumps here on Skip.'
+    )
+    thumbnail_url = models.URLField(
+        max_length=500,
+        blank=True,
+        default='',
+        help_text='Still-frame thumbnail shown in episode lists and hover preview.',
     )
     updated_at = models.DateTimeField(auto_now=True)
 

@@ -56,7 +56,25 @@
                         <button type="button" id="airplay-btn" class="cast-control-btn" title="AirPlay" style="display:none">
                             <i class="fas fa-wifi"></i>
                         </button>
+                        <button type="button" id="pip-btn" class="cast-control-btn" title="Picture-in-Picture" aria-label="Picture-in-Picture">
+                            <i class="fas fa-external-link-alt"></i>
+                        </button>
                     </div>
+                    <!-- Playback speed selector -->
+                    <div class="player-speed-controls" aria-label="Playback speed">
+                        <span class="speed-label-prefix">Speed:</span>
+                        <span id="speed-label" class="speed-label">1x</span>
+                        <div class="speed-options" role="group" aria-label="Speed options">
+                            {% for spd in "0.5,0.75,1,1.25,1.5,2"|split:"," %}
+                            <button type="button" class="speed-btn" data-speed="{{ spd }}"
+                                    role="radio" aria-checked="{% if spd == "1" %}true{% else %}false{% endif %}">
+                                {{ spd }}x
+                            </button>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <!-- On-screen display for keyboard shortcuts -->
+                    <div id="player-osd" class="player-osd" aria-live="polite" aria-atomic="true"></div>
                     {% else %}
                     {% if anime.banner_img %}
                     <img class="detail-image" src="{{ anime.banner_img.image.url }}" alt="{{ anime.title }}">
@@ -465,6 +483,7 @@
 {% block extra_js %}
 <script src="{% static 'js/analytics_tracker.js' %}" defer></script>
 <script src="{% static 'js/cast_airplay.js' %}" defer></script>
+<script src="{% static 'js/player_enhancements.js' %}" defer></script>
 {% if hls_url %}
 <script src="https://cdn.jsdelivr.net/npm/hls.js@1"></script>
 <script>

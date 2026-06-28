@@ -34,6 +34,10 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('i18n/', include('django.conf.urls.i18n')),
     path('analytics/', include('analytics.urls', namespace='analytics')),
+    # REST API v1 — JSON endpoints for catalog, user data, and recommendations.
+    # Prefixed separately so robots.txt can block /api/ wholesale and so future
+    # API versions can live alongside /api/v1/ without changing existing routes.
+    path('api/v1/', include('ananimeclip.api_urls')),
     # robots.txt has always pointed at /sitemap.xml — this is what actually serves it.
     path('sitemap.xml', sitemap, {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.sitemap'),
     path('', include('ananimeclip.urls')),
