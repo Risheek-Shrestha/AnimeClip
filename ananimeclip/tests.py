@@ -1670,8 +1670,6 @@ class ContentSecurityPolicyTest(TestCase):
         even though the script itself loaded fine."""
         resp = self.client.get(reverse('index'))
         csp = resp['Content-Security-Policy']
-        directives = dict(
-            d.strip().split(' ', 1) for d in csp.split(';') if d.strip() and ' ' in d.strip()
-        )
+        directives = dict(d.strip().split(' ', 1) for d in csp.split(';') if d.strip() and ' ' in d.strip())
         self.assertIn('blob:', directives.get('script-src', ''))
         self.assertIn('blob:', directives.get('media-src', ''))
