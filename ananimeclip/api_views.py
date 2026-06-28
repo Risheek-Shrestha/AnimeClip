@@ -427,3 +427,343 @@ def api_recommendations(request):
         'animes': [_anime_summary(a) for a in recs.get('animes', [])],
         'movies': [_movie_summary(m) for m in recs.get('movies', [])],
     })
+
+
+# ---------------------------------------------------------------------------
+# Comments API
+# ---------------------------------------------------------------------------
+
+
+@login_required
+@require_http_methods(['GET'])
+def api_episode_comments(request, episode_id):
+    """GET /api/v1/episodes/<id>/comments/"""
+    from django.shortcuts import get_object_or_404
+    from .models import Comment, Episode
+    episode = get_object_or_404(Episode, pk=episode_id)
+    qs = (
+        Comment.objects
+        .filter(episode=episode, parent=None)
+        .select_related('user')
+        .prefetch_related('replies__user', 'likes', 'replies__likes')
+        .order_by('created_at')
+    )
+    items, meta = _paginate(qs, request)
+
+    def _comment_dict(c):
+        return {
+            'id': c.pk,
+            'user': c.user.get_full_name() or c.user.username,
+            'body': c.body,
+            'created_at': c.created_at.isoformat(),
+            'total_likes': c.total_likes(),
+            'replies': [
+                {
+                    'id': r.pk,
+                    'user': r.user.get_full_name() or r.user.username,
+                    'body': r.body,
+                    'created_at': r.created_at.isoformat(),
+                    'total_likes': r.total_likes(),
+                }
+                for r in c.replies.all()
+            ],
+        }
+
+    return JsonResponse({'pagination': meta, 'results': [_comment_dict(c) for c in items]})
+
+
+@login_required
+@require_http_methods(['GET'])
+def api_movie_comments(request, movie_id):
+    """GET /api/v1/movies/<id>/comments/"""
+    from django.shortcuts import get_object_or_404
+    from .models import Comment, Movie
+    movie = get_object_or_404(Movie, pk=movie_id)
+    qs = (
+        Comment.objects
+        .filter(movie=movie, parent=None)
+        .select_related('user')
+        .prefetch_related('replies__user', 'likes', 'replies__likes')
+        .order_by('created_at')
+    )
+    items, meta = _paginate(qs, request)
+
+    def _comment_dict(c):
+        return {
+            'id': c.pk,
+            'user': c.user.get_full_name() or c.user.username,
+            'body': c.body,
+            'created_at': c.created_at.isoformat(),
+            'total_likes': c.total_likes(),
+            'replies': [
+                {
+                    'id': r.pk,
+                    'user': r.user.get_full_name() or r.user.username,
+                    'body': r.body,
+                    'created_at': r.created_at.isoformat(),
+                    'total_likes': r.total_likes(),
+                }
+                for r in c.replies.all()
+            ],
+        }
+
+    return JsonResponse({'pagination': meta, 'results': [_comment_dict(c) for c in items]})
+
+
+@login_required
+@require_http_methods(['POST'])
+def api_post_episode_comment(request, episode_id):
+    """POST /api/v1/episodes/<id>/comments/"""
+    import json
+    from django.shortcuts import get_object_or_404
+    from .models import Comment, Episode
+    episode = get_object_or_404(Episode, pk=episode_id)
+    try:
+        data = json.loads(request.body)
+    except Exception:
+        data = request.POST
+    body = (data.get('body') or '').strip()
+    if not body:
+        return JsonResponse({'error': 'body is required'}, status=400)
+    parent_id = data.get('parent_id')
+    comment = Comment(episode=episode, user=request.user, body=body)
+    if parent_id:
+        comment.parent = get_object_or_404(Comment, pk=parent_id)
+    comment.save()
+    return JsonResponse({'id': comment.pk, 'body': comment.body, 'created_at': comment.created_at.isoformat()}, status=201)
+
+
+@login_required
+@require_http_methods(['POST'])
+def api_post_movie_comment(request, movie_id):
+    """POST /api/v1/movies/<id>/comments/"""
+    import json
+    from django.shortcuts import get_object_or_404
+    from .models import Comment, Movie
+    movie = get_object_or_404(Movie, pk=movie_id)
+    try:
+        data = json.loads(request.body)
+    except Exception:
+        data = request.POST
+    body = (data.get('body') or '').strip()
+    if not body:
+        return JsonResponse({'error': 'body is required'}, status=400)
+    parent_id = data.get('parent_id')
+    comment = Comment(movie=movie, user=request.user, body=body)
+    if parent_id:
+        comment.parent = get_object_or_404(Comment, pk=parent_id)
+    comment.save()
+    return JsonResponse({'id': comment.pk, 'body': comment.body, 'created_at': comment.created_at.isoformat()}, status=201)
+
+
+# ---------------------------------------------------------------------------
+# Ratings API
+# ---------------------------------------------------------------------------
+
+
+@login_required
+@require_http_methods(['POST'])
+def api_rate_anime(request, anime_id):
+    """POST /api/v1/anime/<id>/rate/  body: {score: 1-10}"""
+    import json
+    from django.db.models import Avg
+    from django.shortcuts import get_object_or_404
+    from .models import Anime, UserRating
+    anime = get_object_or_404(Anime, pk=anime_id)
+    try:
+        data = json.loads(request.body)
+    except Exception:
+        data = request.POST
+    try:
+        score = int(data.get('score', 0))
+        if not (1 <= score <= 10):
+            raise ValueError
+    except (TypeError, ValueError):
+        return JsonResponse({'error': 'score must be 1–10'}, status=400)
+    UserRating.objects.update_or_create(
+        user=request.user, anime=anime,
+        defaults={'score': score, 'movie': None},
+    )
+    avg = UserRating.objects.filter(anime=anime).aggregate(avg=Avg('score'))['avg'] or 0
+    return JsonResponse({'score': score, 'avg': round(avg, 1)})
+
+
+@login_required
+@require_http_methods(['POST'])
+def api_rate_movie(request, movie_id):
+    """POST /api/v1/movies/<id>/rate/  body: {score: 1-10}"""
+    import json
+    from django.db.models import Avg
+    from django.shortcuts import get_object_or_404
+    from .models import Movie, UserRating
+    movie = get_object_or_404(Movie, pk=movie_id)
+    try:
+        data = json.loads(request.body)
+    except Exception:
+        data = request.POST
+    try:
+        score = int(data.get('score', 0))
+        if not (1 <= score <= 10):
+            raise ValueError
+    except (TypeError, ValueError):
+        return JsonResponse({'error': 'score must be 1–10'}, status=400)
+    UserRating.objects.update_or_create(
+        user=request.user, movie=movie,
+        defaults={'score': score, 'anime': None},
+    )
+    avg = UserRating.objects.filter(movie=movie).aggregate(avg=Avg('score'))['avg'] or 0
+    return JsonResponse({'score': score, 'avg': round(avg, 1)})
+
+
+# ---------------------------------------------------------------------------
+# Follows API
+# ---------------------------------------------------------------------------
+
+
+@login_required
+@require_http_methods(['POST', 'DELETE'])
+def api_toggle_follow_anime(request, anime_id):
+    """POST /api/v1/anime/<id>/follow/ — toggle follow; returns {following, follower_count}"""
+    from django.shortcuts import get_object_or_404
+    from .models import Anime, Follow
+    anime = get_object_or_404(Anime, pk=anime_id)
+    obj, created = Follow.objects.get_or_create(user=request.user, anime=anime)
+    if not created:
+        obj.delete()
+    return JsonResponse({'following': created, 'follower_count': anime.followers.count()})
+
+
+@login_required
+@require_http_methods(['POST', 'DELETE'])
+def api_toggle_follow_movie(request, movie_id):
+    """POST /api/v1/movies/<id>/follow/ — toggle follow; returns {following, follower_count}"""
+    from django.shortcuts import get_object_or_404
+    from .models import Follow, Movie
+    movie = get_object_or_404(Movie, pk=movie_id)
+    obj, created = Follow.objects.get_or_create(user=request.user, movie=movie)
+    if not created:
+        obj.delete()
+    return JsonResponse({'following': created, 'follower_count': movie.followers.count()})
+
+
+# ---------------------------------------------------------------------------
+# Search API
+# ---------------------------------------------------------------------------
+
+
+@ratelimit(key='ip', rate='30/m', method='GET', block=False)
+def api_search(request):
+    """GET /api/v1/search/?q=<query>&genre=&sort=relevance|rating|newest"""
+    if getattr(request, 'limited', False):
+        return JsonResponse({'error': 'Too many requests'}, status=429)
+    from django.contrib.postgres.search import SearchQuery, SearchRank, SearchVector
+    from django.db.models import Max, Q
+    query = request.GET.get('q', '').strip()
+    genre = request.GET.get('genre', '').strip()
+    sort = request.GET.get('sort', 'relevance')
+    if not query:
+        return JsonResponse({'error': 'q is required'}, status=400)
+
+    movie_qs = filter_age_appropriate(Movie.objects.prefetch_related('media_images', 'genres'), request)
+    anime_qs = filter_age_appropriate(
+        Anime.objects.prefetch_related('media_images', 'genres'), request
+    )
+
+    try:
+        vec = SearchVector('title', weight='A') + SearchVector('description', weight='B')
+        sq = SearchQuery(query)
+        movie_qs = movie_qs.annotate(rank=SearchRank(vec, sq)).filter(rank__gt=0)
+        anime_qs = anime_qs.annotate(rank=SearchRank(vec, sq)).filter(rank__gt=0)
+    except Exception:
+        movie_qs = movie_qs.filter(Q(title__icontains=query) | Q(description__icontains=query))
+        anime_qs = anime_qs.filter(Q(title__icontains=query) | Q(description__icontains=query))
+
+    if genre:
+        movie_qs = movie_qs.filter(genres__name__iexact=genre)
+        anime_qs = anime_qs.filter(genres__name__iexact=genre)
+
+    sort_map = {'rating': '-rating', 'newest': '-release_date', 'relevance': 'title'}
+    movie_qs = movie_qs.order_by(sort_map.get(sort, 'title')).distinct()
+
+    anime_sort_map = {'rating': '-rating', 'relevance': 'title'}
+    if sort == 'newest':
+        anime_qs = anime_qs.annotate(latest_rel=Max('seasons__release_date')).order_by('-latest_rel').distinct()
+    else:
+        anime_qs = anime_qs.order_by(anime_sort_map.get(sort, 'title')).distinct()
+
+    movies_page, movies_meta = _paginate(movie_qs, request)
+    anime_page, anime_meta = _paginate(anime_qs, request)
+
+    return JsonResponse({
+        'query': query,
+        'movies': {'pagination': movies_meta, 'results': [_movie_summary(m) for m in movies_page]},
+        'anime': {'pagination': anime_meta, 'results': [_anime_summary(a) for a in anime_page]},
+    })
+
+
+# ---------------------------------------------------------------------------
+# Notifications API
+# ---------------------------------------------------------------------------
+
+
+@login_required
+@require_http_methods(['GET'])
+def api_notifications(request):
+    """GET /api/v1/me/notifications/"""
+    from .models import Notification
+    qs = (
+        Notification.objects
+        .filter(user=request.user)
+        .select_related('anime', 'episode', 'movie')
+        .order_by('-created_at')
+    )
+    items, meta = _paginate(qs, request)
+    results = [
+        {
+            'id': n.pk,
+            'type': n.notif_type,
+            'message': n.message,
+            'is_read': n.is_read,
+            'created_at': n.created_at.isoformat(),
+            'anime_id': n.anime_id,
+            'episode_id': n.episode_id,
+            'movie_id': n.movie_id,
+        }
+        for n in items
+    ]
+    return JsonResponse({'pagination': meta, 'results': results})
+
+
+@login_required
+@require_http_methods(['POST'])
+def api_mark_all_notifications_read(request):
+    """POST /api/v1/me/notifications/read-all/"""
+    from .models import Notification
+    updated = Notification.objects.filter(user=request.user, is_read=False).update(is_read=True)
+    return JsonResponse({'marked_read': updated})
+
+
+# ---------------------------------------------------------------------------
+# Sub-profiles API
+# ---------------------------------------------------------------------------
+
+
+@login_required
+@require_http_methods(['GET'])
+def api_subprofiles(request):
+    """GET /api/v1/me/profiles/"""
+    from .models import SubProfile
+    sps = SubProfile.objects.filter(user=request.user)
+    active_id = request.session.get('active_subprofile_id')
+    return JsonResponse({
+        'results': [
+            {
+                'id': sp.pk,
+                'name': sp.name,
+                'avatar': sp.avatar,
+                'kids_mode': sp.kids_mode,
+                'is_active': sp.pk == active_id,
+            }
+            for sp in sps
+        ]
+    })

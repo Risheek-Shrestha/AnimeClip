@@ -441,6 +441,10 @@ class WatchLater(models.Model):
     class Meta:
         ordering = ['-added_at']
         unique_together = [['subprofile', 'episode'], ['subprofile', 'movie']]
+        indexes = [
+            models.Index(fields=['subprofile', '-added_at'], name='wl_subprofile_added_idx'),
+            models.Index(fields=['user', '-added_at'], name='wl_user_added_idx'),
+        ]
 
     def __str__(self):
         return f'{self.user.username} - {self.episode or self.movie}'
@@ -508,6 +512,9 @@ class PlaylistItem(models.Model):
 
     class Meta:
         ordering = ['added_at']
+        indexes = [
+            models.Index(fields=['playlist', 'added_at'], name='playlist_item_playlist_added_idx'),
+        ]
 
     def __str__(self):
         return f'{self.playlist.name} - {self.episode or self.movie}'

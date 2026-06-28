@@ -185,7 +185,7 @@ CLOUDINARY_STORAGE = {
 #   1. Cloudinary dashboard → Security → Token-based access control → Enable
 #   2. Change video delivery type to "authenticated"
 #   3. Copy the hex signing key below
-CLOUDINARY_AUTH_TOKEN_KEY = os.getenv('CLOUDINARY_AUTH_TOKEN_KEY')
+CLOUDINARY_AUTH_TOKEN_KEY = os.getenv('CLOUDINARY_AUTH_TOKEN_KEY', '').strip() or None
 
 if not DEBUG and not CLOUDINARY_AUTH_TOKEN_KEY and 'test' not in sys.argv:
     raise RuntimeError(
@@ -271,7 +271,7 @@ CONTENT_SECURITY_POLICY = {
         ],
         'font-src': ["'self'", 'data:'],
         'connect-src': ["'self'", 'https://res.cloudinary.com', 'https://api.cloudinary.com'],
-        'frame-src': ["'self'", 'https://www.youtube.com', 'https://upload-widget.cloudinary.com'],
+        'frame-src': ["'self'", 'https://www.youtube.com', 'https://www.youtube-nocookie.com', 'https://upload-widget.cloudinary.com'],
         'object-src': ["'none'"],
         'base-uri': ["'self'"],
         'form-action': ["'self'"],
