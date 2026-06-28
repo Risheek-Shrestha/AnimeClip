@@ -1196,29 +1196,41 @@ def search_results(request):
             anime_qs = anime_qs.filter(genres__name__iexact=genre)
 
         # ── Year range ───────────────────────────────────────────────────────
+        # Movie has its own release_date field; Anime doesn't — release dates
+        # live on Season, so anime is filtered through that relation instead.
         if year_from.isdigit():
             movie_qs = movie_qs.filter(release_date__year__gte=int(year_from))
-            anime_qs = anime_qs.filter(release_date__year__gte=int(year_from))
+            anime_qs = anime_qs.filter(seasons__release_date__year__gte=int(year_from))
         if year_to.isdigit():
             movie_qs = movie_qs.filter(release_date__year__lte=int(year_to))
-            anime_qs = anime_qs.filter(release_date__year__lte=int(year_to))
+            anime_qs = anime_qs.filter(seasons__release_date__year__lte=int(year_to))
 
-        # ── Dub / Sub filter (anime only — checks VideoSource.language) ──────
+        # ── Dub / Sub filter (anime only — checks VideoSource.type) ──────────
         if lang == 'dub':
-            anime_qs = anime_qs.filter(seasons__episodes__sources__language__iexact='dub')
+            anime_qs = anime_qs.filter(seasons__episodes__sources__type__iexact='dub')
         elif lang == 'sub':
-            anime_qs = anime_qs.filter(seasons__episodes__sources__language__iexact='sub')
+            anime_qs = anime_qs.filter(seasons__episodes__sources__type__iexact='sub')
 
         # ── Sort — 'relevance' uses FTS rank when available ─────────────────────
-        sort_map = {
-            'rating': '-average_rating',
+        # Movie has a native release_date; Anime doesn't, so its "newest"/
+        # "oldest" ordering uses the latest season's release_date instead —
+        # same pattern as ANIME_SORT_OPTIONS / _apply_anime_filters below.
+        movie_sort_map = {
+            'rating': '-rating',
             'newest': '-release_date',
             'oldest': 'release_date',
             'relevance': 'title',
         }
-        order_field = sort_map.get(sort, 'title')
-        movie_qs = movie_qs.order_by(order_field)
-        anime_qs = anime_qs.order_by(order_field)
+        anime_sort_map = {
+            'rating': '-rating',
+            'newest': '-latest_release',
+            'oldest': 'latest_release',
+            'relevance': 'title',
+        }
+        movie_qs = movie_qs.order_by(movie_sort_map.get(sort, 'title'))
+        if sort in ('newest', 'oldest'):
+            anime_qs = anime_qs.annotate(latest_release=Max('seasons__release_date'))
+        anime_qs = anime_qs.order_by(anime_sort_map.get(sort, 'title'))
 
         movies = list(movie_qs.prefetch_related('media_images').distinct())
         anime_list = list(

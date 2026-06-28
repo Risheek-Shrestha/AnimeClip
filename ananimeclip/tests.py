@@ -1,3 +1,5 @@
+from datetime import date
+
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.test import Client, TestCase, override_settings
@@ -617,6 +619,67 @@ class SearchResultsViewTest(TestCase):
         resp = self.client.get(reverse('search_results'), {'q': 'Searchable'})
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, 'Searchable Movie')
+
+
+# ──────────────────────────────────────────────────────────────
+# View tests — Search filters (sort, year range, dub/sub)
+# (regression: sort=rating referenced a non-existent `average_rating`
+# field; sort=newest/oldest and year_from/year_to referenced
+# `release_date` on Anime, which only exists on Season; lang=dub/sub
+# referenced VideoSource.language, but the real field is `type` —
+# all three were 500s whenever these params were used)
+# ──────────────────────────────────────────────────────────────
+
+
+class SearchResultsFilterTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+
+    def test_sort_by_rating_does_not_crash_and_orders_correctly(self):
+        make_anime(title='Searchable Low Rated', rating=3.0)
+        make_anime(title='Searchable High Rated', rating=9.5)
+
+        resp = self.client.get(reverse('search_results'), {'q': 'Searchable', 'sort': 'rating'})
+        self.assertEqual(resp.status_code, 200)
+        titles = [a.title for a in resp.context['anime_list']]
+        self.assertEqual(titles, ['Searchable High Rated', 'Searchable Low Rated'])
+
+    def test_sort_newest_does_not_crash_and_orders_by_season_release_date(self):
+        old = make_anime(title='Searchable Old Anime')
+        Season.objects.create(anime=old, number=1, release_date=date(2010, 1, 1))
+        new = make_anime(title='Searchable New Anime')
+        Season.objects.create(anime=new, number=1, release_date=date(2022, 1, 1))
+
+        resp = self.client.get(reverse('search_results'), {'q': 'Searchable', 'sort': 'newest'})
+        self.assertEqual(resp.status_code, 200)
+        titles = [a.title for a in resp.context['anime_list']]
+        self.assertEqual(titles, ['Searchable New Anime', 'Searchable Old Anime'])
+
+    def test_year_from_filter_does_not_crash_for_anime(self):
+        old = make_anime(title='Searchable Old Anime')
+        Season.objects.create(anime=old, number=1, release_date=date(2010, 1, 1))
+        new = make_anime(title='Searchable New Anime')
+        Season.objects.create(anime=new, number=1, release_date=date(2022, 1, 1))
+
+        resp = self.client.get(reverse('search_results'), {'q': 'Searchable', 'year_from': '2020'})
+        self.assertEqual(resp.status_code, 200)
+        titles = [a.title for a in resp.context['anime_list']]
+        self.assertEqual(titles, ['Searchable New Anime'])
+
+    def test_lang_filter_does_not_crash_and_filters_by_source_type(self):
+        dubbed = make_anime(title='Searchable Dubbed Anime')
+        dubbed_ep = make_episode(dubbed)
+        VideoSource.objects.create(episode=dubbed_ep, label='1080p', type='dub', video_url='https://example.com/v.mp4')
+
+        sub_only = make_anime(title='Searchable Subbed Only Anime')
+        sub_ep = make_episode(sub_only)
+        VideoSource.objects.create(episode=sub_ep, label='1080p', type='sub', video_url='https://example.com/v2.mp4')
+
+        resp = self.client.get(reverse('search_results'), {'q': 'Searchable', 'lang': 'dub'})
+        self.assertEqual(resp.status_code, 200)
+        titles = [a.title for a in resp.context['anime_list']]
+        self.assertIn('Searchable Dubbed Anime', titles)
+        self.assertNotIn('Searchable Subbed Only Anime', titles)
 
 
 # ──────────────────────────────────────────────────────────────
