@@ -36,3 +36,7 @@ data.json
 nginx/certs/*.pem
 nginx/certs/*.key
 nginx/certs/*.crt
+-e 
+# Backup dumps — never commit these
+backups/
+*.sql.gz
