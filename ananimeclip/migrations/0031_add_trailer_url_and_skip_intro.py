@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('ananimeclip', '0030_watchhistory_subprofile_indexes'),
     ]
@@ -13,21 +12,35 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='anime',
             name='trailer_url',
-            field=models.URLField(blank=True, default='', help_text='YouTube embed URL for the trailer, e.g. https://www.youtube.com/embed/VIDEO_ID', max_length=500),
+            field=models.URLField(
+                blank=True,
+                default='',
+                help_text='YouTube embed URL for the trailer, e.g. https://www.youtube.com/embed/VIDEO_ID',
+                max_length=500,
+            ),
         ),
         migrations.AddField(
             model_name='episode',
             name='intro_end_seconds',
-            field=models.PositiveIntegerField(default=0, help_text='Second at which the opening/intro ends; player jumps here on Skip.'),
+            field=models.PositiveIntegerField(
+                default=0, help_text='Second at which the opening/intro ends; player jumps here on Skip.'
+            ),
         ),
         migrations.AddField(
             model_name='episode',
             name='intro_start_seconds',
-            field=models.PositiveIntegerField(default=0, help_text='Second at which the opening/intro begins (0 = disable skip intro button).'),
+            field=models.PositiveIntegerField(
+                default=0, help_text='Second at which the opening/intro begins (0 = disable skip intro button).'
+            ),
         ),
         migrations.AddField(
             model_name='movie',
             name='trailer_url',
-            field=models.URLField(blank=True, default='', help_text='YouTube embed URL for the trailer, e.g. https://www.youtube.com/embed/VIDEO_ID', max_length=500),
+            field=models.URLField(
+                blank=True,
+                default='',
+                help_text='YouTube embed URL for the trailer, e.g. https://www.youtube.com/embed/VIDEO_ID',
+                max_length=500,
+            ),
         ),
     ]

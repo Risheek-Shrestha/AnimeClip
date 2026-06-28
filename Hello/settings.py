@@ -195,7 +195,7 @@ if not DEBUG:
     # can't be read by JS and are not sent on cross-site top-level navigations.
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = 'Lax'
-    CSRF_COOKIE_HTTPONLY = False   # Django default; keep False so JS can read it for AJAX
+    CSRF_COOKIE_HTTPONLY = False  # Django default; keep False so JS can read it for AJAX
     CSRF_COOKIE_SAMESITE = 'Lax'
     # Tell Django we're behind an SSL-terminating nginx proxy.
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
@@ -294,11 +294,13 @@ CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = TIME_ZONE
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
 
+
 # Periodic jobs — the `crontab` import is deferred inside the dict so
 # `settings.py` doesn't hard-import Celery at startup (which would fail if
 # Celery isn't installed in a lightweight test environment).
 def _celery_beat_schedule():
     from celery.schedules import crontab  # noqa: PLC0415
+
     return {
         # Warm collaborative-filtering recommendations at 3 AM every day.
         'warm-recommendations-daily': {
@@ -311,5 +313,6 @@ def _celery_beat_schedule():
             'schedule': crontab(hour=8, minute=0),
         },
     }
+
 
 CELERY_BEAT_SCHEDULE = _celery_beat_schedule()

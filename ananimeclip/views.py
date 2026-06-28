@@ -1674,9 +1674,8 @@ def resend_verification(request):
 
     email = request.POST.get('email', '').strip()
     try:
-        profile = (
-            Profile.objects.select_related('user')
-            .get(user__email=email, email_verified=False, user__is_active=False)
+        profile = Profile.objects.select_related('user').get(
+            user__email=email, email_verified=False, user__is_active=False
         )
         # Regenerate token and reset the clock.
         token = secrets.token_urlsafe(32)
