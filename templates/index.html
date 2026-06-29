@@ -555,7 +555,7 @@
   "@context": "https://schema.org",
   "@type": "WebSite",
   "name": "AnimeClip",
-  "url": "{{ request.build_absolute_uri '/' }}",
+  "url": "{{ request.scheme }}://{{ request.get_host }}/",
   "description": "Discover a universe of anime and movies — stream in HD, track your progress, get personalised picks.",
   "potentialAction": {
     "@type": "SearchAction",

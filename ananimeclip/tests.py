@@ -1810,7 +1810,7 @@ class ContentReportTest(TestCase):
         self.assertIn(resp.status_code, [302, 403])
 
     def test_report_episode_authenticated(self):
-        self.client.login(username='reporter', password='pass')
+        self.client.force_login(self.user)
         resp = self.client.post(reverse('report_episode', args=[self.episode.id]), {'reason': 'broken_video'})
         self.assertEqual(resp.status_code, 200)
         import json
@@ -1822,7 +1822,7 @@ class ContentReportTest(TestCase):
         self.assertTrue(ContentReport.objects.filter(user=self.user, episode=self.episode).exists())
 
     def test_report_episode_invalid_reason(self):
-        self.client.login(username='reporter', password='pass')
+        self.client.force_login(self.user)
         resp = self.client.post(reverse('report_episode', args=[self.episode.id]), {'reason': 'invalid_reason'})
         self.assertEqual(resp.status_code, 400)
 
@@ -1847,7 +1847,7 @@ class WatchPartyTest(TestCase):
         self.assertIn(resp.status_code, [302, 403])
 
     def test_create_party_authenticated(self):
-        self.client.login(username='host', password='pass')
+        self.client.force_login(self.host)
         resp = self.client.post(reverse('create_watch_party'), {'episode_id': self.episode.id})
         self.assertEqual(resp.status_code, 200)
         import json
@@ -1857,7 +1857,7 @@ class WatchPartyTest(TestCase):
         self.assertEqual(len(data['room_code']), 8)
 
     def test_join_and_sync_party(self):
-        self.client.login(username='host', password='pass')
+        self.client.force_login(self.host)
         resp = self.client.post(reverse('create_watch_party'), {'episode_id': self.episode.id})
         import json
 
@@ -1865,7 +1865,7 @@ class WatchPartyTest(TestCase):
 
         # Guest joins
         self.client.logout()
-        self.client.login(username='guest', password='pass')
+        self.client.force_login(self.guest)
         resp = self.client.post(reverse('join_watch_party', args=[code]))
         self.assertEqual(resp.status_code, 200)
         state = json.loads(resp.content)['state']
@@ -1873,7 +1873,7 @@ class WatchPartyTest(TestCase):
 
         # Host syncs state
         self.client.logout()
-        self.client.login(username='host', password='pass')
+        self.client.force_login(self.host)
         resp = self.client.post(reverse('sync_watch_party', args=[code]), {'position': 42.5, 'is_playing': 'true'})
         self.assertEqual(resp.status_code, 200)
         state = json.loads(resp.content)['state']
@@ -1881,7 +1881,7 @@ class WatchPartyTest(TestCase):
         self.assertTrue(state['is_playing'])
 
     def test_end_party(self):
-        self.client.login(username='host', password='pass')
+        self.client.force_login(self.host)
         resp = self.client.post(reverse('create_watch_party'), {'episode_id': self.episode.id})
         import json
 
@@ -1893,12 +1893,12 @@ class WatchPartyTest(TestCase):
         self.assertFalse(WatchParty.objects.get(room_code=code).is_active)
 
     def test_guest_cannot_sync(self):
-        self.client.login(username='host', password='pass')
+        self.client.force_login(self.host)
         resp = self.client.post(reverse('create_watch_party'), {'episode_id': self.episode.id})
         import json
 
         code = json.loads(resp.content)['room_code']
         self.client.logout()
-        self.client.login(username='guest', password='pass')
+        self.client.force_login(self.guest)
         resp = self.client.post(reverse('sync_watch_party', args=[code]), {'position': 99, 'is_playing': 'true'})
         self.assertEqual(resp.status_code, 404)

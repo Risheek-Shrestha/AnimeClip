@@ -66,6 +66,10 @@ urlpatterns = [
     path('playlists/json/', views.get_user_playlists, name='get_user_playlists'),
     path('playlists/<int:playlist_id>/', views.playlist_detail, name='playlist_detail'),
     path('playlists/<int:playlist_id>/delete/', views.delete_playlist, name='delete_playlist'),
+    # Fixed sub-paths MUST come before <slug:slug> capture, or e.g. /anime/recent/
+    # gets routed to anime_detail with slug='recent' instead of all_recent_anime.
+    path('anime/recent/', views.all_recent_anime, name='all_recent_anime'),
+    path('anime/popular/', views.all_popular_anime, name='all_popular_anime'),
     path('anime/<slug:slug>/', views.anime_detail, name='anime_detail'),
     path('anime/<int:anime_id>/follow/', views.toggle_follow, name='toggle_follow'),
     path('movie/<int:movie_id>/follow/', views.toggle_follow_movie, name='toggle_follow_movie'),
@@ -84,8 +88,6 @@ urlpatterns = [
     path('movie/<int:movie_id>/rate/', views.rate_movie, name='rate_movie'),
     path('movies/recent/', views.all_recent_movies, name='all_recent_movies'),
     path('movies/popular/', views.all_popular_movies, name='all_popular_movies'),
-    path('anime/recent/', views.all_recent_anime, name='all_recent_anime'),
-    path('anime/popular/', views.all_popular_anime, name='all_popular_anime'),
     # ---- Offline downloads ----
     path('download/episode/<int:episode_id>/', views.request_episode_download, name='request_episode_download'),
     path('download/movie/<int:movie_id>/', views.request_movie_download, name='request_movie_download'),
