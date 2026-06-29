@@ -71,9 +71,8 @@ def _build_cloudinary_auth_token(url: str, expiry: int) -> str | None:
         key_bytes = bytes.fromhex(key_hex)
     except ValueError:
         import logging
-        logging.getLogger(__name__).error(
-            'CLOUDINARY_AUTH_TOKEN_KEY is not valid hex — CDN token auth disabled.'
-        )
+
+        logging.getLogger(__name__).error('CLOUDINARY_AUTH_TOKEN_KEY is not valid hex — CDN token auth disabled.')
         return None
 
     exp = int(time.time()) + expiry

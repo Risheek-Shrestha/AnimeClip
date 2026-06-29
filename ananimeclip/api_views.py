@@ -61,7 +61,7 @@ def _paginate(qs, request):
     total_pages = max(1, math.ceil(total / PAGE_SIZE))
     page = min(page, total_pages)
     offset = (page - 1) * PAGE_SIZE
-    objects = list(qs[offset: offset + PAGE_SIZE])
+    objects = list(qs[offset : offset + PAGE_SIZE])
     return objects, {
         'page': page,
         'page_size': PAGE_SIZE,
@@ -202,10 +202,12 @@ def api_anime_list(request):
     qs = qs.order_by(sort_map.get(sort, '-rating')).distinct()
 
     items, meta = _paginate(qs, request)
-    return JsonResponse({
-        'pagination': meta,
-        'results': [_anime_summary(a) for a in items],
-    })
+    return JsonResponse(
+        {
+            'pagination': meta,
+            'results': [_anime_summary(a) for a in items],
+        }
+    )
 
 
 @ratelimit(key='ip', rate='60/m', method='GET', block=False)
@@ -213,16 +215,19 @@ def api_anime_detail(request, slug):
     """GET /api/v1/anime/<slug>/"""
     if getattr(request, 'limited', False):
         return JsonResponse({'error': 'Too many requests'}, status=429)
-    from django.shortcuts import get_object_or_404
     from django.db.models import Prefetch
+    from django.shortcuts import get_object_or_404
 
     anime = get_object_or_404(
         Anime.objects.prefetch_related(
             'media_images',
             'genres',
-            Prefetch('seasons', queryset=Season.objects.prefetch_related(
-                Prefetch('episodes', queryset=Episode.objects.prefetch_related('sources__subtitles'))
-            )),
+            Prefetch(
+                'seasons',
+                queryset=Season.objects.prefetch_related(
+                    Prefetch('episodes', queryset=Episode.objects.prefetch_related('sources__subtitles'))
+                ),
+            ),
         ),
         slug=slug,
     )
@@ -249,10 +254,12 @@ def api_movie_list(request):
     qs = qs.order_by(sort_map.get(sort, '-rating')).distinct()
 
     items, meta = _paginate(qs, request)
-    return JsonResponse({
-        'pagination': meta,
-        'results': [_movie_summary(m) for m in items],
-    })
+    return JsonResponse(
+        {
+            'pagination': meta,
+            'results': [_movie_summary(m) for m in items],
+        }
+    )
 
 
 @ratelimit(key='ip', rate='60/m', method='GET', block=False)
@@ -291,22 +298,26 @@ def api_me(request):
     u = request.user
     profile = getattr(u, 'profile', None)
     sp = get_active_subprofile(request)
-    return JsonResponse({
-        'id': u.pk,
-        'username': u.username,
-        'email': u.email,
-        'first_name': u.first_name,
-        'last_name': u.last_name,
-        'date_joined': u.date_joined.isoformat(),
-        'age': profile.age if profile else None,
-        'email_verified': profile.email_verified if profile else False,
-        'active_subprofile': {
-            'id': sp.pk,
-            'name': sp.name,
-            'avatar': sp.avatar,
-            'kids_mode': sp.kids_mode,
-        } if sp else None,
-    })
+    return JsonResponse(
+        {
+            'id': u.pk,
+            'username': u.username,
+            'email': u.email,
+            'first_name': u.first_name,
+            'last_name': u.last_name,
+            'date_joined': u.date_joined.isoformat(),
+            'age': profile.age if profile else None,
+            'email_verified': profile.email_verified if profile else False,
+            'active_subprofile': {
+                'id': sp.pk,
+                'name': sp.name,
+                'avatar': sp.avatar,
+                'kids_mode': sp.kids_mode,
+            }
+            if sp
+            else None,
+        }
+    )
 
 
 @login_required
@@ -315,8 +326,7 @@ def api_watch_history(request):
     sp = get_active_subprofile(request)
     wh_filter = {'subprofile': sp} if sp else {'user': request.user}
     qs = (
-        WatchHistory.objects
-        .filter(**wh_filter)
+        WatchHistory.objects.filter(**wh_filter)
         .select_related('episode__season__anime', 'movie')
         .prefetch_related('episode__season__anime__media_images', 'movie__media_images')
         .order_by('-updated_at')
@@ -378,8 +388,7 @@ def api_watch_later(request):
     sp = get_active_subprofile(request)
     wl_filter = {'subprofile': sp} if sp else {'user': request.user}
     qs = (
-        WatchLater.objects
-        .filter(**wl_filter)
+        WatchLater.objects.filter(**wl_filter)
         .select_related('episode__season__anime', 'movie')
         .prefetch_related('episode__season__anime__media_images', 'movie__media_images')
         .order_by('-added_at')
@@ -423,10 +432,12 @@ def api_watch_later(request):
 def api_recommendations(request):
     """GET /api/v1/me/recommendations/"""
     recs = get_recommendations(request.user, limit=20)
-    return JsonResponse({
-        'animes': [_anime_summary(a) for a in recs.get('animes', [])],
-        'movies': [_movie_summary(m) for m in recs.get('movies', [])],
-    })
+    return JsonResponse(
+        {
+            'animes': [_anime_summary(a) for a in recs.get('animes', [])],
+            'movies': [_movie_summary(m) for m in recs.get('movies', [])],
+        }
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -439,11 +450,12 @@ def api_recommendations(request):
 def api_episode_comments(request, episode_id):
     """GET /api/v1/episodes/<id>/comments/"""
     from django.shortcuts import get_object_or_404
+
     from .models import Comment, Episode
+
     episode = get_object_or_404(Episode, pk=episode_id)
     qs = (
-        Comment.objects
-        .filter(episode=episode, parent=None)
+        Comment.objects.filter(episode=episode, parent=None)
         .select_related('user')
         .prefetch_related('replies__user', 'likes', 'replies__likes')
         .order_by('created_at')
@@ -477,11 +489,12 @@ def api_episode_comments(request, episode_id):
 def api_movie_comments(request, movie_id):
     """GET /api/v1/movies/<id>/comments/"""
     from django.shortcuts import get_object_or_404
+
     from .models import Comment, Movie
+
     movie = get_object_or_404(Movie, pk=movie_id)
     qs = (
-        Comment.objects
-        .filter(movie=movie, parent=None)
+        Comment.objects.filter(movie=movie, parent=None)
         .select_related('user')
         .prefetch_related('replies__user', 'likes', 'replies__likes')
         .order_by('created_at')
@@ -515,8 +528,11 @@ def api_movie_comments(request, movie_id):
 def api_post_episode_comment(request, episode_id):
     """POST /api/v1/episodes/<id>/comments/"""
     import json
+
     from django.shortcuts import get_object_or_404
+
     from .models import Comment, Episode
+
     episode = get_object_or_404(Episode, pk=episode_id)
     try:
         data = json.loads(request.body)
@@ -530,7 +546,9 @@ def api_post_episode_comment(request, episode_id):
     if parent_id:
         comment.parent = get_object_or_404(Comment, pk=parent_id)
     comment.save()
-    return JsonResponse({'id': comment.pk, 'body': comment.body, 'created_at': comment.created_at.isoformat()}, status=201)
+    return JsonResponse(
+        {'id': comment.pk, 'body': comment.body, 'created_at': comment.created_at.isoformat()}, status=201
+    )
 
 
 @login_required
@@ -538,8 +556,11 @@ def api_post_episode_comment(request, episode_id):
 def api_post_movie_comment(request, movie_id):
     """POST /api/v1/movies/<id>/comments/"""
     import json
+
     from django.shortcuts import get_object_or_404
+
     from .models import Comment, Movie
+
     movie = get_object_or_404(Movie, pk=movie_id)
     try:
         data = json.loads(request.body)
@@ -553,7 +574,9 @@ def api_post_movie_comment(request, movie_id):
     if parent_id:
         comment.parent = get_object_or_404(Comment, pk=parent_id)
     comment.save()
-    return JsonResponse({'id': comment.pk, 'body': comment.body, 'created_at': comment.created_at.isoformat()}, status=201)
+    return JsonResponse(
+        {'id': comment.pk, 'body': comment.body, 'created_at': comment.created_at.isoformat()}, status=201
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -566,9 +589,12 @@ def api_post_movie_comment(request, movie_id):
 def api_rate_anime(request, anime_id):
     """POST /api/v1/anime/<id>/rate/  body: {score: 1-10}"""
     import json
+
     from django.db.models import Avg
     from django.shortcuts import get_object_or_404
+
     from .models import Anime, UserRating
+
     anime = get_object_or_404(Anime, pk=anime_id)
     try:
         data = json.loads(request.body)
@@ -581,7 +607,8 @@ def api_rate_anime(request, anime_id):
     except (TypeError, ValueError):
         return JsonResponse({'error': 'score must be 1–10'}, status=400)
     UserRating.objects.update_or_create(
-        user=request.user, anime=anime,
+        user=request.user,
+        anime=anime,
         defaults={'score': score, 'movie': None},
     )
     avg = UserRating.objects.filter(anime=anime).aggregate(avg=Avg('score'))['avg'] or 0
@@ -593,9 +620,12 @@ def api_rate_anime(request, anime_id):
 def api_rate_movie(request, movie_id):
     """POST /api/v1/movies/<id>/rate/  body: {score: 1-10}"""
     import json
+
     from django.db.models import Avg
     from django.shortcuts import get_object_or_404
+
     from .models import Movie, UserRating
+
     movie = get_object_or_404(Movie, pk=movie_id)
     try:
         data = json.loads(request.body)
@@ -608,7 +638,8 @@ def api_rate_movie(request, movie_id):
     except (TypeError, ValueError):
         return JsonResponse({'error': 'score must be 1–10'}, status=400)
     UserRating.objects.update_or_create(
-        user=request.user, movie=movie,
+        user=request.user,
+        movie=movie,
         defaults={'score': score, 'anime': None},
     )
     avg = UserRating.objects.filter(movie=movie).aggregate(avg=Avg('score'))['avg'] or 0
@@ -625,7 +656,9 @@ def api_rate_movie(request, movie_id):
 def api_toggle_follow_anime(request, anime_id):
     """POST /api/v1/anime/<id>/follow/ — toggle follow; returns {following, follower_count}"""
     from django.shortcuts import get_object_or_404
+
     from .models import Anime, Follow
+
     anime = get_object_or_404(Anime, pk=anime_id)
     obj, created = Follow.objects.get_or_create(user=request.user, anime=anime)
     if not created:
@@ -638,7 +671,9 @@ def api_toggle_follow_anime(request, anime_id):
 def api_toggle_follow_movie(request, movie_id):
     """POST /api/v1/movies/<id>/follow/ — toggle follow; returns {following, follower_count}"""
     from django.shortcuts import get_object_or_404
+
     from .models import Follow, Movie
+
     movie = get_object_or_404(Movie, pk=movie_id)
     obj, created = Follow.objects.get_or_create(user=request.user, movie=movie)
     if not created:
@@ -658,6 +693,7 @@ def api_search(request):
         return JsonResponse({'error': 'Too many requests'}, status=429)
     from django.contrib.postgres.search import SearchQuery, SearchRank, SearchVector
     from django.db.models import Max, Q
+
     query = request.GET.get('q', '').strip()
     genre = request.GET.get('genre', '').strip()
     sort = request.GET.get('sort', 'relevance')
@@ -665,9 +701,7 @@ def api_search(request):
         return JsonResponse({'error': 'q is required'}, status=400)
 
     movie_qs = filter_age_appropriate(Movie.objects.prefetch_related('media_images', 'genres'), request)
-    anime_qs = filter_age_appropriate(
-        Anime.objects.prefetch_related('media_images', 'genres'), request
-    )
+    anime_qs = filter_age_appropriate(Anime.objects.prefetch_related('media_images', 'genres'), request)
 
     try:
         vec = SearchVector('title', weight='A') + SearchVector('description', weight='B')
@@ -694,11 +728,13 @@ def api_search(request):
     movies_page, movies_meta = _paginate(movie_qs, request)
     anime_page, anime_meta = _paginate(anime_qs, request)
 
-    return JsonResponse({
-        'query': query,
-        'movies': {'pagination': movies_meta, 'results': [_movie_summary(m) for m in movies_page]},
-        'anime': {'pagination': anime_meta, 'results': [_anime_summary(a) for a in anime_page]},
-    })
+    return JsonResponse(
+        {
+            'query': query,
+            'movies': {'pagination': movies_meta, 'results': [_movie_summary(m) for m in movies_page]},
+            'anime': {'pagination': anime_meta, 'results': [_anime_summary(a) for a in anime_page]},
+        }
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -711,9 +747,9 @@ def api_search(request):
 def api_notifications(request):
     """GET /api/v1/me/notifications/"""
     from .models import Notification
+
     qs = (
-        Notification.objects
-        .filter(user=request.user)
+        Notification.objects.filter(user=request.user)
         .select_related('anime', 'episode', 'movie')
         .order_by('-created_at')
     )
@@ -739,6 +775,7 @@ def api_notifications(request):
 def api_mark_all_notifications_read(request):
     """POST /api/v1/me/notifications/read-all/"""
     from .models import Notification
+
     updated = Notification.objects.filter(user=request.user, is_read=False).update(is_read=True)
     return JsonResponse({'marked_read': updated})
 
@@ -753,17 +790,20 @@ def api_mark_all_notifications_read(request):
 def api_subprofiles(request):
     """GET /api/v1/me/profiles/"""
     from .models import SubProfile
+
     sps = SubProfile.objects.filter(user=request.user)
     active_id = request.session.get('active_subprofile_id')
-    return JsonResponse({
-        'results': [
-            {
-                'id': sp.pk,
-                'name': sp.name,
-                'avatar': sp.avatar,
-                'kids_mode': sp.kids_mode,
-                'is_active': sp.pk == active_id,
-            }
-            for sp in sps
-        ]
-    })
+    return JsonResponse(
+        {
+            'results': [
+                {
+                    'id': sp.pk,
+                    'name': sp.name,
+                    'avatar': sp.avatar,
+                    'kids_mode': sp.kids_mode,
+                    'is_active': sp.pk == active_id,
+                }
+                for sp in sps
+            ]
+        }
+    )

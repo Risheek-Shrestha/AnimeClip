@@ -90,9 +90,13 @@ class Anime(models.Model):
         help_text='URL-safe identifier; auto-populated from title on save.',
     )
 
+    def __str__(self):
+        return self.title
+
     def save(self, *args, **kwargs):
         if not self.slug:
             from django.utils.text import slugify
+
             base = slugify(self.title) or f'anime-{self.pk or 0}'
             slug = base
             n = 1
@@ -102,9 +106,6 @@ class Anime(models.Model):
                 n += 1
             self.slug = slug
         super().save(*args, **kwargs)
-
-    def __str__(self):
-        return self.title
 
     def get_image(self, img_type):
         # FIX: Iterate over the prefetch cache instead of hitting the DB again.

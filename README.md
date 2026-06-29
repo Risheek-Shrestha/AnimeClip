@@ -25,7 +25,7 @@ A full-stack anime streaming web application built with Django, PostgreSQL, Redi
 
 | Layer | Technology |
 |---|---|
-| Backend | Django 4.2, Python 3.11+ |
+| Backend | Django 5.2 LTS, Python 3.11+ |
 | Database | PostgreSQL (psycopg2) |
 | Cache | Redis (django-redis) |
 | Media storage | Cloudinary |

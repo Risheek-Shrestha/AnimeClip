@@ -1,5 +1,5 @@
-from django.db import migrations, models
 import django.utils.text
+from django.db import migrations, models
 
 
 def populate_anime_slugs(apps, schema_editor):
@@ -50,12 +50,8 @@ def add_slug_unique_index(apps, schema_editor):
 
 
 def drop_slug_unique_index(apps, schema_editor):
-    schema_editor.execute(
-        'DROP INDEX IF EXISTS "ananimeclip_anime_slug_f9e727b2_like"'
-    )
-    schema_editor.execute(
-        'ALTER TABLE "ananimeclip_anime" DROP CONSTRAINT IF EXISTS "ananimeclip_anime_slug_key"'
-    )
+    schema_editor.execute('DROP INDEX IF EXISTS "ananimeclip_anime_slug_f9e727b2_like"')
+    schema_editor.execute('ALTER TABLE "ananimeclip_anime" DROP CONSTRAINT IF EXISTS "ananimeclip_anime_slug_key"')
 
 
 class Migration(migrations.Migration):
@@ -64,7 +60,15 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        # 1. Add Anime.slug column (non-unique first so existing rows don't break)
+        # 1. Add Anime.slug column (non-unique first so existing rows don't break).
+        #    db_index=False is required here: SlugField defaults to db_index=True,
+        #    which makes Django queue a deferred "CREATE INDEX ..._like" statement
+        #    that only runs when this migration's schema_editor block exits --
+        #    i.e. *after* every operation below, including step 3's manual,
+        #    idempotent creation of that exact same index. Without this, step 3
+        #    creates the index first (finding it "doesn't exist yet" since
+        #    Django's copy is still queued, not applied) and Django's own
+        #    deferred SQL then fails with DuplicateTable on the same name.
         migrations.AddField(
             model_name='anime',
             name='slug',
@@ -72,6 +76,7 @@ class Migration(migrations.Migration):
                 max_length=120,
                 blank=True,
                 default='',
+                db_index=False,
                 help_text='URL-safe identifier; auto-populated from title on save.',
             ),
         ),
@@ -93,7 +98,7 @@ class Migration(migrations.Migration):
                     ),
                 ),
             ],
-            database_operations=[],   # already done above
+            database_operations=[],  # already done above
         ),
         # 5. Episode thumbnail URL
         migrations.AddField(

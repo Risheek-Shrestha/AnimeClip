@@ -24,7 +24,9 @@ urlpatterns = [
     path('search/', api_views.api_search, name='api_search'),
     # Episode sub-resources
     path('episodes/<int:episode_id>/comments/', api_views.api_episode_comments, name='api_episode_comments'),
-    path('episodes/<int:episode_id>/comments/post/', api_views.api_post_episode_comment, name='api_post_episode_comment'),
+    path(
+        'episodes/<int:episode_id>/comments/post/', api_views.api_post_episode_comment, name='api_post_episode_comment'
+    ),
     # Authenticated user
     path('me/', api_views.api_me, name='api_me'),
     path('me/watch-history/', api_views.api_watch_history, name='api_watch_history'),
@@ -32,6 +34,8 @@ urlpatterns = [
     path('me/watch-later/', api_views.api_watch_later, name='api_watch_later'),
     path('me/recommendations/', api_views.api_recommendations, name='api_recommendations'),
     path('me/notifications/', api_views.api_notifications, name='api_notifications'),
-    path('me/notifications/read-all/', api_views.api_mark_all_notifications_read, name='api_mark_all_notifications_read'),
+    path(
+        'me/notifications/read-all/', api_views.api_mark_all_notifications_read, name='api_mark_all_notifications_read'
+    ),
     path('me/profiles/', api_views.api_subprofiles, name='api_subprofiles'),
 ]

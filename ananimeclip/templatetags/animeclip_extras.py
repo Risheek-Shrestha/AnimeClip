@@ -1,6 +1,7 @@
 """
 Custom template filters for AnimeClip.
 """
+
 from django import template
 
 register = template.Library()

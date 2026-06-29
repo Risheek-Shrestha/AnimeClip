@@ -271,7 +271,12 @@ CONTENT_SECURITY_POLICY = {
         ],
         'font-src': ["'self'", 'data:'],
         'connect-src': ["'self'", 'https://res.cloudinary.com', 'https://api.cloudinary.com'],
-        'frame-src': ["'self'", 'https://www.youtube.com', 'https://www.youtube-nocookie.com', 'https://upload-widget.cloudinary.com'],
+        'frame-src': [
+            "'self'",
+            'https://www.youtube.com',
+            'https://www.youtube-nocookie.com',
+            'https://upload-widget.cloudinary.com',
+        ],
         'object-src': ["'none'"],
         'base-uri': ["'self'"],
         'form-action': ["'self'"],
@@ -369,7 +374,9 @@ if _sentry_dsn:
 CELERY_BROKER_URL = os.getenv('REDIS_URL', 'redis://127.0.0.1:6379/0')
 # Use a separate Redis DB for task results (DB 2) so broker keys (DB 0)
 # and result keys don't collide and flush each other under MAXMEMORY eviction.
-_redis_result_url = os.getenv('REDIS_RESULT_URL') or os.getenv('REDIS_URL', 'redis://127.0.0.1:6379/0').rstrip('/0123456789') + '/2'
+_redis_result_url = (
+    os.getenv('REDIS_RESULT_URL') or os.getenv('REDIS_URL', 'redis://127.0.0.1:6379/0').rstrip('/0123456789') + '/2'
+)
 CELERY_RESULT_BACKEND = _redis_result_url
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
