@@ -33,56 +33,56 @@ logger = logging.getLogger(__name__)
 
 
 class PushSubscription(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="push_subscriptions")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='push_subscriptions')
     endpoint = models.URLField(max_length=500, unique=True)
     p256dh = models.TextField()
     auth = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        app_label = "ananimeclip"
+        app_label = 'ananimeclip'
 
     def __str__(self):
-        return f"{self.user.username} — {self.endpoint[:60]}"
+        return f'{self.user.username} — {self.endpoint[:60]}'
 
     @property
     def subscription_info(self) -> dict:
-        return {"endpoint": self.endpoint, "keys": {"p256dh": self.p256dh, "auth": self.auth}}
+        return {'endpoint': self.endpoint, 'keys': {'p256dh': self.p256dh, 'auth': self.auth}}
 
 
-def send_push_notification(subscription_info: dict, title: str, body: str, url: str = "/") -> bool:
+def send_push_notification(subscription_info: dict, title: str, body: str, url: str = '/') -> bool:
     try:
         from pywebpush import webpush  # type: ignore[import]
     except ImportError:
-        logger.warning("pywebpush not installed — skipping push notification")
+        logger.warning('pywebpush not installed — skipping push notification')
         return False
 
-    private_key = os.getenv("VAPID_PRIVATE_KEY", "")
-    claims_sub = os.getenv("VAPID_CLAIMS_SUB", "mailto:admin@example.com")
+    private_key = os.getenv('VAPID_PRIVATE_KEY', '')
+    claims_sub = os.getenv('VAPID_CLAIMS_SUB', 'mailto:admin@example.com')
     if not private_key:
-        logger.warning("VAPID_PRIVATE_KEY not set")
+        logger.warning('VAPID_PRIVATE_KEY not set')
         return False
 
-    payload = json.dumps({"title": title, "body": body, "url": url})
+    payload = json.dumps({'title': title, 'body': body, 'url': url})
     try:
         webpush(
             subscription_info=subscription_info,
             data=payload,
             vapid_private_key=private_key,
-            vapid_claims={"sub": claims_sub},
+            vapid_claims={'sub': claims_sub},
         )
         return True
     except Exception as exc:
-        status = getattr(exc, "response", None)
-        if status is not None and getattr(status, "status_code", 0) in (404, 410):
-            endpoint = subscription_info.get("endpoint", "")
+        status = getattr(exc, 'response', None)
+        if status is not None and getattr(status, 'status_code', 0) in (404, 410):
+            endpoint = subscription_info.get('endpoint', '')
             PushSubscription.objects.filter(endpoint=endpoint).delete()
         else:
-            logger.exception("Push notification failed: %s", exc)
+            logger.exception('Push notification failed: %s', exc)
         return False
 
 
-def notify_user(user: User, title: str, body: str, url: str = "/"):
+def notify_user(user: User, title: str, body: str, url: str = '/'):
     for sub in user.push_subscriptions.all():
         send_push_notification(sub.subscription_info, title, body, url)
 
@@ -92,16 +92,16 @@ def notify_user(user: User, title: str, body: str, url: str = "/"):
 def push_subscribe(request):
     try:
         data = json.loads(request.body)
-        endpoint = data["endpoint"]
-        p256dh = data["keys"]["p256dh"]
-        auth = data["keys"]["auth"]
+        endpoint = data['endpoint']
+        p256dh = data['keys']['p256dh']
+        auth = data['keys']['auth']
     except (KeyError, json.JSONDecodeError):
-        return JsonResponse({"error": "invalid payload"}, status=400)
+        return JsonResponse({'error': 'invalid payload'}, status=400)
     PushSubscription.objects.update_or_create(
         endpoint=endpoint,
-        defaults={"user": request.user, "p256dh": p256dh, "auth": auth},
+        defaults={'user': request.user, 'p256dh': p256dh, 'auth': auth},
     )
-    return JsonResponse({"status": "ok"})
+    return JsonResponse({'status': 'ok'})
 
 
 @login_required
@@ -109,13 +109,13 @@ def push_subscribe(request):
 def push_unsubscribe(request):
     try:
         data = json.loads(request.body)
-        endpoint = data["endpoint"]
+        endpoint = data['endpoint']
     except (KeyError, json.JSONDecodeError):
-        return JsonResponse({"error": "invalid payload"}, status=400)
+        return JsonResponse({'error': 'invalid payload'}, status=400)
     PushSubscription.objects.filter(user=request.user, endpoint=endpoint).delete()
-    return JsonResponse({"status": "ok"})
+    return JsonResponse({'status': 'ok'})
 
 
 def vapid_public_key(request):
-    key = os.getenv("VAPID_PUBLIC_KEY", "")
-    return JsonResponse({"publicKey": key})
+    key = os.getenv('VAPID_PUBLIC_KEY', '')
+    return JsonResponse({'publicKey': key})

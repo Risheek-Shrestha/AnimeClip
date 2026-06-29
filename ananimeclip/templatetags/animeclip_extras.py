@@ -17,6 +17,7 @@ def split_filter(value, delimiter=','):
 
 # ── Anti-piracy watermark label ────────────────────────────────────────────
 
+
 @register.filter
 def watermark_label(user):
     """Return an obfuscated user identifier for the canvas watermark overlay."""

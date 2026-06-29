@@ -5,6 +5,7 @@ Staff members and the ticket owner can exchange messages in real-time.
 Room group name: support_<ticket_id>
 Messages: {"type": "chat", "username": "...", "body": "...", "is_staff": bool}
 """
+
 import json
 
 try:
@@ -14,11 +15,10 @@ try:
     from ananimeclip.support.models import SupportTicket
 
     class SupportChatConsumer(AsyncWebsocketConsumer):
-
         async def connect(self):
-            self.ticket_id = self.scope["url_route"]["kwargs"]["ticket_id"]
-            self.room_group = f"support_{self.ticket_id}"
-            user = self.scope.get("user")
+            self.ticket_id = self.scope['url_route']['kwargs']['ticket_id']
+            self.room_group = f'support_{self.ticket_id}'
+            user = self.scope.get('user')
             if not user or not user.is_authenticated:
                 await self.close()
                 return
@@ -41,28 +41,35 @@ try:
             await self.channel_layer.group_discard(self.room_group, self.channel_name)
 
         async def receive(self, text_data=None, bytes_data=None):
-            user = self.scope.get("user")
+            user = self.scope.get('user')
             try:
-                data = json.loads(text_data or "{}")
-                body = str(data.get("body", "")).strip()[:1000]
+                data = json.loads(text_data or '{}')
+                body = str(data.get('body', '')).strip()[:1000]
             except Exception:
                 return
             if not body:
                 return
-            await self.channel_layer.group_send(self.room_group, {
-                "type": "chat_message",
-                "username": user.username if user else "?",
-                "body": body,
-                "is_staff": bool(user and user.is_staff),
-            })
+            await self.channel_layer.group_send(
+                self.room_group,
+                {
+                    'type': 'chat_message',
+                    'username': user.username if user else '?',
+                    'body': body,
+                    'is_staff': bool(user and user.is_staff),
+                },
+            )
 
         async def chat_message(self, event):
-            await self.send(text_data=json.dumps({
-                "type": "chat",
-                "username": event["username"],
-                "body": event["body"],
-                "is_staff": event["is_staff"],
-            }))
+            await self.send(
+                text_data=json.dumps(
+                    {
+                        'type': 'chat',
+                        'username': event['username'],
+                        'body': event['body'],
+                        'is_staff': event['is_staff'],
+                    }
+                )
+            )
 
 except ImportError:
     pass

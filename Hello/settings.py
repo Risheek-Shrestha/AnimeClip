@@ -41,8 +41,8 @@ INSTALLED_APPS = [
     'axes',
     'csp',
     # Feature-pack additions
-    'channels',                              # WebSockets (Django Channels) — for live support chat
-    'ananimeclip.editorial',                 # Editorial / merchandising tools
+    'channels',  # WebSockets (Django Channels) — for live support chat
+    'ananimeclip.editorial',  # Editorial / merchandising tools
 ]
 
 MIDDLEWARE = [
@@ -63,8 +63,8 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     # Feature-pack additions
     'ananimeclip.session_manager.SessionManagerMiddleware',  # device/session registry
-    'ananimeclip.totp.TwoFactorMiddleware',                  # 2FA second-step enforcement
-    'ananimeclip.geo_block.GeoBlockMiddleware',              # geo-blocking (requires GEOIP2_DB_PATH)
+    'ananimeclip.totp.TwoFactorMiddleware',  # 2FA second-step enforcement
+    'ananimeclip.geo_block.GeoBlockMiddleware',  # geo-blocking (requires GEOIP2_DB_PATH)
 ]
 
 ROOT_URLCONF = 'Hello.urls'
@@ -426,30 +426,30 @@ def _celery_beat_schedule():
 CELERY_BEAT_SCHEDULE = _celery_beat_schedule()
 
 # ── Feature Pack: Session / Stream limits ──────────────────────────────────
-MAX_CONCURRENT_STREAMS = int(os.getenv("MAX_CONCURRENT_STREAMS", "2"))
+MAX_CONCURRENT_STREAMS = int(os.getenv('MAX_CONCURRENT_STREAMS', '2'))
 
 # ── Feature Pack: 2FA ─────────────────────────────────────────────────────
 # No extra settings required; pyotp is self-contained.
 
 # ── Feature Pack: Geo-blocking ────────────────────────────────────────────
-GEOIP2_DB_PATH = os.getenv("GEOIP2_DB_PATH", "")
+GEOIP2_DB_PATH = os.getenv('GEOIP2_DB_PATH', '')
 # e.g. GEOBLOCK_DENIED_COUNTRIES = ['CN', 'RU']
-GEOBLOCK_DENIED_COUNTRIES = [c for c in os.getenv("GEOBLOCK_DENIED_COUNTRIES", "").split(",") if c]
+GEOBLOCK_DENIED_COUNTRIES = [c for c in os.getenv('GEOBLOCK_DENIED_COUNTRIES', '').split(',') if c]
 # e.g. GEOBLOCK_ALLOWED_COUNTRIES = ['US', 'JP', 'GB']
-GEOBLOCK_ALLOWED_COUNTRIES = [c for c in os.getenv("GEOBLOCK_ALLOWED_COUNTRIES", "").split(",") if c]
+GEOBLOCK_ALLOWED_COUNTRIES = [c for c in os.getenv('GEOBLOCK_ALLOWED_COUNTRIES', '').split(',') if c]
 
 # ── Feature Pack: Web Push (VAPID) ────────────────────────────────────────
-VAPID_PUBLIC_KEY = os.getenv("VAPID_PUBLIC_KEY", "")
-VAPID_PRIVATE_KEY = os.getenv("VAPID_PRIVATE_KEY", "")
-VAPID_CLAIMS_SUB = os.getenv("VAPID_CLAIMS_SUB", "mailto:admin@example.com")
+VAPID_PUBLIC_KEY = os.getenv('VAPID_PUBLIC_KEY', '')
+VAPID_PRIVATE_KEY = os.getenv('VAPID_PRIVATE_KEY', '')
+VAPID_CLAIMS_SUB = os.getenv('VAPID_CLAIMS_SUB', 'mailto:admin@example.com')
 
 # ── Feature Pack: Django Channels (WebSockets for support chat) ────────────
-ASGI_APPLICATION = "Hello.asgi.application"
+ASGI_APPLICATION = 'Hello.asgi.application'
 CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {
-            "hosts": [os.getenv("REDIS_URL", "redis://127.0.0.1:6379/1")],
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            'hosts': [os.getenv('REDIS_URL', 'redis://127.0.0.1:6379/1')],
         },
     },
 }

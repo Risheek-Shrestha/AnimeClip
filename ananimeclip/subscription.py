@@ -24,17 +24,17 @@ from functools import wraps
 
 from django.shortcuts import redirect
 
-PLAN_FREE = "free"
-PLAN_PREMIUM = "premium"
+PLAN_FREE = 'free'
+PLAN_PREMIUM = 'premium'
 
 
 def get_plan(request) -> str:
     if not request.user.is_authenticated:
         return PLAN_FREE
-    profile = getattr(request.user, "profile", None)
+    profile = getattr(request.user, 'profile', None)
     if profile is None:
         return PLAN_FREE
-    return getattr(profile, "plan", PLAN_FREE)
+    return getattr(profile, 'plan', PLAN_FREE)
 
 
 def is_premium(request) -> bool:
@@ -51,14 +51,15 @@ def premium_required(view_func):
     @wraps(view_func)
     def _wrapped(request, *args, **kwargs):
         if not request.user.is_authenticated:
-            return redirect("login")
+            return redirect('login')
         if not can_access_premium_content(request):
-            return redirect("upgrade")
+            return redirect('upgrade')
         return view_func(request, *args, **kwargs)
+
     return _wrapped
 
 
-def filter_premium_content(qs, request, premium_field: str = "is_premium_only"):
+def filter_premium_content(qs, request, premium_field: str = 'is_premium_only'):
     if can_access_premium_content(request):
         return qs
     return qs.filter(**{premium_field: False})

@@ -7,7 +7,7 @@ import os
 
 from django.core.asgi import get_asgi_application
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "Hello.settings")
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'Hello.settings')
 
 django_asgi_app = get_asgi_application()
 
@@ -17,11 +17,11 @@ try:
 
     from ananimeclip import channel_routing
 
-    application = ProtocolTypeRouter({
-        "http": django_asgi_app,
-        "websocket": AuthMiddlewareStack(
-            URLRouter(channel_routing.websocket_urlpatterns)
-        ),
-    })
+    application = ProtocolTypeRouter(
+        {
+            'http': django_asgi_app,
+            'websocket': AuthMiddlewareStack(URLRouter(channel_routing.websocket_urlpatterns)),
+        }
+    )
 except ImportError:
     application = django_asgi_app

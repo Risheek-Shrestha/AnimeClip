@@ -36,16 +36,17 @@ def _get_reader():
     global _reader
     if _reader is not None:
         return _reader
-    db_path = getattr(settings, "GEOIP2_DB_PATH", os.getenv("GEOIP2_DB_PATH", ""))
+    db_path = getattr(settings, 'GEOIP2_DB_PATH', os.getenv('GEOIP2_DB_PATH', ''))
     if not db_path:
-        logger.warning("GeoBlockMiddleware: GEOIP2_DB_PATH not set — geo-blocking disabled.")
+        logger.warning('GeoBlockMiddleware: GEOIP2_DB_PATH not set — geo-blocking disabled.')
         return None
     try:
         import geoip2.database  # type: ignore[import]
+
         _reader = geoip2.database.Reader(db_path)
-        logger.info("GeoBlockMiddleware: loaded %s", db_path)
+        logger.info('GeoBlockMiddleware: loaded %s', db_path)
     except Exception as exc:
-        logger.error("GeoBlockMiddleware: could not open DB — %s", exc)
+        logger.error('GeoBlockMiddleware: could not open DB — %s', exc)
     return _reader
 
 
@@ -61,8 +62,8 @@ def get_country_code(ip: str) -> str | None:
 
 
 def _client_ip(request) -> str:
-    xff = request.META.get("HTTP_X_FORWARDED_FOR", "")
-    return xff.split(",")[0].strip() if xff else request.META.get("REMOTE_ADDR", "")
+    xff = request.META.get('HTTP_X_FORWARDED_FOR', '')
+    return xff.split(',')[0].strip() if xff else request.META.get('REMOTE_ADDR', '')
 
 
 class GeoBlockMiddleware:
@@ -74,8 +75,8 @@ class GeoBlockMiddleware:
 
     def __init__(self, get_response):
         self.get_response = get_response
-        self.denied = set(getattr(settings, "GEOBLOCK_DENIED_COUNTRIES", []))
-        self.allowed = set(getattr(settings, "GEOBLOCK_ALLOWED_COUNTRIES", []))
+        self.denied = set(getattr(settings, 'GEOBLOCK_DENIED_COUNTRIES', []))
+        self.allowed = set(getattr(settings, 'GEOBLOCK_ALLOWED_COUNTRIES', []))
 
     def __call__(self, request):
         # Staff / superusers are never blocked
@@ -87,12 +88,8 @@ class GeoBlockMiddleware:
 
         if country:
             if self.denied and country in self.denied:
-                return HttpResponseForbidden(
-                    f"This content is not available in your region ({country})."
-                )
+                return HttpResponseForbidden(f'This content is not available in your region ({country}).')
             if self.allowed and country not in self.allowed:
-                return HttpResponseForbidden(
-                    f"This content is not available in your region ({country})."
-                )
+                return HttpResponseForbidden(f'This content is not available in your region ({country}).')
 
         return self.get_response(request)

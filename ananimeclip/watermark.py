@@ -30,14 +30,14 @@ def get_watermark_label(user) -> str:
     not immediately visible to casual viewers.
     """
     if not user or not user.is_authenticated:
-        return ""
-    email = getattr(user, "email", "") or ""
+        return ''
+    email = getattr(user, 'email', '') or ''
     if email:
-        local, _, domain = email.partition("@")
-        obscured = local[:3] + "***@" + domain if len(local) > 3 else email
+        local, _, domain = email.partition('@')
+        obscured = local[:3] + '***@' + domain if len(local) > 3 else email
         return obscured
     username = user.username
-    return username[:3] + "***" if len(username) > 3 else username
+    return username[:3] + '***' if len(username) > 3 else username
 
 
 # ── Template filter (register in animeclip_extras.py) ──────────────────────

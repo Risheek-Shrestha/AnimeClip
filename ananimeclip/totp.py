@@ -32,14 +32,14 @@ from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_http_methods, require_POST
 
-TOTP_SESSION_KEY = "totp_verified"
-TOTP_ISSUER = "AnimeClip"
+TOTP_SESSION_KEY = 'totp_verified'
+TOTP_ISSUER = 'AnimeClip'
 
 
 def get_or_create_secret(profile) -> str:
     if not profile.totp_secret:
         profile.totp_secret = pyotp.random_base32()
-        profile.save(update_fields=["totp_secret"])
+        profile.save(update_fields=['totp_secret'])
     return profile.totp_secret
 
 
@@ -58,67 +58,67 @@ def totp_uri(profile, user) -> str:
 def qr_png_b64(uri: str) -> str:
     img = qrcode.make(uri)
     buf = io.BytesIO()
-    img.save(buf, format="PNG")
+    img.save(buf, format='PNG')
     return base64.b64encode(buf.getvalue()).decode()
 
 
 @login_required
-@require_http_methods(["GET", "POST"])
+@require_http_methods(['GET', 'POST'])
 def totp_setup(request):
     profile = request.user.profile
-    if request.method == "POST":
-        code = request.POST.get("code", "").strip()
+    if request.method == 'POST':
+        code = request.POST.get('code', '').strip()
         if verify_totp_code(profile, code):
             profile.totp_enabled = True
-            profile.save(update_fields=["totp_enabled"])
+            profile.save(update_fields=['totp_enabled'])
             request.session[TOTP_SESSION_KEY] = True
-            django_messages.success(request, "Two-factor authentication enabled.")
-            return redirect("profile")
+            django_messages.success(request, 'Two-factor authentication enabled.')
+            return redirect('profile')
         else:
-            django_messages.error(request, "Invalid code — please try again.")
+            django_messages.error(request, 'Invalid code — please try again.')
 
     secret = get_or_create_secret(profile)
     uri = totp_uri(profile, request.user)
     qr_b64 = qr_png_b64(uri)
-    return render(request, "totp_setup.html", {"secret": secret, "qr_b64": qr_b64})
+    return render(request, 'totp_setup.html', {'secret': secret, 'qr_b64': qr_b64})
 
 
 @login_required
 @require_POST
 def totp_disable(request):
-    password = request.POST.get("password", "")
+    password = request.POST.get('password', '')
     user = authenticate(request, username=request.user.username, password=password)
     if user is None:
-        django_messages.error(request, "Incorrect password.")
-        return redirect("profile")
+        django_messages.error(request, 'Incorrect password.')
+        return redirect('profile')
     profile = user.profile
-    profile.totp_secret = ""
+    profile.totp_secret = ''
     profile.totp_enabled = False
-    profile.save(update_fields=["totp_secret", "totp_enabled"])
+    profile.save(update_fields=['totp_secret', 'totp_enabled'])
     request.session.pop(TOTP_SESSION_KEY, None)
-    django_messages.success(request, "Two-factor authentication disabled.")
-    return redirect("profile")
+    django_messages.success(request, 'Two-factor authentication disabled.')
+    return redirect('profile')
 
 
-@require_http_methods(["GET", "POST"])
+@require_http_methods(['GET', 'POST'])
 def totp_verify(request):
     if not request.user.is_authenticated:
-        return redirect("login")
+        return redirect('login')
     if request.session.get(TOTP_SESSION_KEY):
-        return redirect(request.GET.get("next", "index"))
+        return redirect(request.GET.get('next', 'index'))
 
-    if request.method == "POST":
-        code = request.POST.get("code", "").strip()
-        profile = getattr(request.user, "profile", None)
+    if request.method == 'POST':
+        code = request.POST.get('code', '').strip()
+        profile = getattr(request.user, 'profile', None)
         if profile and verify_totp_code(profile, code):
             request.session[TOTP_SESSION_KEY] = True
-            return HttpResponseRedirect(request.POST.get("next", reverse("index")))
-        django_messages.error(request, "Invalid code.")
+            return HttpResponseRedirect(request.POST.get('next', reverse('index')))
+        django_messages.error(request, 'Invalid code.')
 
-    return render(request, "totp_verify.html", {"next": request.GET.get("next", reverse("index"))})
+    return render(request, 'totp_verify.html', {'next': request.GET.get('next', reverse('index'))})
 
 
-TOTP_EXEMPT_PATHS = {"/account/2fa/verify/", "/logout/", "/healthz/"}
+TOTP_EXEMPT_PATHS = {'/account/2fa/verify/', '/logout/', '/healthz/'}
 
 
 class TwoFactorMiddleware:
@@ -129,12 +129,10 @@ class TwoFactorMiddleware:
         if (
             request.user.is_authenticated
             and request.path not in TOTP_EXEMPT_PATHS
-            and not request.path.startswith("/admin/")
+            and not request.path.startswith('/admin/')
         ):
-            profile = getattr(request.user, "profile", None)
-            if profile and getattr(profile, "totp_enabled", False):
+            profile = getattr(request.user, 'profile', None)
+            if profile and getattr(profile, 'totp_enabled', False):
                 if not request.session.get(TOTP_SESSION_KEY):
-                    return HttpResponseRedirect(
-                        f"{reverse('totp_verify')}?next={request.path}"
-                    )
+                    return HttpResponseRedirect(f'{reverse("totp_verify")}?next={request.path}')
         return self.get_response(request)

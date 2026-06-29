@@ -2126,5 +2126,6 @@ def service_worker(request):
 def upgrade(request):
     """Placeholder upgrade/upsell page. Wire real billing here (Stripe/Paddle)."""
     from .subscription import get_plan
+
     current_plan = get_plan(request)
-    return render(request, "upgrade.html", {"current_plan": current_plan})
+    return render(request, 'upgrade.html', {'current_plan': current_plan})
