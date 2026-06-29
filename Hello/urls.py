@@ -40,5 +40,6 @@ urlpatterns = [
     path('api/v1/', include('ananimeclip.api_urls')),
     # robots.txt has always pointed at /sitemap.xml — this is what actually serves it.
     path('sitemap.xml', sitemap, {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.sitemap'),
+    path('support/', include('ananimeclip.support.urls')),
     path('', include('ananimeclip.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

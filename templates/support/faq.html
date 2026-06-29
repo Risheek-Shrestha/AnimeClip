@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-5">
+  <h2>Help Center / FAQ</h2>
+  {% for cat in categories %}
+  <h4 class="mt-4">{{ cat.name }}</h4>
+  <div class="accordion" id="acc-{{ cat.pk }}">
+    {% for faq in cat.faqs.all %}{% if faq.is_published %}
+    <div class="accordion-item">
+      <h2 class="accordion-header">
+        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq-{{ faq.pk }}">{{ faq.question }}</button>
+      </h2>
+      <div id="faq-{{ faq.pk }}" class="accordion-collapse collapse">
+        <div class="accordion-body">{{ faq.answer }}</div>
+      </div>
+    </div>
+    {% endif %}{% endfor %}
+  </div>
+  {% endfor %}
+  <hr class="mt-5">
+  <p>Didn't find your answer? <a href="{% url 'support:ticket_create' %}">Open a support ticket</a>.</p>
+</div>
+{% endblock %}

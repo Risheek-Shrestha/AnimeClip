@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-5">
+  <h2>#{{ ticket.pk }} {{ ticket.subject }}</h2>
+  <span class="badge bg-secondary">{{ ticket.get_status_display }}</span>
+  <div class="card mt-3 mb-4"><div class="card-body">{{ ticket.body }}</div></div>
+  <h5>Replies</h5>
+  {% for reply in ticket.replies.all %}
+  <div class="card mb-2 {% if reply.is_staff_reply %}border-info{% endif %}">
+    <div class="card-body">
+      <strong>{{ reply.author.username }}{% if reply.is_staff_reply %} <span class="badge bg-info">Staff</span>{% endif %}</strong>
+      <p class="mb-0 mt-1">{{ reply.body }}</p>
+    </div>
+  </div>
+  {% endfor %}
+  {% if ticket.status != "closed" %}
+  <form method="post" action="{% url 'support:ticket_reply' ticket.pk %}" class="mt-4">{% csrf_token %}
+    <div class="mb-3">
+      <textarea name="body" class="form-control" rows="4" placeholder="Add a reply..." required></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary">Send Reply</button>
+  </form>
+  {% endif %}
+</div>
+{% endblock %}
