@@ -409,6 +409,11 @@ def _celery_beat_schedule():
             'task': 'ananimeclip.tasks.notify_movie_releases',
             'schedule': crontab(hour=8, minute=0),
         },
+        # Warm trending cache every 5 minutes.
+        'warm-trending-cache': {
+            'task': 'ananimeclip.tasks.warm_trending_cache',
+            'schedule': crontab(minute='*/5'),
+        },
     }
 
 

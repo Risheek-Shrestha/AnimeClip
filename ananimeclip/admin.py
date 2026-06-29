@@ -251,3 +251,44 @@ from .models import VideoSource as _VS  # noqa: E402
 
 _patch_admin_actions(_VS, trigger_transcoding_action)
 _patch_admin_actions(_MS, trigger_transcoding_action)
+
+
+# ── Content Reports ─────────────────────────────────────────────────────────
+
+from .models import ContentReport, WatchParty, WatchPartyMember  # noqa: E402
+
+
+@admin.register(ContentReport)
+class ContentReportAdmin(admin.ModelAdmin):
+    list_display = ('user', 'reason', 'episode', 'movie', 'resolved', 'created_at')
+    list_filter = ('reason', 'resolved')
+    search_fields = ('user__username', 'detail')
+    list_editable = ('resolved',)
+    date_hierarchy = 'created_at'
+    ordering = ('-created_at',)
+    readonly_fields = ('user', 'episode', 'movie', 'reason', 'detail', 'created_at')
+
+    actions = ['mark_resolved']
+
+    @admin.action(description='Mark selected reports as resolved')
+    def mark_resolved(self, request, queryset):
+        updated = queryset.update(resolved=True)
+        self.message_user(request, f'{updated} report(s) marked as resolved.')
+
+
+# ── Watch Party ─────────────────────────────────────────────────────────────
+
+
+class WatchPartyMemberInline(admin.TabularInline):
+    model = WatchPartyMember
+    extra = 0
+    readonly_fields = ('user', 'joined_at')
+
+
+@admin.register(WatchParty)
+class WatchPartyAdmin(admin.ModelAdmin):
+    list_display = ('room_code', 'host', 'episode', 'movie', 'is_active', 'is_playing', 'created_at')
+    list_filter = ('is_active', 'is_playing')
+    search_fields = ('room_code', 'host__username')
+    readonly_fields = ('room_code', 'created_at', 'updated_at')
+    inlines = [WatchPartyMemberInline]

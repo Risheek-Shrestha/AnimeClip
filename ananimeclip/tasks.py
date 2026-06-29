@@ -45,3 +45,27 @@ def notify_movie_releases(self):
     except Exception as exc:
         logger.exception('notify_movie_releases task failed: %s', exc)
         raise self.retry(exc=exc, countdown=60 * 5) from None  # retry in 5 min
+
+
+@shared_task(bind=True, name='ananimeclip.tasks.warm_trending_cache', max_retries=1)
+def warm_trending_cache(self):
+    """
+    Pre-warm the trending page cache so the first visitor after expiry
+    never hits a slow DB query. Runs every 5 minutes via Celery beat.
+    """
+    try:
+        from django.test import RequestFactory
+
+        from ananimeclip.trending import trending as trending_view
+
+        rf = RequestFactory()
+        req = rf.get('/trending/')
+        # Use an AnonymousUser so age-filtering uses the public path
+        from django.contrib.auth.models import AnonymousUser
+
+        req.user = AnonymousUser()
+        trending_view(req)
+        logger.info('warm_trending_cache completed.')
+    except Exception as exc:
+        logger.exception('warm_trending_cache failed: %s', exc)
+        raise self.retry(exc=exc, countdown=60) from None

@@ -477,6 +477,51 @@
 </section>
 
 {% include "_playlist_modal.html" %}
+{% include "_report_modal.html" %}
+
+{# ── Watch Party launch ──────────────────────────────────────────────────── #}
+{% if user.is_authenticated %}
+<div class="container mb-4">
+  <div class="d-flex gap-2 flex-wrap align-items-center">
+    <button class="btn btn-outline-primary btn-sm" id="start-watch-party"
+            data-episode-id="{{ episode.id }}" data-csrf="{{ csrf_token }}">
+      🎉 Start Watch Party
+    </button>
+    <div class="input-group input-group-sm" style="max-width:240px">
+      <input type="text" class="form-control bg-dark text-light border-secondary"
+             id="join-code-input" placeholder="Room code…">
+      <button class="btn btn-outline-secondary" id="join-watch-party">Join</button>
+    </div>
+    {# Social sharing #}
+    <button class="btn btn-outline-info btn-sm" id="share-btn" data-url="{{ request.build_absolute_uri }}">📤 Share</button>
+    <button class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#reportModal">⚠️ Report Issue</button>
+  </div>
+  <div id="party-created-msg" class="mt-2 d-none"></div>
+</div>
+{% endif %}
+
+{# JSON-LD structured data #}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "VideoObject",
+  "name": "{{ anime.title }} — Episode {{ episode.number }}{% if episode.title %}: {{ episode.title }}{% endif %}",
+  "description": "{{ anime.description|truncatechars:200|escapejs }}",
+  "thumbnailUrl": "{% if anime.thumb_img %}{{ anime.thumb_img.image.url }}{% endif %}",
+  "uploadDate": "{{ episode.updated_at|date:'c' }}",
+  "duration": "PT{{ episode.duration_mins }}M",
+  "embedUrl": "{{ request.build_absolute_uri }}"
+}
+</script>
+
+{# ── Service Worker registration ─────────────────────────────────────────── #}
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(() => {});
+  });
+}
+</script>
 
 {% endblock body %}
 
@@ -554,5 +599,56 @@ document.querySelectorAll('.delete-comment-btn').forEach(function (btn) {
         });
     });
 });
+
+// ── Watch Party JS ───────────────────────────────────────────────────────────
+(function () {
+  const startBtn = document.getElementById('start-watch-party');
+  const joinBtn = document.getElementById('join-watch-party');
+  const shareBtn = document.getElementById('share-btn');
+  const msg = document.getElementById('party-created-msg');
+
+  if (startBtn) {
+    startBtn.addEventListener('click', function () {
+      const fd = new FormData();
+      fd.append('episode_id', startBtn.dataset.episodeId);
+      fd.append('csrfmiddlewaretoken', startBtn.dataset.csrf);
+      fetch('/watch-party/create/', { method: 'POST', body: fd,
+        headers: { 'X-CSRFToken': startBtn.dataset.csrf } })
+        .then(r => r.json())
+        .then(data => {
+          if (data.room_code) {
+            const url = '/watch-party/' + data.room_code + '/';
+            msg.innerHTML = '🎉 Party created! <a href="' + url + '" class="btn btn-primary btn-sm ms-2">Open Room ' + data.room_code + '</a>';
+            msg.classList.remove('d-none');
+          }
+        });
+    });
+  }
+
+  if (joinBtn) {
+    joinBtn.addEventListener('click', function () {
+      const code = document.getElementById('join-code-input').value.trim().toUpperCase();
+      if (code) window.location.href = '/watch-party/' + code + '/';
+    });
+  }
+
+  if (shareBtn) {
+    shareBtn.addEventListener('click', function () {
+      const url = shareBtn.dataset.url;
+      if (navigator.share) {
+        navigator.share({ title: document.title, url });
+      } else {
+        navigator.clipboard.writeText(url).then(() => {
+          shareBtn.textContent = '✅ Link copied!';
+          setTimeout(() => { shareBtn.textContent = '📤 Share'; }, 2000);
+        });
+      }
+    });
+  }
+
+  // ── Report modal ──────────────────────────────────────────────────────────
+  // Set report URL on body so _report_modal.html can find it
+  document.body.dataset.reportUrl = '{% url "report_episode" episode.id %}';
+})();
 </script>
 {% endblock extra_js %}

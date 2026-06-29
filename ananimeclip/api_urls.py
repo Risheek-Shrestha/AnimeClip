@@ -22,6 +22,7 @@ urlpatterns = [
     path('movies/<int:movie_id>/comments/post/', api_views.api_post_movie_comment, name='api_post_movie_comment'),
     path('genres/', api_views.api_genre_list, name='api_genre_list'),
     path('search/', api_views.api_search, name='api_search'),
+    path('trending/', api_views.api_trending, name='api_trending'),
     # Episode sub-resources
     path('episodes/<int:episode_id>/comments/', api_views.api_episode_comments, name='api_episode_comments'),
     path(
@@ -38,4 +39,11 @@ urlpatterns = [
         'me/notifications/read-all/', api_views.api_mark_all_notifications_read, name='api_mark_all_notifications_read'
     ),
     path('me/profiles/', api_views.api_subprofiles, name='api_subprofiles'),
+    # Content reporting
+    path('report/episode/<int:episode_id>/', api_views.api_report_episode, name='api_report_episode'),
+    path('report/movie/<int:movie_id>/', api_views.api_report_movie, name='api_report_movie'),
+    # Watch party REST shim
+    path('watch-party/create/', api_views.api_create_watch_party, name='api_create_watch_party'),
+    path('watch-party/<str:room_code>/state/', api_views.api_watch_party_state, name='api_watch_party_state'),
+    path('watch-party/<str:room_code>/sync/', api_views.api_sync_watch_party, name='api_sync_watch_party'),
 ]

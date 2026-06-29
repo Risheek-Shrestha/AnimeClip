@@ -38,3 +38,8 @@ django-csp>=4.0
 
 # Code quality
 ruff>=0.4.0
+
+# Watch Party (future WebSocket upgrade) — install to enable real-time sync
+# channels>=4.1.0
+# channels-redis>=4.2.0
+# daphne>=4.1.0

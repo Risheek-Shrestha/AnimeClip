@@ -13,7 +13,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('ananimeclip', '0034_watchlater_indexes'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),

@@ -662,3 +662,65 @@ class Subtitle(models.Model):
             raise ValidationError('Subtitle must be linked to either a VideoSource or a MovieSource')
         if self.video_source and self.movie_source:
             raise ValidationError('Subtitle cannot be linked to both a VideoSource and a MovieSource')
+
+
+class ContentReport(models.Model):
+    REASON_CHOICES = [
+        ('broken_video', 'Broken / unplayable video'),
+        ('wrong_audio', 'Wrong audio track'),
+        ('wrong_subtitles', 'Wrong or missing subtitles'),
+        ('wrong_episode', 'Wrong episode content'),
+        ('copyright', 'Copyright violation'),
+        ('inappropriate', 'Inappropriate content'),
+        ('other', 'Other'),
+    ]
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='content_reports')
+    episode = models.ForeignKey('Episode', null=True, blank=True, on_delete=models.CASCADE, related_name='reports')
+    movie = models.ForeignKey('Movie', null=True, blank=True, on_delete=models.CASCADE, related_name='reports')
+    reason = models.CharField(max_length=30, choices=REASON_CHOICES)
+    detail = models.TextField(blank=True, max_length=500)
+    resolved = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['resolved', '-created_at'], name='report_resolved_created_idx'),
+        ]
+
+    def __str__(self):
+        target = self.episode or self.movie
+        return f'{self.user.username} reported {target}: {self.reason}'
+
+
+class WatchParty(models.Model):
+    host = models.ForeignKey(User, on_delete=models.CASCADE, related_name='hosted_parties')
+    episode = models.ForeignKey(
+        'Episode', null=True, blank=True, on_delete=models.CASCADE, related_name='watch_parties'
+    )
+    movie = models.ForeignKey('Movie', null=True, blank=True, on_delete=models.CASCADE, related_name='watch_parties')
+    room_code = models.CharField(max_length=8, unique=True, db_index=True)
+    is_active = models.BooleanField(default=True)
+    playback_position = models.FloatField(default=0.0, help_text='Seconds into the content')
+    is_playing = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'Party {self.room_code} hosted by {self.host.username}'
+
+
+class WatchPartyMember(models.Model):
+    party = models.ForeignKey(WatchParty, on_delete=models.CASCADE, related_name='members')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='watch_party_memberships')
+    joined_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = [['party', 'user']]
+
+    def __str__(self):
+        return f'{self.user.username} in party {self.party.room_code}'

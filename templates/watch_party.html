@@ -1,0 +1,148 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block body %}
+<section class="watch-party-page sec-mar">
+  <div class="container">
+    <div class="row">
+      <div class="col-12 mb-3">
+        <div class="d-flex align-items-center gap-3 flex-wrap">
+          <h4 class="mb-0">Watch Party — Room <code class="room-code-badge">{{ party.room_code }}</code></h4>
+          <button class="btn btn-sm btn-outline-light" id="copy-room-code"
+                  data-code="{{ party.room_code }}">📋 Copy Invite Link</button>
+          {% if is_host %}
+          <span class="badge bg-warning text-dark">👑 You are the host</span>
+          {% else %}
+          <span class="badge bg-secondary">Guest</span>
+          {% endif %}
+        </div>
+        <small class="text-muted">Share this room code with friends. All guests sync to the host's playback.</small>
+      </div>
+
+      <!-- Player -->
+      <div class="col-lg-9 col-12">
+        <div class="video-box position-relative">
+          {% if content_type == 'episode' and content.sources.first %}
+          <video id="party-player" controls width="100%"
+                 data-room="{{ party.room_code }}"
+                 data-is-host="{{ is_host|yesno:'true,false' }}"
+                 data-sync-url="{% url 'watch_party_state' party.room_code %}"
+                 data-push-url="{% url 'sync_watch_party' party.room_code %}"
+                 data-csrftoken="{{ csrf_token }}">
+            <source src="{{ content.sources.first.video_url }}" type="video/mp4">
+          </video>
+          {% elif content_type == 'movie' and content.sources.first %}
+          <video id="party-player" controls width="100%"
+                 data-room="{{ party.room_code }}"
+                 data-is-host="{{ is_host|yesno:'true,false' }}"
+                 data-sync-url="{% url 'watch_party_state' party.room_code %}"
+                 data-push-url="{% url 'sync_watch_party' party.room_code %}"
+                 data-csrftoken="{{ csrf_token }}">
+            <source src="{{ content.sources.first.video_url }}" type="video/mp4">
+          </video>
+          {% else %}
+          <div class="alert alert-warning">No playable source found for this content.</div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Members sidebar -->
+      <div class="col-lg-3 col-12">
+        <div class="card bg-dark text-light">
+          <div class="card-header">👥 Members</div>
+          <ul class="list-group list-group-flush" id="party-members">
+            {% for member in party.members.all %}
+            <li class="list-group-item bg-dark text-light">
+              {{ member.user.username }}
+              {% if member.user == party.host %}<span class="badge bg-warning text-dark ms-1">Host</span>{% endif %}
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% if is_host %}
+        <form method="post" action="{% url 'end_watch_party' party.room_code %}" class="mt-3">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger w-100"
+                  onclick="return confirm('End the Watch Party for everyone?')">🛑 End Party</button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+(function () {
+  const video = document.getElementById('party-player');
+  if (!video) return;
+
+  const isHost = video.dataset.isHost === 'true';
+  const syncUrl = video.dataset.syncUrl;
+  const pushUrl = video.dataset.pushUrl;
+  const csrf = video.dataset.csrftoken;
+  const SYNC_INTERVAL = 3000;   // poll every 3 s
+  const DRIFT_THRESHOLD = 5;    // seek if >5 s out of sync
+
+  // ── Host: push state on play/pause/seek ──────────────────────────────────
+  function pushState() {
+    if (!isHost) return;
+    const fd = new FormData();
+    fd.append('position', video.currentTime);
+    fd.append('is_playing', video.paused ? 'false' : 'true');
+    fetch(pushUrl, { method: 'POST', headers: { 'X-CSRFToken': csrf }, body: fd })
+      .catch(() => {});
+  }
+  if (isHost) {
+    video.addEventListener('play', pushState);
+    video.addEventListener('pause', pushState);
+    video.addEventListener('seeked', pushState);
+  }
+
+  // ── Guest: poll and sync ─────────────────────────────────────────────────
+  function pollState() {
+    fetch(syncUrl)
+      .then(r => r.json())
+      .then(data => {
+        const state = data.state;
+        if (!state) return;
+        // Update member list
+        const membersList = document.getElementById('party-members');
+        if (membersList) {
+          membersList.innerHTML = state.members
+            .map(m => `<li class="list-group-item bg-dark text-light">${m}</li>`)
+            .join('');
+        }
+        if (!isHost) {
+          const drift = Math.abs(video.currentTime - state.playback_position);
+          if (drift > DRIFT_THRESHOLD) {
+            video.currentTime = state.playback_position;
+          }
+          if (state.is_playing && video.paused) video.play().catch(() => {});
+          if (!state.is_playing && !video.paused) video.pause();
+          // Party ended
+          if (!state.is_active) {
+            alert('The host has ended the Watch Party.');
+            window.location.href = '/';
+          }
+        }
+      })
+      .catch(() => {});
+  }
+
+  setInterval(pollState, SYNC_INTERVAL);
+  pollState();
+
+  // ── Copy invite link ─────────────────────────────────────────────────────
+  const copyBtn = document.getElementById('copy-room-code');
+  if (copyBtn) {
+    copyBtn.addEventListener('click', () => {
+      const url = window.location.origin + '/watch-party/' + copyBtn.dataset.code + '/';
+      navigator.clipboard.writeText(url).then(() => {
+        copyBtn.textContent = '✅ Copied!';
+        setTimeout(() => { copyBtn.textContent = '📋 Copy Invite Link'; }, 2000);
+      });
+    });
+  }
+})();
+</script>
+{% endblock %}

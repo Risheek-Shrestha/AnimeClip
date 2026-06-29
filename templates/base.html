@@ -102,6 +102,9 @@
               <a href="{% url 'movies' %}">{% trans "Movie" %}</a>
             </li>
             <li class="menu-item-has-children">
+              <a href="{% url 'trending' %}">🔥 {% trans "Trending" %}</a>
+            </li>
+            <li class="menu-item-has-children">
               <a href="#" title="{% trans 'Coming Soon' %}" class="menu-disabled">{% trans "Manga" %}</a>
             </li>
             <li class="menu-item-has-children dropdown">
@@ -290,6 +293,14 @@
 <script src="{% static 'assets/js/motion.js' %}"               defer></script>
 <script src="{% static 'assets/js/animeclip.js' %}"          defer></script>
 {% block extra_js %}{% endblock extra_js %}
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(function () {});
+  });
+}
+</script>
 
 </body>
 </html>

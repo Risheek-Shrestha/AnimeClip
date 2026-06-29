@@ -1757,3 +1757,148 @@ class ContentSecurityPolicyTest(TestCase):
         directives = dict(d.strip().split(' ', 1) for d in csp.split(';') if d.strip() and ' ' in d.strip())
         self.assertIn('blob:', directives.get('script-src', ''))
         self.assertIn('blob:', directives.get('media-src', ''))
+
+
+# ============================================================
+# Trending, ContentReport, WatchParty, Offline, SW
+# ============================================================
+
+
+class TrendingViewTest(TestCase):
+    def test_trending_page_renders_for_anonymous(self):
+        resp = self.client.get(reverse('trending'))
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'Trending')
+
+    def test_trending_page_in_nav(self):
+        resp = self.client.get(reverse('index'))
+        self.assertContains(resp, reverse('trending'))
+
+
+class OfflineViewTest(TestCase):
+    def test_offline_page_renders(self):
+        resp = self.client.get(reverse('offline'))
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'Offline')
+
+    def test_service_worker_js_served(self):
+        resp = self.client.get(reverse('service_worker'))
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp['Content-Type'], 'application/javascript')
+        self.assertIn('no-cache', resp.get('Cache-Control', ''))
+        self.assertEqual(resp.get('Service-Worker-Allowed'), '/')
+
+
+class ContentReportTest(TestCase):
+    def setUp(self):
+        from django.contrib.auth.models import User
+
+        self.user = User.objects.create_user('reporter', password='pass')
+        from ananimeclip.models import Anime, Episode, Genre, Season, VideoSource
+
+        genre = Genre.objects.create(name='Action')
+        anime = Anime.objects.create(title='Test Anime', description='desc', slug='test-anime')
+        anime.genres.add(genre)
+        season = Season.objects.create(anime=anime, number=1)
+        self.episode = Episode.objects.create(season=season, number=1)
+        VideoSource.objects.create(
+            episode=self.episode, label='HD', type='sub', video_url='https://example.com/vid.mp4'
+        )
+
+    def test_report_episode_requires_login(self):
+        resp = self.client.post(reverse('report_episode', args=[self.episode.id]), {'reason': 'broken_video'})
+        self.assertIn(resp.status_code, [302, 403])
+
+    def test_report_episode_authenticated(self):
+        self.client.login(username='reporter', password='pass')
+        resp = self.client.post(reverse('report_episode', args=[self.episode.id]), {'reason': 'broken_video'})
+        self.assertEqual(resp.status_code, 200)
+        import json
+
+        data = json.loads(resp.content)
+        self.assertEqual(data['status'], 'reported')
+        from ananimeclip.models import ContentReport
+
+        self.assertTrue(ContentReport.objects.filter(user=self.user, episode=self.episode).exists())
+
+    def test_report_episode_invalid_reason(self):
+        self.client.login(username='reporter', password='pass')
+        resp = self.client.post(reverse('report_episode', args=[self.episode.id]), {'reason': 'invalid_reason'})
+        self.assertEqual(resp.status_code, 400)
+
+
+class WatchPartyTest(TestCase):
+    def setUp(self):
+        from django.contrib.auth.models import User
+
+        self.host = User.objects.create_user('host', password='pass')
+        self.guest = User.objects.create_user('guest', password='pass')
+        from ananimeclip.models import Anime, Episode, Genre, Season, VideoSource
+
+        genre = Genre.objects.create(name='Action')
+        anime = Anime.objects.create(title='Party Anime', description='desc', slug='party-anime')
+        anime.genres.add(genre)
+        season = Season.objects.create(anime=anime, number=1)
+        self.episode = Episode.objects.create(season=season, number=1)
+        VideoSource.objects.create(episode=self.episode, label='HD', type='sub', video_url='https://example.com/v.mp4')
+
+    def test_create_party_requires_login(self):
+        resp = self.client.post(reverse('create_watch_party'), {'episode_id': self.episode.id})
+        self.assertIn(resp.status_code, [302, 403])
+
+    def test_create_party_authenticated(self):
+        self.client.login(username='host', password='pass')
+        resp = self.client.post(reverse('create_watch_party'), {'episode_id': self.episode.id})
+        self.assertEqual(resp.status_code, 200)
+        import json
+
+        data = json.loads(resp.content)
+        self.assertIn('room_code', data)
+        self.assertEqual(len(data['room_code']), 8)
+
+    def test_join_and_sync_party(self):
+        self.client.login(username='host', password='pass')
+        resp = self.client.post(reverse('create_watch_party'), {'episode_id': self.episode.id})
+        import json
+
+        code = json.loads(resp.content)['room_code']
+
+        # Guest joins
+        self.client.logout()
+        self.client.login(username='guest', password='pass')
+        resp = self.client.post(reverse('join_watch_party', args=[code]))
+        self.assertEqual(resp.status_code, 200)
+        state = json.loads(resp.content)['state']
+        self.assertIn('guest', state['members'])
+
+        # Host syncs state
+        self.client.logout()
+        self.client.login(username='host', password='pass')
+        resp = self.client.post(reverse('sync_watch_party', args=[code]), {'position': 42.5, 'is_playing': 'true'})
+        self.assertEqual(resp.status_code, 200)
+        state = json.loads(resp.content)['state']
+        self.assertAlmostEqual(state['playback_position'], 42.5)
+        self.assertTrue(state['is_playing'])
+
+    def test_end_party(self):
+        self.client.login(username='host', password='pass')
+        resp = self.client.post(reverse('create_watch_party'), {'episode_id': self.episode.id})
+        import json
+
+        code = json.loads(resp.content)['room_code']
+        resp = self.client.post(reverse('end_watch_party', args=[code]))
+        self.assertEqual(resp.status_code, 200)
+        from ananimeclip.models import WatchParty
+
+        self.assertFalse(WatchParty.objects.get(room_code=code).is_active)
+
+    def test_guest_cannot_sync(self):
+        self.client.login(username='host', password='pass')
+        resp = self.client.post(reverse('create_watch_party'), {'episode_id': self.episode.id})
+        import json
+
+        code = json.loads(resp.content)['room_code']
+        self.client.logout()
+        self.client.login(username='guest', password='pass')
+        resp = self.client.post(reverse('sync_watch_party', args=[code]), {'position': 99, 'is_playing': 'true'})
+        self.assertEqual(resp.status_code, 404)

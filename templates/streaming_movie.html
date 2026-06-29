@@ -405,6 +405,44 @@
 </section>
 
 {% include "_playlist_modal.html" %}
+{% include "_report_modal.html" %}
+
+{% if user.is_authenticated %}
+<div class="container mb-4">
+  <div class="d-flex gap-2 flex-wrap align-items-center">
+    <button class="btn btn-outline-primary btn-sm" id="start-watch-party"
+            data-movie-id="{{ movie.id }}" data-csrf="{{ csrf_token }}">
+      🎉 Start Watch Party
+    </button>
+    <div class="input-group input-group-sm" style="max-width:240px">
+      <input type="text" class="form-control bg-dark text-light border-secondary" id="join-code-input" placeholder="Room code…">
+      <button class="btn btn-outline-secondary" id="join-watch-party">Join</button>
+    </div>
+    <button class="btn btn-outline-info btn-sm" id="share-btn" data-url="{{ request.build_absolute_uri }}">📤 Share</button>
+    <button class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#reportModal">⚠️ Report Issue</button>
+  </div>
+  <div id="party-created-msg" class="mt-2 d-none"></div>
+</div>
+{% endif %}
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Movie",
+  "name": "{{ movie.title|escapejs }}",
+  "description": "{{ movie.description|truncatechars:200|escapejs }}",
+  "thumbnailUrl": "{% if movie.thumb_img %}{{ movie.thumb_img.image.url }}{% endif %}",
+  "duration": "PT{{ movie.duration_mins }}M",
+  "url": "{{ request.build_absolute_uri }}"
+}
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(() => {});
+  });
+}
+</script>
 
 {% endblock body %}
 
@@ -455,5 +493,47 @@ document.querySelectorAll('.delete-comment-btn').forEach(function (btn) {
         });
     });
 });
+</script>
+<script>
+// ── Watch Party + Share (movie) ───────────────────────────────────────────────
+(function () {
+  const startBtn = document.getElementById('start-watch-party');
+  const joinBtn  = document.getElementById('join-watch-party');
+  const shareBtn = document.getElementById('share-btn');
+  const msg      = document.getElementById('party-created-msg');
+  if (startBtn) {
+    startBtn.addEventListener('click', () => {
+      const fd = new FormData();
+      fd.append('movie_id', startBtn.dataset.movieId);
+      fetch('/watch-party/create/', { method: 'POST', body: fd,
+        headers: { 'X-CSRFToken': startBtn.dataset.csrf } })
+        .then(r => r.json())
+        .then(data => {
+          if (data.room_code) {
+            const url = '/watch-party/' + data.room_code + '/';
+            msg.innerHTML = '🎉 Party created! <a href="' + url + '" class="btn btn-primary btn-sm ms-2">Open Room ' + data.room_code + '</a>';
+            msg.classList.remove('d-none');
+          }
+        });
+    });
+  }
+  if (joinBtn) {
+    joinBtn.addEventListener('click', () => {
+      const code = document.getElementById('join-code-input').value.trim().toUpperCase();
+      if (code) window.location.href = '/watch-party/' + code + '/';
+    });
+  }
+  if (shareBtn) {
+    shareBtn.addEventListener('click', () => {
+      const url = shareBtn.dataset.url;
+      if (navigator.share) navigator.share({ title: document.title, url });
+      else navigator.clipboard.writeText(url).then(() => {
+        shareBtn.textContent = '✅ Copied!';
+        setTimeout(() => { shareBtn.textContent = '📤 Share'; }, 2000);
+      });
+    });
+  }
+  document.body.dataset.reportUrl = '{% url "report_movie" movie.id %}';
+})();
 </script>
 {% endblock extra_js %}

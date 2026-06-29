@@ -815,3 +815,182 @@ def api_subprofiles(request):
             ]
         }
     )
+
+
+# ---------------------------------------------------------------------------
+# Trending
+# ---------------------------------------------------------------------------
+
+from datetime import timedelta  # noqa: E402
+
+from django.db.models import Count  # noqa: E402
+
+
+@ratelimit(key='ip', rate='60/m', method='GET', block=True)
+@require_http_methods(['GET'])
+def api_trending(request):
+    from django.core.cache import cache
+
+    ctx = cache.get('api:trending')
+    if ctx is None:
+        from django.utils import timezone
+
+        since = timezone.now() - timedelta(days=7)
+        anime_ids = (
+            WatchHistory.objects.filter(updated_at__gte=since, episode__isnull=False)
+            .values('episode__season__anime_id')
+            .annotate(views=Count('id'))
+            .order_by('-views')[:12]
+        )
+        movie_ids = (
+            WatchHistory.objects.filter(updated_at__gte=since, movie__isnull=False)
+            .values('movie_id')
+            .annotate(views=Count('id'))
+            .order_by('-views')[:12]
+        )
+        from .models import Anime as _Anime
+        from .models import Movie as _Movie
+
+        anime_list = list(
+            _Anime.objects.filter(pk__in=[r['episode__season__anime_id'] for r in anime_ids]).prefetch_related(
+                'media_images', 'genres'
+            )
+        )
+        movie_list = list(
+            _Movie.objects.filter(pk__in=[r['movie_id'] for r in movie_ids]).prefetch_related('media_images', 'genres')
+        )
+        ctx = {
+            'anime': [_anime_summary(a) for a in anime_list],
+            'movies': [_movie_summary(m) for m in movie_list],
+        }
+        cache.set('api:trending', ctx, 300)
+    return JsonResponse(ctx)
+
+
+# ---------------------------------------------------------------------------
+# Content Reporting
+# ---------------------------------------------------------------------------
+
+from .models import ContentReport  # noqa: E402
+
+
+@login_required
+@ratelimit(key='user', rate='10/h', method='POST', block=True)
+@require_http_methods(['POST'])
+def api_report_episode(request, episode_id):
+    from django.shortcuts import get_object_or_404
+
+    from .models import Episode as _Ep
+
+    episode = get_object_or_404(_Ep, pk=episode_id)
+    reason = request.POST.get('reason', '')
+    detail = (request.POST.get('detail', '') or '')[:500]
+    if reason not in [r[0] for r in ContentReport.REASON_CHOICES]:
+        return JsonResponse({'error': 'invalid reason'}, status=400)
+    ContentReport.objects.get_or_create(
+        user=request.user,
+        episode=episode,
+        reason=reason,
+        resolved=False,
+        defaults={'detail': detail},
+    )
+    return JsonResponse({'status': 'reported'})
+
+
+@login_required
+@ratelimit(key='user', rate='10/h', method='POST', block=True)
+@require_http_methods(['POST'])
+def api_report_movie(request, movie_id):
+    from django.shortcuts import get_object_or_404
+
+    from .models import Movie as _Mv
+
+    movie = get_object_or_404(_Mv, pk=movie_id)
+    reason = request.POST.get('reason', '')
+    detail = (request.POST.get('detail', '') or '')[:500]
+    if reason not in [r[0] for r in ContentReport.REASON_CHOICES]:
+        return JsonResponse({'error': 'invalid reason'}, status=400)
+    ContentReport.objects.get_or_create(
+        user=request.user,
+        movie=movie,
+        reason=reason,
+        resolved=False,
+        defaults={'detail': detail},
+    )
+    return JsonResponse({'status': 'reported'})
+
+
+# ---------------------------------------------------------------------------
+# Watch Party REST shim
+# ---------------------------------------------------------------------------
+
+import secrets as _secrets  # noqa: E402
+
+from .models import WatchParty, WatchPartyMember  # noqa: E402
+
+
+def _wp_state(party):
+    members = list(party.members.select_related('user').values_list('user__username', flat=True))
+    return {
+        'room_code': party.room_code,
+        'host': party.host.username,
+        'is_playing': party.is_playing,
+        'playback_position': party.playback_position,
+        'members': members,
+        'is_active': party.is_active,
+    }
+
+
+@login_required
+@require_http_methods(['POST'])
+def api_create_watch_party(request):
+    from django.shortcuts import get_object_or_404
+
+    episode_id = request.POST.get('episode_id')
+    movie_id = request.POST.get('movie_id')
+    episode = get_object_or_404(Episode, pk=episode_id) if episode_id else None
+    movie = get_object_or_404(Movie, pk=movie_id) if movie_id else None
+    if not episode and not movie:
+        return JsonResponse({'error': 'episode_id or movie_id required'}, status=400)
+    WatchParty.objects.filter(host=request.user, is_active=True).update(is_active=False)
+    # Generate unique room code
+    code = None
+    for _ in range(10):
+        candidate = _secrets.token_urlsafe(6)[:8].upper().replace('-', 'X').replace('_', 'Y')
+        if not WatchParty.objects.filter(room_code=candidate).exists():
+            code = candidate
+            break
+    if not code:
+        return JsonResponse({'error': 'Could not generate room code'}, status=500)
+    party = WatchParty.objects.create(host=request.user, episode=episode, movie=movie, room_code=code)
+    WatchPartyMember.objects.create(party=party, user=request.user)
+    return JsonResponse({'state': _wp_state(party)})
+
+
+@login_required
+@require_http_methods(['GET'])
+def api_watch_party_state(request, room_code):
+    from django.shortcuts import get_object_or_404
+
+    party = get_object_or_404(WatchParty, room_code=room_code, is_active=True)
+    WatchPartyMember.objects.get_or_create(party=party, user=request.user)
+    return JsonResponse({'state': _wp_state(party)})
+
+
+@login_required
+@require_http_methods(['POST'])
+def api_sync_watch_party(request, room_code):
+    from django.shortcuts import get_object_or_404
+    from django.utils import timezone
+
+    party = get_object_or_404(WatchParty, room_code=room_code, host=request.user, is_active=True)
+    try:
+        position = float(request.POST.get('position', party.playback_position))
+        is_playing = request.POST.get('is_playing', 'true').lower() == 'true'
+    except (TypeError, ValueError):
+        return JsonResponse({'error': 'invalid position'}, status=400)
+    party.playback_position = position
+    party.is_playing = is_playing
+    party.updated_at = timezone.now()
+    party.save(update_fields=['playback_position', 'is_playing', 'updated_at'])
+    return JsonResponse({'state': _wp_state(party)})

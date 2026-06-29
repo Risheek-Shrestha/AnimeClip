@@ -856,7 +856,7 @@ def rate_anime(request, anime_id):
     avg = UserRating.objects.filter(anime=anime).aggregate(avg=Avg('score'))['avg'] or 0
     # Keep the denormalised Anime.rating in sync so homepage/browse sorts stay accurate.
     Anime.objects.filter(pk=anime.pk).update(rating=round(avg, 1))
-    safe_cache_delete(f'index:public_context')
+    safe_cache_delete('index:public_context')
     return JsonResponse({'score': score, 'avg': round(avg, 1)})
 
 
@@ -882,7 +882,7 @@ def rate_movie(request, movie_id):
     avg = UserRating.objects.filter(movie=movie).aggregate(avg=Avg('score'))['avg'] or 0
     # Keep the denormalised Movie.rating in sync.
     Movie.objects.filter(pk=movie.pk).update(rating=round(avg, 1))
-    safe_cache_delete(f'movies:public_context')
+    safe_cache_delete('movies:public_context')
     return JsonResponse({'score': score, 'avg': round(avg, 1)})
 
 
@@ -1798,8 +1798,6 @@ def profile_delete(request, subprofile_id):
     return redirect('profile_select')
 
 
-
-
 # ============================================================
 # ANIME DETAIL  (series info page)
 # ============================================================
@@ -1871,6 +1869,7 @@ def anime_detail(request, slug):
             'og_image': next((img.image.url for img in anime.media_images.all() if img.image), None),
         },
     )
+
 
 # ============================================================
 # HEALTH CHECK + ROBOTS
@@ -2101,3 +2100,22 @@ def handler404(request, exception=None):
 
 def handler500(request):
     return render(request, '500.html', status=500)
+
+
+def offline(request):
+    """PWA offline fallback page served by the service worker."""
+    return render(request, 'offline.html', {'title': 'Offline — AnimeClip'})
+
+
+def service_worker(request):
+    """Serve sw.js with correct MIME type and no-cache headers (must be at root scope)."""
+    import os
+
+    from django.conf import settings
+    from django.http import FileResponse
+
+    sw_path = os.path.join(settings.BASE_DIR, 'static', 'sw.js')
+    response = FileResponse(open(sw_path, 'rb'), content_type='application/javascript')
+    response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response['Service-Worker-Allowed'] = '/'
+    return response

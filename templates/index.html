@@ -550,4 +550,22 @@
 
 {% include "_playlist_modal.html" %}
 
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "AnimeClip",
+  "url": "{{ request.build_absolute_uri '/' }}",
+  "description": "Discover a universe of anime and movies — stream in HD, track your progress, get personalised picks.",
+  "potentialAction": {
+    "@type": "SearchAction",
+    "target": {
+      "@type": "EntryPoint",
+      "urlTemplate": "{{ request.scheme }}://{{ request.get_host }}/search/?q={search_term_string}"
+    },
+    "query-input": "required name=search_term_string"
+  }
+}
+</script>
+
 {% endblock body %}

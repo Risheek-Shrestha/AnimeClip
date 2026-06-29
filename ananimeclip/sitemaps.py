@@ -24,7 +24,7 @@ class StaticViewSitemap(Sitemap):
     changefreq = 'daily'
 
     def items(self):
-        return ['index', 'movies', 'all_categories']
+        return ['index', 'movies', 'all_categories', 'trending']
 
     def location(self, item):
         return reverse(item)
@@ -53,6 +53,7 @@ class AnimeSitemap(Sitemap):
 
     def items(self):
         from .models import Anime
+
         return Anime.objects.exclude(slug='').order_by('slug')
 
     def location(self, obj):
@@ -61,6 +62,7 @@ class AnimeSitemap(Sitemap):
     def lastmod(self, obj):
         # Use the most recently updated episode as the last-modified date.
         from .models import Episode
+
         ep = Episode.objects.filter(season__anime=obj).order_by('-updated_at').first()
         return ep.updated_at if ep else None
 

@@ -268,4 +268,23 @@ document.getElementById('trailerModal').addEventListener('hide.bs.modal', () => 
 });
 {% endif %}
 </script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TVSeries",
+  "name": "{{ anime.title|escapejs }}",
+  "description": "{{ anime.description|truncatechars:300|escapejs }}",
+  "url": "{{ request.build_absolute_uri }}",
+  {% if anime.thumb_img %}"image": "{{ anime.thumb_img.image.url }}",{% endif %}
+  "genre": [{% for g in anime.genres.all %}"{{ g.name }}"{% if not forloop.last %},{% endif %}{% endfor %}],
+  "aggregateRating": {
+    "@type": "AggregateRating",
+    "ratingValue": "{{ anime.rating }}",
+    "bestRating": "10",
+    "worstRating": "1"
+  }
+}
+</script>
+
 {% endblock %}

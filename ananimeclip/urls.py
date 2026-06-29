@@ -1,7 +1,10 @@
 from django.contrib.auth import views as auth_views
 from django.urls import path
 
+from ananimeclip import reporting as report_views
+from ananimeclip import trending as trending_views
 from ananimeclip import views
+from ananimeclip import watch_party as wp_views
 
 urlpatterns = [
     path('healthz/', views.healthz, name='healthz'),
@@ -48,6 +51,7 @@ urlpatterns = [
     path('category/<str:genre>/', views.category_page, name='category_page'),
     path('search/', views.search_results, name='search_results'),
     path('categories/', views.all_categories, name='all_categories'),
+    path('trending/', trending_views.trending, name='trending'),
     # Watch history
     path('watch-history/update/', views.update_watch_history, name='update_watch_history'),
     path('continue-watching/', views.continue_watching, name='continue_watching'),
@@ -55,7 +59,6 @@ urlpatterns = [
     path('watch-later/', views.watch_later, name='watch_later'),
     path('watch-later/toggle/', views.toggle_watch_later, name='toggle_watch_later'),
     # Playlists — fixed sub-paths MUST come before <int:playlist_id> capture
-    # so Django matches them first and doesn't try to cast 'add-item'/'json' as int.
     path('playlists/', views.playlists, name='playlists'),
     path('playlists/create/', views.create_playlist, name='create_playlist'),
     path('playlists/add-item/', views.add_to_playlist, name='add_to_playlist'),
@@ -84,9 +87,19 @@ urlpatterns = [
     path('anime/recent/', views.all_recent_anime, name='all_recent_anime'),
     path('anime/popular/', views.all_popular_anime, name='all_popular_anime'),
     # ---- Offline downloads ----
-    # Step 1: client POSTs here to get a signed download token URL
     path('download/episode/<int:episode_id>/', views.request_episode_download, name='request_episode_download'),
     path('download/movie/<int:movie_id>/', views.request_movie_download, name='request_movie_download'),
-    # Step 2: client GETs this URL; it validates the token and 302s to the Cloudinary mp4
     path('dl/<str:token>/', views.serve_download, name='serve_download'),
+    # ---- Content reporting ----
+    path('report/episode/<int:episode_id>/', report_views.report_episode, name='report_episode'),
+    path('report/movie/<int:movie_id>/', report_views.report_movie, name='report_movie'),
+    path('offline/', views.offline, name='offline'),
+    path('sw.js', views.service_worker, name='service_worker'),
+    # ---- Watch Party ----
+    path('watch-party/create/', wp_views.create_watch_party, name='create_watch_party'),
+    path('watch-party/<str:room_code>/', wp_views.watch_party_room, name='watch_party_room'),
+    path('watch-party/<str:room_code>/join/', wp_views.join_watch_party, name='join_watch_party'),
+    path('watch-party/<str:room_code>/state/', wp_views.watch_party_state, name='watch_party_state'),
+    path('watch-party/<str:room_code>/sync/', wp_views.sync_watch_party, name='sync_watch_party'),
+    path('watch-party/<str:room_code>/end/', wp_views.end_watch_party, name='end_watch_party'),
 ]
