@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-5 text-center">
+  <h2>Upgrade to Premium</h2>
+  <p>You are currently on the <strong>{{ current_plan }}</strong> plan.</p>
+  <div class="row justify-content-center mt-4">
+    <div class="col-md-4">
+      <div class="card border-warning">
+        <div class="card-body">
+          <h4>Premium</h4>
+          <ul class="list-unstyled">
+            <li>✅ Unlimited streams</li>
+            <li>✅ Early access to new episodes</li>
+            <li>✅ Ad-free experience</li>
+            <li>✅ Offline playback</li>
+          </ul>
+          <p class="text-muted">(Billing integration coming soon)</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
