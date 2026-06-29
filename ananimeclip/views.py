@@ -854,6 +854,9 @@ def rate_anime(request, anime_id):
         defaults={'score': score, 'movie': None},
     )
     avg = UserRating.objects.filter(anime=anime).aggregate(avg=Avg('score'))['avg'] or 0
+    # Keep the denormalised Anime.rating in sync so homepage/browse sorts stay accurate.
+    Anime.objects.filter(pk=anime.pk).update(rating=round(avg, 1))
+    safe_cache_delete(f'index:public_context')
     return JsonResponse({'score': score, 'avg': round(avg, 1)})
 
 
@@ -877,6 +880,9 @@ def rate_movie(request, movie_id):
         defaults={'score': score, 'anime': None},
     )
     avg = UserRating.objects.filter(movie=movie).aggregate(avg=Avg('score'))['avg'] or 0
+    # Keep the denormalised Movie.rating in sync.
+    Movie.objects.filter(pk=movie.pk).update(rating=round(avg, 1))
+    safe_cache_delete(f'movies:public_context')
     return JsonResponse({'score': score, 'avg': round(avg, 1)})
 
 
@@ -1791,6 +1797,80 @@ def profile_delete(request, subprofile_id):
     sp.delete()
     return redirect('profile_select')
 
+
+
+
+# ============================================================
+# ANIME DETAIL  (series info page)
+# ============================================================
+
+
+def anime_detail(request, slug):
+    """
+    Series landing page: banner, synopsis, all seasons/episodes list,
+    trailer, genres, rating, and recommended similar titles.
+
+    This page is intentionally public (no @login_required) so search
+    engines can index it and unauthenticated users see a proper episode
+    list before being prompted to log in when they click Play.
+    """
+    anime = get_object_or_404(
+        Anime.objects.prefetch_related(
+            'media_images',
+            'genres',
+            Prefetch(
+                'seasons',
+                queryset=Season.objects.prefetch_related(
+                    Prefetch(
+                        'episodes',
+                        queryset=Episode.objects.prefetch_related('sources'),
+                    )
+                ),
+            ),
+        ),
+        slug=slug,
+    )
+
+    if not can_view(request, anime.age_rating):
+        messages.error(request, "This title is age-restricted and isn't available on this profile.")
+        return redirect('index')
+
+    seasons = list(anime.seasons.all())
+    is_following = False
+    user_rating = None
+    if request.user.is_authenticated:
+        is_following = Follow.objects.filter(user=request.user, anime=anime).exists()
+        try:
+            user_rating = UserRating.objects.get(user=request.user, anime=anime)
+        except UserRating.DoesNotExist:
+            pass
+
+    similar = get_similar(anime, limit=6)
+
+    # Determine first episode for the "Play" button
+    first_episode = None
+    if seasons:
+        first_eps = list(seasons[0].episodes.all())
+        first_episode = first_eps[0] if first_eps else None
+
+    return render(
+        request,
+        'anime_detail.html',
+        {
+            'title': anime.title,
+            'anime': anime,
+            'seasons': seasons,
+            'first_episode': first_episode,
+            'is_following': is_following,
+            'follower_count': anime.followers.count(),
+            'user_rating': user_rating,
+            'similar': similar,
+            'og_title': anime.title,
+            'og_description': (anime.description or '')[:200],
+            'og_type': 'video.tv_show',
+            'og_image': next((img.image.url for img in anime.media_images.all() if img.image), None),
+        },
+    )
 
 # ============================================================
 # HEALTH CHECK + ROBOTS

@@ -63,6 +63,7 @@ urlpatterns = [
     path('playlists/json/', views.get_user_playlists, name='get_user_playlists'),
     path('playlists/<int:playlist_id>/', views.playlist_detail, name='playlist_detail'),
     path('playlists/<int:playlist_id>/delete/', views.delete_playlist, name='delete_playlist'),
+    path('anime/<slug:slug>/', views.anime_detail, name='anime_detail'),
     path('anime/<int:anime_id>/follow/', views.toggle_follow, name='toggle_follow'),
     path('movie/<int:movie_id>/follow/', views.toggle_follow_movie, name='toggle_follow_movie'),
     path('favourites/', views.favourites, name='favourites'),

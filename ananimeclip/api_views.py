@@ -524,9 +524,12 @@ def api_movie_comments(request, movie_id):
 
 
 @login_required
+@ratelimit(key='user', rate='20/10m', method='POST', block=False)
 @require_http_methods(['POST'])
 def api_post_episode_comment(request, episode_id):
     """POST /api/v1/episodes/<id>/comments/"""
+    if getattr(request, 'limited', False):
+        return JsonResponse({'error': 'Too many requests. Slow down.'}, status=429)
     import json
 
     from django.shortcuts import get_object_or_404
@@ -552,9 +555,12 @@ def api_post_episode_comment(request, episode_id):
 
 
 @login_required
+@ratelimit(key='user', rate='20/10m', method='POST', block=False)
 @require_http_methods(['POST'])
 def api_post_movie_comment(request, movie_id):
     """POST /api/v1/movies/<id>/comments/"""
+    if getattr(request, 'limited', False):
+        return JsonResponse({'error': 'Too many requests. Slow down.'}, status=429)
     import json
 
     from django.shortcuts import get_object_or_404
@@ -612,6 +618,7 @@ def api_rate_anime(request, anime_id):
         defaults={'score': score, 'movie': None},
     )
     avg = UserRating.objects.filter(anime=anime).aggregate(avg=Avg('score'))['avg'] or 0
+    Anime.objects.filter(pk=anime.pk).update(rating=round(avg, 1))
     return JsonResponse({'score': score, 'avg': round(avg, 1)})
 
 
@@ -643,6 +650,7 @@ def api_rate_movie(request, movie_id):
         defaults={'score': score, 'anime': None},
     )
     avg = UserRating.objects.filter(movie=movie).aggregate(avg=Avg('score'))['avg'] or 0
+    Movie.objects.filter(pk=movie.pk).update(rating=round(avg, 1))
     return JsonResponse({'score': score, 'avg': round(avg, 1)})
 
 

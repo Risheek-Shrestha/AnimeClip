@@ -371,13 +371,20 @@ if _sentry_dsn:
 # ============================================================
 # CELERY — async task queue + periodic scheduler
 # ============================================================
-CELERY_BROKER_URL = os.getenv('REDIS_URL', 'redis://127.0.0.1:6379/0')
-# Use a separate Redis DB for task results (DB 2) so broker keys (DB 0)
-# and result keys don't collide and flush each other under MAXMEMORY eviction.
-_redis_result_url = (
-    os.getenv('REDIS_RESULT_URL') or os.getenv('REDIS_URL', 'redis://127.0.0.1:6379/0').rstrip('/0123456789') + '/2'
-)
+# The cache uses REDIS_URL (DB 1 by default in .env.example).
+# Celery broker lives on DB 0 and results on DB 2 to avoid cross-eviction.
+# We derive broker/result URLs from REDIS_URL by replacing the DB number,
+# so password, host, and port are always consistent with the main URL.
+import re as _re
+
+_redis_base_url = os.getenv('REDIS_URL', 'redis://127.0.0.1:6379/1')
+_redis_url_no_db = _re.sub(r'/\d+$', '', _redis_base_url)
+
+CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', _redis_url_no_db + '/0')
+_redis_result_url = os.getenv('REDIS_RESULT_URL', _redis_url_no_db + '/2')
 CELERY_RESULT_BACKEND = _redis_result_url
+
+del _re, _redis_base_url, _redis_url_no_db
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'

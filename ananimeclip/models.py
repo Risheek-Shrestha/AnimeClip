@@ -418,9 +418,34 @@ class WatchHistory(models.Model):
 
     class Meta:
         ordering = ['-updated_at']
-        # Unique per sub-profile so two profiles on the same account can each
-        # have independent progress on the same episode/movie.
-        unique_together = [['subprofile', 'episode'], ['subprofile', 'movie']]
+        # Unique per sub-profile. unique_together silently allows multiple NULLs
+        # in PostgreSQL, so we use UniqueConstraints with explicit conditions.
+        constraints = [
+            # When a sub-profile is active: one row per (subprofile, episode).
+            models.UniqueConstraint(
+                fields=['subprofile', 'episode'],
+                condition=models.Q(subprofile__isnull=False, episode__isnull=False),
+                name='wh_unique_subprofile_episode',
+            ),
+            # When a sub-profile is active: one row per (subprofile, movie).
+            models.UniqueConstraint(
+                fields=['subprofile', 'movie'],
+                condition=models.Q(subprofile__isnull=False, movie__isnull=False),
+                name='wh_unique_subprofile_movie',
+            ),
+            # Legacy / no sub-profile: one row per (user, episode).
+            models.UniqueConstraint(
+                fields=['user', 'episode'],
+                condition=models.Q(subprofile__isnull=True, episode__isnull=False),
+                name='wh_unique_user_episode_no_sp',
+            ),
+            # Legacy / no sub-profile: one row per (user, movie).
+            models.UniqueConstraint(
+                fields=['user', 'movie'],
+                condition=models.Q(subprofile__isnull=True, movie__isnull=False),
+                name='wh_unique_user_movie_no_sp',
+            ),
+        ]
         indexes = [
             models.Index(fields=['subprofile', '-updated_at'], name='wh_subprofile_updated_idx'),
             models.Index(fields=['user', '-updated_at'], name='wh_user_updated_idx'),
@@ -441,7 +466,29 @@ class WatchLater(models.Model):
 
     class Meta:
         ordering = ['-added_at']
-        unique_together = [['subprofile', 'episode'], ['subprofile', 'movie']]
+        # Same NULL-safe uniqueness pattern as WatchHistory above.
+        constraints = [
+            models.UniqueConstraint(
+                fields=['subprofile', 'episode'],
+                condition=models.Q(subprofile__isnull=False, episode__isnull=False),
+                name='wl_unique_subprofile_episode',
+            ),
+            models.UniqueConstraint(
+                fields=['subprofile', 'movie'],
+                condition=models.Q(subprofile__isnull=False, movie__isnull=False),
+                name='wl_unique_subprofile_movie',
+            ),
+            models.UniqueConstraint(
+                fields=['user', 'episode'],
+                condition=models.Q(subprofile__isnull=True, episode__isnull=False),
+                name='wl_unique_user_episode_no_sp',
+            ),
+            models.UniqueConstraint(
+                fields=['user', 'movie'],
+                condition=models.Q(subprofile__isnull=True, movie__isnull=False),
+                name='wl_unique_user_movie_no_sp',
+            ),
+        ]
         indexes = [
             models.Index(fields=['subprofile', '-added_at'], name='wl_subprofile_added_idx'),
             models.Index(fields=['user', '-added_at'], name='wl_user_added_idx'),

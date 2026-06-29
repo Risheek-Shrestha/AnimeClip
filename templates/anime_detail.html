@@ -1,0 +1,271 @@
+{% extends "base.html" %}
+{% load static %}
+{% load i18n %}
+
+{% block body %}
+
+<!-- ── Hero banner ──────────────────────────────────────────────────── -->
+<section class="hero-section" style="position:relative;overflow:hidden;min-height:480px;">
+  {% with banner=anime.banner_img %}
+  {% if banner %}
+  <div class="hero-bg"
+       style="background-image:url('{{ banner.image.url }}');
+              background-size:cover;background-position:center;
+              position:absolute;inset:0;filter:brightness(0.35);"></div>
+  {% endif %}
+  {% endwith %}
+
+  <div class="container position-relative py-5" style="z-index:1;">
+    <div class="row align-items-center g-4">
+      <!-- Poster -->
+      <div class="col-md-3 text-center">
+        {% with poster=anime.poster_img %}
+        {% if poster %}
+        <img src="{{ poster.image.url }}" alt="{{ anime.title }} poster"
+             class="img-fluid rounded shadow" style="max-height:360px;object-fit:cover;">
+        {% endif %}
+        {% endwith %}
+      </div>
+
+      <!-- Info -->
+      <div class="col-md-9 text-white">
+        <h1 class="fw-bold display-5">{{ anime.title }}</h1>
+
+        <div class="d-flex flex-wrap gap-2 mb-3">
+          {% for genre in anime.genres.all %}
+          <a href="{% url 'category_page' genre.name %}"
+             class="badge bg-primary text-decoration-none">{{ genre.name }}</a>
+          {% endfor %}
+          <span class="badge bg-secondary">{{ anime.get_age_rating_display }}</span>
+          {% if anime.studio %}
+          <span class="badge bg-dark">{{ anime.studio }}</span>
+          {% endif %}
+        </div>
+
+        <p class="lead mb-3">{{ anime.description }}</p>
+
+        <!-- Rating stars (read-only display) -->
+        <div class="mb-3">
+          <span class="text-warning fs-5">★</span>
+          <strong>{{ anime.rating }}/10</strong>
+          {% if user_rating %}
+          <span class="text-muted ms-2">(your rating: {{ user_rating.score }}/10)</span>
+          {% endif %}
+        </div>
+
+        <!-- Action buttons -->
+        <div class="d-flex flex-wrap gap-2 mb-3">
+          {% if first_episode %}
+          {% if user.is_authenticated %}
+          <a href="{% url 'streaming' first_episode.id %}"
+             class="btn btn-danger btn-lg px-4">
+            <i class="fa fa-play"></i> {% trans "Play" %}
+          </a>
+          {% else %}
+          <a href="{% url 'login' %}?next={{ request.path }}"
+             class="btn btn-danger btn-lg px-4">
+            <i class="fa fa-play"></i> {% trans "Play" %}
+          </a>
+          {% endif %}
+          {% endif %}
+
+          {% if request.user.is_authenticated %}
+          <button id="follow-btn"
+                  class="btn btn-outline-light btn-lg px-4"
+                  data-anime-id="{{ anime.id }}"
+                  data-following="{{ is_following|yesno:'true,false' }}">
+            {% if is_following %}
+            <i class="fa fa-heart"></i> {% trans "Following" %}
+            {% else %}
+            <i class="fa fa-heart-o"></i> {% trans "Follow" %}
+            {% endif %}
+          </button>
+          {% endif %}
+        </div>
+
+        <small class="text-muted">
+          <i class="fa fa-users"></i>
+          <span id="follower-count">{{ follower_count }}</span> {% trans "followers" %}
+        </small>
+
+        <!-- Trailer -->
+        {% if anime.trailer_url %}
+        <div class="mt-3">
+          <button class="btn btn-outline-light btn-sm" data-bs-toggle="modal" data-bs-target="#trailerModal">
+            <i class="fa fa-youtube-play"></i> {% trans "Watch Trailer" %}
+          </button>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Seasons & Episodes ─────────────────────────────────────────────── -->
+<section class="container my-5">
+  <h2 class="mb-4">{% trans "Episodes" %}</h2>
+
+  {% if seasons %}
+  <ul class="nav nav-tabs mb-3" id="seasonTabs" role="tablist">
+    {% for season in seasons %}
+    <li class="nav-item" role="presentation">
+      <button class="nav-link {% if forloop.first %}active{% endif %}"
+              id="season-{{ season.number }}-tab"
+              data-bs-toggle="tab"
+              data-bs-target="#season-{{ season.number }}"
+              type="button" role="tab">
+        {% if season.title %}{{ season.title }}{% else %}{% trans "Season" %} {{ season.number }}{% endif %}
+        <span class="badge bg-secondary ms-1">{{ season.status }}</span>
+      </button>
+    </li>
+    {% endfor %}
+  </ul>
+
+  <div class="tab-content">
+    {% for season in seasons %}
+    <div class="tab-pane fade {% if forloop.first %}show active{% endif %}"
+         id="season-{{ season.number }}"
+         role="tabpanel">
+      <div class="list-group">
+        {% for episode in season.episodes.all %}
+        <a href="{% if request.user.is_authenticated %}{% url 'streaming' episode.id %}{% else %}{% url 'login' %}?next={% url 'streaming' episode.id %}{% endif %}"
+           class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+          <div>
+            {% if episode.thumbnail_url %}
+            <img src="{{ episode.thumbnail_url }}" alt=""
+                 class="rounded me-3" style="width:96px;height:54px;object-fit:cover;">
+            {% endif %}
+            <strong>{% trans "Ep" %} {{ episode.number }}</strong>
+            {% if episode.title %} — {{ episode.title }}{% endif %}
+          </div>
+          <span class="text-muted small">
+            {% if episode.duration_mins %}{{ episode.duration_mins }}m{% endif %}
+          </span>
+        </a>
+        {% empty %}
+        <p class="text-muted p-3">{% trans "No episodes available yet." %}</p>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="text-muted">{% trans "No seasons available." %}</p>
+  {% endif %}
+</section>
+
+<!-- ── User rating widget ─────────────────────────────────────────────── -->
+{% if request.user.is_authenticated %}
+<section class="container mb-5">
+  <h4>{% trans "Rate this anime" %}</h4>
+  <div class="d-flex gap-2 flex-wrap" id="rating-stars">
+    {% for i in "12345678910" %}
+    {% with score=forloop.counter %}
+    <button class="btn btn-sm {% if user_rating and user_rating.score >= score %}btn-warning{% else %}btn-outline-secondary{% endif %} rate-btn"
+            data-score="{{ score }}">{{ score }}</button>
+    {% endwith %}
+    {% endfor %}
+  </div>
+  <small class="text-muted mt-1 d-block" id="rating-feedback"></small>
+</section>
+{% endif %}
+
+<!-- ── More Like This ─────────────────────────────────────────────────── -->
+{% if similar %}
+<section class="container mb-5">
+  <h2 class="mb-4">{% trans "More Like This" %}</h2>
+  <div class="row row-cols-2 row-cols-md-3 row-cols-lg-6 g-3">
+    {% for item in similar %}
+    <div class="col">
+      {% with img=item.thumb_img %}
+      <a href="{% url 'anime_detail' item.slug %}" class="text-decoration-none">
+        {% if img %}
+        <img src="{{ img.image.url }}" alt="{{ item.title }}"
+             class="img-fluid rounded mb-1" style="aspect-ratio:2/3;object-fit:cover;width:100%;">
+        {% endif %}
+        <small class="text-light">{{ item.title }}</small>
+      </a>
+      {% endwith %}
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<!-- ── Trailer modal ─────────────────────────────────────────────────── -->
+{% if anime.trailer_url %}
+<div class="modal fade" id="trailerModal" tabindex="-1">
+  <div class="modal-dialog modal-xl modal-dialog-centered">
+    <div class="modal-content bg-dark">
+      <div class="modal-header border-0">
+        <h5 class="modal-title text-white">{{ anime.title }} — {% trans "Trailer" %}</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-0">
+        <div class="ratio ratio-16x9">
+          <iframe id="trailer-iframe"
+                  src="{{ anime.trailer_url }}"
+                  allowfullscreen
+                  allow="autoplay; encrypted-media"></iframe>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<script>
+// Follow toggle
+const followBtn = document.getElementById('follow-btn');
+if (followBtn) {
+  followBtn.addEventListener('click', () => {
+    const animeId = followBtn.dataset.animeId;
+    const csrfToken = document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '';
+    fetch(`/anime/${animeId}/follow/`, {
+      method: 'POST',
+      headers: {'X-CSRFToken': csrfToken},
+    })
+    .then(r => r.json())
+    .then(data => {
+      const isFollowing = data.following;
+      followBtn.innerHTML = isFollowing
+        ? '<i class="fa fa-heart"></i> Following'
+        : '<i class="fa fa-heart-o"></i> Follow';
+      followBtn.dataset.following = isFollowing;
+      const counter = document.getElementById('follower-count');
+      if (counter) counter.textContent = data.follower_count;
+    });
+  });
+}
+
+// Rating
+document.querySelectorAll('.rate-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const score = btn.dataset.score;
+    const animeId = {{ anime.id }};
+    const csrfToken = document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '';
+    fetch(`/anime/${animeId}/rate/`, {
+      method: 'POST',
+      headers: {'X-CSRFToken': csrfToken, 'Content-Type': 'application/x-www-form-urlencoded'},
+      body: `score=${score}`,
+    })
+    .then(r => r.json())
+    .then(data => {
+      document.querySelectorAll('.rate-btn').forEach((b, i) => {
+        b.className = `btn btn-sm rate-btn ${i < data.score ? 'btn-warning' : 'btn-outline-secondary'}`;
+      });
+      const fb = document.getElementById('rating-feedback');
+      if (fb) fb.textContent = `Your rating: ${data.score}/10  ·  Community avg: ${data.avg}/10`;
+    });
+  });
+});
+
+// Stop trailer when modal closes
+{% if anime.trailer_url %}
+document.getElementById('trailerModal').addEventListener('hide.bs.modal', () => {
+  const iframe = document.getElementById('trailer-iframe');
+  if (iframe) { const src = iframe.src; iframe.src = ''; iframe.src = src; }
+});
+{% endif %}
+</script>
+{% endblock %}

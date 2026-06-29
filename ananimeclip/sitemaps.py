@@ -45,7 +45,28 @@ class GenreSitemap(Sitemap):
         return reverse('category_page', args=[name])
 
 
+class AnimeSitemap(Sitemap):
+    """One entry per Anime series — public detail pages (/anime/<slug>/)."""
+
+    priority = 0.9
+    changefreq = 'weekly'
+
+    def items(self):
+        from .models import Anime
+        return Anime.objects.exclude(slug='').order_by('slug')
+
+    def location(self, obj):
+        return reverse('anime_detail', args=[obj.slug])
+
+    def lastmod(self, obj):
+        # Use the most recently updated episode as the last-modified date.
+        from .models import Episode
+        ep = Episode.objects.filter(season__anime=obj).order_by('-updated_at').first()
+        return ep.updated_at if ep else None
+
+
 sitemaps = {
     'static': StaticViewSitemap,
     'genres': GenreSitemap,
+    'anime': AnimeSitemap,
 }
