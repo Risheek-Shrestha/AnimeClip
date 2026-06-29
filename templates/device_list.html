@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-5">
+  <h2>Active Devices / Sessions</h2>
+  <form method="post" action="{% url 'revoke_other_devices' %}">{% csrf_token %}
+    <button class="btn btn-warning mb-4">Log out all other devices</button>
+  </form>
+  <table class="table">
+    <thead><tr><th>Device</th><th>IP</th><th>Last Seen</th><th></th></tr></thead>
+    <tbody>
+    {% for s in sessions %}
+    <tr {% if s.is_current %}class="table-active"{% endif %}>
+      <td>{{ s.ua|truncatechars:60 }} {% if s.is_current %}<span class="badge bg-success">This device</span>{% endif %}</td>
+      <td>{{ s.ip }}</td>
+      <td>{{ s.last_seen }}</td>
+      <td>{% if not s.is_current %}
+        <form method="post" action="{% url 'revoke_device' %}">{% csrf_token %}
+          <input type="hidden" name="sid" value="{{ s.sid }}">
+          <button class="btn btn-sm btn-danger">Log out</button>
+        </form>{% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
