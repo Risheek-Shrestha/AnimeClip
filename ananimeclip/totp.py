@@ -30,7 +30,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseRedirect
 from django.shortcuts import redirect, render
 from django.urls import reverse
-from django.views.decorators.http import require_POST, require_http_methods
+from django.views.decorators.http import require_http_methods, require_POST
 
 TOTP_SESSION_KEY = "totp_verified"
 TOTP_ISSUER = "AnimeClip"

@@ -3,6 +3,7 @@ Custom template filters for AnimeClip.
 """
 
 from django import template
+
 from ananimeclip.watermark import get_watermark_label
 
 register = template.Library()

@@ -2,10 +2,9 @@ from django.contrib.auth import views as auth_views
 from django.urls import path
 
 from ananimeclip import reporting as report_views
-from ananimeclip import session_views
+from ananimeclip import session_views, views
 from ananimeclip import totp as totp_views
 from ananimeclip import trending as trending_views
-from ananimeclip import views
 from ananimeclip import watch_party as wp_views
 from ananimeclip import web_push as push_views
 
