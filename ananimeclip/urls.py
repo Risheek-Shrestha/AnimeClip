@@ -2,12 +2,12 @@ from django.contrib.auth import views as auth_views
 from django.urls import path
 
 from ananimeclip import reporting as report_views
+from ananimeclip import session_views
+from ananimeclip import totp as totp_views
 from ananimeclip import trending as trending_views
 from ananimeclip import views
 from ananimeclip import watch_party as wp_views
-from ananimeclip import totp as totp_views
 from ananimeclip import web_push as push_views
-from ananimeclip import session_views
 
 urlpatterns = [
     path('healthz/', views.healthz, name='healthz'),
@@ -30,26 +30,10 @@ urlpatterns = [
     path('editprofile/', views.edit_profile, name='edit_profile'),
     path('movies/', views.movies, name='movies'),
     # password reset flow
-    path(
-        'password-reset/',
-        auth_views.PasswordResetView.as_view(template_name='reset_password.html'),
-        name='password_reset',
-    ),
-    path(
-        'password-reset/done/',
-        auth_views.PasswordResetDoneView.as_view(template_name='password_reset_done.html'),
-        name='password_reset_done',
-    ),
-    path(
-        'password-reset-confirm/<uidb64>/<token>/',
-        auth_views.PasswordResetConfirmView.as_view(template_name='password_reset_confirm.html'),
-        name='password_reset_confirm',
-    ),
-    path(
-        'password-reset-complete/',
-        auth_views.PasswordResetCompleteView.as_view(template_name='password_reset_complete.html'),
-        name='password_reset_complete',
-    ),
+    path('password-reset/', auth_views.PasswordResetView.as_view(template_name='reset_password.html'), name='password_reset'),
+    path('password-reset/done/', auth_views.PasswordResetDoneView.as_view(template_name='password_reset_done.html'), name='password_reset_done'),
+    path('password-reset-confirm/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(template_name='password_reset_confirm.html'), name='password_reset_confirm'),
+    path('password-reset-complete/', auth_views.PasswordResetCompleteView.as_view(template_name='password_reset_complete.html'), name='password_reset_complete'),
     path('live-search/', views.live_search, name='live_search'),
     path('category/<str:genre>/', views.category_page, name='category_page'),
     path('search/', views.search_results, name='search_results'),
@@ -61,7 +45,7 @@ urlpatterns = [
     # Watch later
     path('watch-later/', views.watch_later, name='watch_later'),
     path('watch-later/toggle/', views.toggle_watch_later, name='toggle_watch_later'),
-    # Playlists — fixed sub-paths MUST come before <int:playlist_id> capture
+    # Playlists
     path('playlists/', views.playlists, name='playlists'),
     path('playlists/create/', views.create_playlist, name='create_playlist'),
     path('playlists/add-item/', views.add_to_playlist, name='add_to_playlist'),
@@ -69,8 +53,7 @@ urlpatterns = [
     path('playlists/json/', views.get_user_playlists, name='get_user_playlists'),
     path('playlists/<int:playlist_id>/', views.playlist_detail, name='playlist_detail'),
     path('playlists/<int:playlist_id>/delete/', views.delete_playlist, name='delete_playlist'),
-    # Fixed sub-paths MUST come before <slug:slug> capture, or e.g. /anime/recent/
-    # gets routed to anime_detail with slug='recent' instead of all_recent_anime.
+    # Anime
     path('anime/recent/', views.all_recent_anime, name='all_recent_anime'),
     path('anime/popular/', views.all_popular_anime, name='all_popular_anime'),
     path('anime/<slug:slug>/', views.anime_detail, name='anime_detail'),
@@ -82,45 +65,44 @@ urlpatterns = [
     path('notifications/count/', views.unread_notification_count, name='unread_notification_count'),
     path('verify-email/<str:token>/', views.verify_email, name='verify_email'),
     path('resend-verification/', views.resend_verification, name='resend_verification'),
-    # Sub-profile switcher
     path('profiles/', views.profile_select, name='profile_select'),
-    path('profiles/switch/<int:subprofile_id>/', views.profile_switch, name='profile_switch'),
     path('profiles/create/', views.profile_create, name='profile_create'),
-    path('profiles/delete/<int:subprofile_id>/', views.profile_delete, name='profile_delete'),
+    path('profiles/<int:subprofile_id>/switch/', views.profile_switch, name='profile_switch'),
+    path('profiles/<int:subprofile_id>/delete/', views.profile_delete, name='profile_delete'),
     path('anime/<int:anime_id>/rate/', views.rate_anime, name='rate_anime'),
     path('movie/<int:movie_id>/rate/', views.rate_movie, name='rate_movie'),
     path('movies/recent/', views.all_recent_movies, name='all_recent_movies'),
     path('movies/popular/', views.all_popular_movies, name='all_popular_movies'),
-    # ---- Offline downloads ----
+    # Offline downloads
     path('download/episode/<int:episode_id>/', views.request_episode_download, name='request_episode_download'),
     path('download/movie/<int:movie_id>/', views.request_movie_download, name='request_movie_download'),
     path('dl/<str:token>/', views.serve_download, name='serve_download'),
-    # ---- Content reporting ----
+    # Content reporting
     path('report/episode/<int:episode_id>/', report_views.report_episode, name='report_episode'),
     path('report/movie/<int:movie_id>/', report_views.report_movie, name='report_movie'),
     path('offline/', views.offline, name='offline'),
     path('sw.js', views.service_worker, name='service_worker'),
-    # ---- Watch Party ----
+    # Watch Party
     path('watch-party/create/', wp_views.create_watch_party, name='create_watch_party'),
     path('watch-party/<str:room_code>/', wp_views.watch_party_room, name='watch_party_room'),
     path('watch-party/<str:room_code>/join/', wp_views.join_watch_party, name='join_watch_party'),
     path('watch-party/<str:room_code>/state/', wp_views.watch_party_state, name='watch_party_state'),
     path('watch-party/<str:room_code>/sync/', wp_views.sync_watch_party, name='sync_watch_party'),
     path('watch-party/<str:room_code>/end/', wp_views.end_watch_party, name='end_watch_party'),
-    # ---- 2FA ----
+    # 2FA
     path('account/2fa/setup/', totp_views.totp_setup, name='totp_setup'),
     path('account/2fa/disable/', totp_views.totp_disable, name='totp_disable'),
     path('account/2fa/verify/', totp_views.totp_verify, name='totp_verify'),
-    # ---- Session / Device management ----
+    # Session / Device management
     path('account/devices/', session_views.device_list, name='device_list'),
     path('account/devices/revoke/', session_views.revoke_device, name='revoke_device'),
     path('account/devices/revoke-others/', session_views.revoke_other_devices, name='revoke_other_devices'),
-    # ---- Stream heartbeat ----
+    # Stream heartbeat
     path('stream/heartbeat/', session_views.stream_heartbeat_view, name='stream_heartbeat'),
-    # ---- Web Push ----
+    # Web Push
     path('push/subscribe/', push_views.push_subscribe, name='push_subscribe'),
     path('push/unsubscribe/', push_views.push_unsubscribe, name='push_unsubscribe'),
     path('push/vapid-key/', push_views.vapid_public_key, name='push_vapid_key'),
-    # ---- Upgrade page (subscription) ----
+    # Upgrade page
     path('upgrade/', views.upgrade, name='upgrade'),
 ]

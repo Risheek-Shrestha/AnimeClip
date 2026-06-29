@@ -7,10 +7,11 @@ Messages: {"type": "chat", "username": "...", "body": "...", "is_staff": bool}
 """
 import json
 
-from django.contrib.auth.models import User
-
 try:
+    from channels.db import database_sync_to_async
     from channels.generic.websocket import AsyncWebsocketConsumer
+
+    from ananimeclip.support.models import SupportTicket
 
     class SupportChatConsumer(AsyncWebsocketConsumer):
 
@@ -21,15 +22,14 @@ try:
             if not user or not user.is_authenticated:
                 await self.close()
                 return
-            # Only staff and the ticket owner may connect
-            from channels.db import database_sync_to_async
-            from ananimeclip.support.models import SupportTicket
+
             @database_sync_to_async
             def get_ticket():
                 try:
                     return SupportTicket.objects.get(pk=self.ticket_id)
                 except SupportTicket.DoesNotExist:
                     return None
+
             ticket = await get_ticket()
             if ticket is None or (not user.is_staff and ticket.user_id != user.pk):
                 await self.close()
@@ -65,5 +65,4 @@ try:
             }))
 
 except ImportError:
-    # channels not installed — no-op
     pass

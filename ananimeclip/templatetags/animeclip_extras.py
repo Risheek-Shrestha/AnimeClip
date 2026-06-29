@@ -3,6 +3,7 @@ Custom template filters for AnimeClip.
 """
 
 from django import template
+from ananimeclip.watermark import get_watermark_label
 
 register = template.Library()
 
@@ -13,8 +14,7 @@ def split_filter(value, delimiter=','):
     return str(value).split(delimiter)
 
 
-# ── Anti-piracy watermark label ─────────────────────────────────────────────
-from ananimeclip.watermark import get_watermark_label  # noqa: E402
+# ── Anti-piracy watermark label ────────────────────────────────────────────
 
 @register.filter
 def watermark_label(user):

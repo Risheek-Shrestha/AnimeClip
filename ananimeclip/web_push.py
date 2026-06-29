@@ -7,8 +7,7 @@ Setup:
   1. pip install pywebpush
   2. Generate VAPID keys once:
        from py_vapid import Vapid
-       v = Vapid()
-       v.generate_keys()
+       v = Vapid(); v.generate_keys()
        print(v.private_key_urlsafe, v.public_key_urlsafe)
   3. Set in .env:
        VAPID_PRIVATE_KEY=<base64url private key>
@@ -16,10 +15,6 @@ Setup:
        VAPID_CLAIMS_SUB=mailto:admin@yoursite.com
   4. Service worker: subscribe to push and POST the subscription object to
        /push/subscribe/
-  5. Call send_push_notification(subscription_info, title, body) from anywhere
-     (e.g. Celery tasks, signals).
-
-The PushSubscription model stores one row per browser subscription per user.
 """
 
 from __future__ import annotations
@@ -32,18 +27,12 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.db import models
 from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
 logger = logging.getLogger(__name__)
 
 
-# ---------------------------------------------------------------------------
-# Model
-# ---------------------------------------------------------------------------
-
 class PushSubscription(models.Model):
-    """Stores a Web Push subscription object for a user+browser pair."""
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="push_subscriptions")
     endpoint = models.URLField(max_length=500, unique=True)
     p256dh = models.TextField()
@@ -58,23 +47,12 @@ class PushSubscription(models.Model):
 
     @property
     def subscription_info(self) -> dict:
-        return {
-            "endpoint": self.endpoint,
-            "keys": {"p256dh": self.p256dh, "auth": self.auth},
-        }
+        return {"endpoint": self.endpoint, "keys": {"p256dh": self.p256dh, "auth": self.auth}}
 
-
-# ---------------------------------------------------------------------------
-# Send helper
-# ---------------------------------------------------------------------------
 
 def send_push_notification(subscription_info: dict, title: str, body: str, url: str = "/") -> bool:
-    """
-    Send a single Web Push notification.  Returns True on success.
-    Silently deletes the subscription row if the endpoint is gone (410).
-    """
     try:
-        from pywebpush import webpush, WebPushException  # type: ignore[import]
+        from pywebpush import webpush  # type: ignore[import]
     except ImportError:
         logger.warning("pywebpush not installed — skipping push notification")
         return False
@@ -94,10 +72,9 @@ def send_push_notification(subscription_info: dict, title: str, body: str, url: 
             vapid_claims={"sub": claims_sub},
         )
         return True
-    except Exception as exc:  # pywebpush raises WebPushException
+    except Exception as exc:
         status = getattr(exc, "response", None)
         if status is not None and getattr(status, "status_code", 0) in (404, 410):
-            # Expired subscription — clean up
             endpoint = subscription_info.get("endpoint", "")
             PushSubscription.objects.filter(endpoint=endpoint).delete()
         else:
@@ -106,19 +83,13 @@ def send_push_notification(subscription_info: dict, title: str, body: str, url: 
 
 
 def notify_user(user: User, title: str, body: str, url: str = "/"):
-    """Send a push notification to all subscriptions for a user."""
     for sub in user.push_subscriptions.all():
         send_push_notification(sub.subscription_info, title, body, url)
 
 
-# ---------------------------------------------------------------------------
-# Views
-# ---------------------------------------------------------------------------
-
 @login_required
 @require_POST
 def push_subscribe(request):
-    """Register a new push subscription from the service worker."""
     try:
         data = json.loads(request.body)
         endpoint = data["endpoint"]
@@ -126,7 +97,6 @@ def push_subscribe(request):
         auth = data["keys"]["auth"]
     except (KeyError, json.JSONDecodeError):
         return JsonResponse({"error": "invalid payload"}, status=400)
-
     PushSubscription.objects.update_or_create(
         endpoint=endpoint,
         defaults={"user": request.user, "p256dh": p256dh, "auth": auth},
@@ -137,7 +107,6 @@ def push_subscribe(request):
 @login_required
 @require_POST
 def push_unsubscribe(request):
-    """Remove a push subscription."""
     try:
         data = json.loads(request.body)
         endpoint = data["endpoint"]
@@ -148,6 +117,5 @@ def push_unsubscribe(request):
 
 
 def vapid_public_key(request):
-    """Return VAPID public key so the SW can subscribe."""
     key = os.getenv("VAPID_PUBLIC_KEY", "")
     return JsonResponse({"publicKey": key})

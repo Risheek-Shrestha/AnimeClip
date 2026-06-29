@@ -12,8 +12,9 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "Hello.settings")
 django_asgi_app = get_asgi_application()
 
 try:
-    from channels.routing import ProtocolTypeRouter, URLRouter
     from channels.auth import AuthMiddlewareStack
+    from channels.routing import ProtocolTypeRouter, URLRouter
+
     from ananimeclip import channel_routing
 
     application = ProtocolTypeRouter({
@@ -23,5 +24,4 @@ try:
         ),
     })
 except ImportError:
-    # channels not installed yet — fall back to pure WSGI-style ASGI
     application = django_asgi_app
