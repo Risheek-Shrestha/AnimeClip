@@ -11,11 +11,31 @@ AGE_CHOICES = [
 
 
 class Profile(models.Model):
+    PLAN_CHOICES = [('free', 'Free'), ('premium', 'Premium')]
+
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     age = models.IntegerField(validators=[MinValueValidator(10), MaxValueValidator(80)])
     email_verified = models.BooleanField(default=False)
     verification_token = models.CharField(max_length=64, blank=True, default='')
     verification_sent_at = models.DateTimeField(null=True, blank=True)
+    # 2FA fields (migration 0037)
+    totp_secret = models.CharField(
+        max_length=64,
+        blank=True,
+        default='',
+        help_text='Base32 TOTP seed. Empty = 2FA not configured.',
+    )
+    totp_enabled = models.BooleanField(
+        default=False,
+        help_text='True once the user has verified their first TOTP code.',
+    )
+    # Subscription plan (migration 0037)
+    plan = models.CharField(
+        max_length=10,
+        choices=PLAN_CHOICES,
+        default='free',
+        help_text='Subscription tier. Gated by content_access.py.',
+    )
 
     def __str__(self):
         return self.user.username

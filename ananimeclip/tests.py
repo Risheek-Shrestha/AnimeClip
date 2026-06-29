@@ -897,6 +897,7 @@ class NotifyMovieReleasesCommandTest(TestCase):
 
 
 class VideoAccessTokenTest(TestCase):
+    @override_settings(CLOUDINARY_AUTH_TOKEN_KEY=None)
     def test_roundtrip(self):
         token = sign_video_url('https://example.com/v.mp4')
         self.assertEqual(unsign_video_url(token), 'https://example.com/v.mp4')
@@ -966,6 +967,7 @@ class CloudinaryAuthTokenTest(TestCase):
         signed = _build_cloudinary_auth_token(raw_url, expiry=3600)
         self.assertTrue(signed.startswith('https://example.com/v.mp4?quality=1080p&__cld_token__='))
 
+    @override_settings(CLOUDINARY_AUTH_TOKEN_KEY=None)
     def test_build_auth_token_is_noop_without_key_configured(self):
         # Default test settings have no CLOUDINARY_AUTH_TOKEN_KEY set.
         self.assertIsNone(_build_cloudinary_auth_token('https://example.com/v.mp4', expiry=3600))
