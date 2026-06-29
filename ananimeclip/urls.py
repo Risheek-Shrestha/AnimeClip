@@ -5,6 +5,9 @@ from ananimeclip import reporting as report_views
 from ananimeclip import trending as trending_views
 from ananimeclip import views
 from ananimeclip import watch_party as wp_views
+from ananimeclip import totp as totp_views
+from ananimeclip import web_push as push_views
+from ananimeclip import session_views
 
 urlpatterns = [
     path('healthz/', views.healthz, name='healthz'),
@@ -104,4 +107,20 @@ urlpatterns = [
     path('watch-party/<str:room_code>/state/', wp_views.watch_party_state, name='watch_party_state'),
     path('watch-party/<str:room_code>/sync/', wp_views.sync_watch_party, name='sync_watch_party'),
     path('watch-party/<str:room_code>/end/', wp_views.end_watch_party, name='end_watch_party'),
+    # ---- 2FA ----
+    path('account/2fa/setup/', totp_views.totp_setup, name='totp_setup'),
+    path('account/2fa/disable/', totp_views.totp_disable, name='totp_disable'),
+    path('account/2fa/verify/', totp_views.totp_verify, name='totp_verify'),
+    # ---- Session / Device management ----
+    path('account/devices/', session_views.device_list, name='device_list'),
+    path('account/devices/revoke/', session_views.revoke_device, name='revoke_device'),
+    path('account/devices/revoke-others/', session_views.revoke_other_devices, name='revoke_other_devices'),
+    # ---- Stream heartbeat ----
+    path('stream/heartbeat/', session_views.stream_heartbeat_view, name='stream_heartbeat'),
+    # ---- Web Push ----
+    path('push/subscribe/', push_views.push_subscribe, name='push_subscribe'),
+    path('push/unsubscribe/', push_views.push_unsubscribe, name='push_unsubscribe'),
+    path('push/vapid-key/', push_views.vapid_public_key, name='push_vapid_key'),
+    # ---- Upgrade page (subscription) ----
+    path('upgrade/', views.upgrade, name='upgrade'),
 ]

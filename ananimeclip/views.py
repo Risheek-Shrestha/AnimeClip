@@ -2119,3 +2119,12 @@ def service_worker(request):
     response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
     response['Service-Worker-Allowed'] = '/'
     return response
+
+
+# ── Subscription upgrade page ──────────────────────────────────────────────
+@login_required
+def upgrade(request):
+    """Placeholder upgrade/upsell page. Wire real billing here (Stripe/Paddle)."""
+    from .subscription import get_plan
+    current_plan = get_plan(request)
+    return render(request, "upgrade.html", {"current_plan": current_plan})

@@ -43,3 +43,12 @@ ruff>=0.4.0
 # channels>=4.1.0
 # channels-redis>=4.2.0
 # daphne>=4.1.0
+
+# Feature Pack additions
+pyotp>=2.9.0                # 2FA TOTP generation and verification
+qrcode[pil]>=7.4.2         # QR code generation for 2FA setup
+pywebpush>=2.0.0           # Web Push API (VAPID) — no FCM/APNs needed
+geoip2>=4.7.0              # MaxMind GeoLite2 database reader (geo-blocking)
+channels>=4.1.0            # Django Channels WebSockets (live support chat)
+channels-redis>=4.2.0      # Redis channel layer for Channels
+daphne>=4.1.0              # ASGI server for Channels (replaces/supplements gunicorn)
