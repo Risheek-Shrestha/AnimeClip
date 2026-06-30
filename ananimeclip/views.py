@@ -2154,11 +2154,19 @@ def service_worker(request):
 # ── Subscription upgrade page ──────────────────────────────────────────────
 @login_required
 def upgrade(request):
-    """Placeholder upgrade/upsell page. Wire real billing here (Stripe/Paddle)."""
+    """Upgrade/upsell page with a real Stripe Checkout button (see billing.py)."""
     from .subscription import get_plan
+    from . import billing
 
     current_plan = get_plan(request)
-    return render(request, 'upgrade.html', {'current_plan': current_plan})
+    return render(
+        request,
+        'upgrade.html',
+        {
+            'current_plan': current_plan,
+            'billing_configured': billing.billing_configured(),
+        },
+    )
 
 
 # ── Password Change ────────────────────────────────────────────────────────

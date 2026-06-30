@@ -21,6 +21,7 @@ from django.contrib import admin
 from django.contrib.sitemaps.views import sitemap
 from django.urls import include, path
 
+from ananimeclip import billing as billing_views
 from ananimeclip.sitemaps import sitemaps
 
 admin.site.site_header = 'Anime CLip'
@@ -41,5 +42,9 @@ urlpatterns = [
     # robots.txt has always pointed at /sitemap.xml — this is what actually serves it.
     path('sitemap.xml', sitemap, {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.sitemap'),
     path('support/', include('ananimeclip.support.urls')),
+    # Stripe webhook — must live before the catch-all below and stays
+    # CSRF-exempt (see billing.stripe_webhook); request authenticity comes
+    # from Stripe's signed Stripe-Signature header instead.
+    path('billing/webhook/', billing_views.stripe_webhook, name='stripe_webhook'),
     path('', include('ananimeclip.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -210,6 +210,25 @@ if not DEBUG and not CLOUDINARY_AUTH_TOKEN_KEY and 'test' not in sys.argv:
         'Enable token auth in your Cloudinary dashboard and set this variable before starting in production.'
     )
 
+# ============================================================
+# STRIPE BILLING
+# ============================================================
+# Wires the existing gating layer (ananimeclip/subscription.py) up to real
+# payments via ananimeclip/billing.py. All four must be set for checkout to
+# work; billing_configured() degrades gracefully (shows "coming soon") when
+# they're absent, e.g. in local dev or CI.
+#   STRIPE_SECRET_KEY       sk_test_... / sk_live_...
+#   STRIPE_PUBLISHABLE_KEY  pk_test_... / pk_live_...
+#   STRIPE_PRICE_ID         price_... for the Premium monthly plan
+#   STRIPE_WEBHOOK_SECRET   whsec_... from the Stripe Dashboard webhook config
+#     (endpoint: POST https://<your-domain>/billing/webhook/, events:
+#      checkout.session.completed, customer.subscription.updated,
+#      customer.subscription.deleted, invoice.payment_failed)
+STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY', '').strip() or None
+STRIPE_PUBLISHABLE_KEY = os.getenv('STRIPE_PUBLISHABLE_KEY', '').strip() or None
+STRIPE_PRICE_ID = os.getenv('STRIPE_PRICE_ID', '').strip() or None
+STRIPE_WEBHOOK_SECRET = os.getenv('STRIPE_WEBHOOK_SECRET', '').strip() or None
+
 CACHES = {
     'default': {
         'BACKEND': 'django_redis.cache.RedisCache',

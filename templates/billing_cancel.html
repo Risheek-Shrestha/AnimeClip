@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-5 text-center">
+  <h2>Checkout canceled</h2>
+  <p>No charge was made. You can upgrade any time.</p>
+  <a href="{% url 'upgrade' %}" class="btn btn-outline-warning mt-3">Back to plans</a>
+</div>
+{% endblock %}

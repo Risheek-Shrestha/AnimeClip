@@ -14,7 +14,19 @@
             <li>✅ Ad-free experience</li>
             <li>✅ Offline playback</li>
           </ul>
-          <p class="text-muted">(Billing integration coming soon)</p>
+          {% if current_plan == 'premium' %}
+            <form method="post" action="{% url 'billing_portal' %}">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-outline-warning">Manage subscription</button>
+            </form>
+          {% elif billing_configured %}
+            <form method="post" action="{% url 'billing_checkout' %}">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-warning">Subscribe — go Premium</button>
+            </form>
+          {% else %}
+            <p class="text-muted">(Billing isn't configured on this server yet)</p>
+          {% endif %}
         </div>
       </div>
     </div>

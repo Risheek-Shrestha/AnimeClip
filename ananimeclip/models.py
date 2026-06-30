@@ -36,6 +36,13 @@ class Profile(models.Model):
         default='free',
         help_text='Subscription tier. Gated by content_access.py.',
     )
+    # Stripe billing (migration 0038)
+    stripe_customer_id = models.CharField(
+        max_length=64,
+        blank=True,
+        default='',
+        help_text='Stripe Customer ID, set on first checkout. Used to match webhook events back to a Profile.',
+    )
 
     def __str__(self):
         return self.user.username

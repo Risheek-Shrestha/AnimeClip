@@ -1,6 +1,7 @@
 from django.contrib.auth import views as auth_views
 from django.urls import include, path
 
+from ananimeclip import billing as billing_views
 from ananimeclip import reporting as report_views
 from ananimeclip import session_views, views
 from ananimeclip import totp as totp_views
@@ -120,6 +121,12 @@ urlpatterns = [
     path('push/vapid-key/', push_views.vapid_public_key, name='push_vapid_key'),
     # Upgrade page
     path('upgrade/', views.upgrade, name='upgrade'),
+    # Stripe billing (checkout, portal, post-checkout landing pages — webhook lives
+    # in Hello/urls.py since it must stay outside the catch-all and CSRF-exempt)
+    path('billing/checkout/', billing_views.create_checkout_session, name='billing_checkout'),
+    path('billing/portal/', billing_views.create_customer_portal_session, name='billing_portal'),
+    path('billing/success/', billing_views.billing_success, name='billing_success'),
+    path('billing/cancel/', billing_views.billing_cancel, name='billing_cancel'),
     # Password change (logged-in flow, separate from forgot-password reset)
     path('account/password/', views.change_password, name='change_password'),
     # Account deletion & GDPR data export
