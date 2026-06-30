@@ -51,7 +51,11 @@ MIDDLEWARE = [
     # early (right after SecurityMiddleware) per django-csp's docs so it can
     # see/modify the final response on the way back out.
     'csp.middleware.CSPMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
+    *(['whitenoise.middleware.WhiteNoiseMiddleware'] if not DEBUG else []),
+    # WhiteNoise always serves /static/ from STATIC_ROOT (the collectstatic
+    # output), ignoring STATICFILES_DIRS and DEBUG. In dev that fights with
+    # contrib.staticfiles, which serves straight from STATICFILES_DIRS when
+    # DEBUG=True — so we only enable WhiteNoise in production, per its docs.
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.locale.LocaleMiddleware',
     'django.middleware.common.CommonMiddleware',
