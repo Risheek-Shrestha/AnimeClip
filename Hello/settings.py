@@ -142,7 +142,14 @@ STORAGES = {
         'BACKEND': 'cloudinary_storage.storage.MediaCloudinaryStorage',
     },
     'staticfiles': {
-        'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
+        # WhiteNoise's hashed/manifest storage is only safe with DEBUG=False.
+        # With DEBUG=True, runserver serves /static/ straight from
+        # STATICFILES_DIRS (unhashed filenames), so {% static %} tags
+        # generating hashed URLs against the manifest would 404. Use plain
+        # staticfiles storage in dev so URLs match what runserver serves.
+        'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage'
+        if DEBUG
+        else 'whitenoise.storage.CompressedManifestStaticFilesStorage',
     },
 }
 
