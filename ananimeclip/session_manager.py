@@ -149,14 +149,17 @@ class SessionManagerMiddleware:
         if request.user.is_authenticated and request.session.session_key:
             uid = request.user.pk
             sid = request.session.session_key
-            r = _redis()
-            hkey = f'{SESSION_HASH_PREFIX}{uid}'
-            raw = r.hget(hkey, sid)
-            if raw:
-                try:
-                    d = json.loads(raw)
-                    d['last_seen'] = time.time()
-                    r.hset(hkey, sid, json.dumps(d))
-                except Exception:
-                    logger.debug('Could not update session last_seen', exc_info=True)
+            try:
+                r = _redis()
+                hkey = f'{SESSION_HASH_PREFIX}{uid}'
+                raw = r.hget(hkey, sid)
+                if raw:
+                    try:
+                        d = json.loads(raw)
+                        d['last_seen'] = time.time()
+                        r.hset(hkey, sid, json.dumps(d))
+                    except Exception:
+                        logger.debug('Could not update session last_seen', exc_info=True)
+            except Exception:
+                logger.debug('SessionManagerMiddleware: Redis unavailable, skipping session update', exc_info=True)
         return response

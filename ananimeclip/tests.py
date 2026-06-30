@@ -1006,6 +1006,7 @@ class StreamRedirectViewTest(TestCase):
         self.assertEqual(resp.status_code, 302)
         self.assertIn(reverse('login'), resp.url)
 
+    @override_settings(CLOUDINARY_AUTH_TOKEN_KEY=None)
     def test_valid_token_redirects_to_real_url(self):
         self.client.force_login(self.user)
         token = sign_video_url('https://example.com/v.mp4')
@@ -1068,6 +1069,7 @@ class StreamingSourceSwitchingTest(TestCase):
         self.assertNotContains(resp, 'https://example.com/sub.mp4')
         self.assertNotContains(resp, 'https://example.com/dub.mp4')
 
+    @override_settings(CLOUDINARY_AUTH_TOKEN_KEY=None)
     def test_response_uses_signed_watch_link(self):
         resp = self.client.get(reverse('streaming', args=[self.episode.id]))
         self.assertContains(resp, '/watch/')
@@ -1168,6 +1170,7 @@ class StreamRedirectHlsFormatTest(TestCase):
         self.user = make_user(username='hls_redirect_viewer', age=25)
         self.client.force_login(self.user)
 
+    @override_settings(CLOUDINARY_AUTH_TOKEN_KEY=None)
     def test_format_hls_redirects_to_manifest_for_cloudinary_source(self):
         token = sign_video_url('https://res.cloudinary.com/demo/video/upload/v1/anime/clip.mp4')
         resp = self.client.get(reverse('stream_redirect', args=[token]) + '?format=hls')
@@ -1177,11 +1180,13 @@ class StreamRedirectHlsFormatTest(TestCase):
             fetch_redirect_response=False,
         )
 
+    @override_settings(CLOUDINARY_AUTH_TOKEN_KEY=None)
     def test_format_hls_falls_back_to_raw_url_for_non_cloudinary_source(self):
         token = sign_video_url('https://example.com/clip.mp4')
         resp = self.client.get(reverse('stream_redirect', args=[token]) + '?format=hls')
         self.assertRedirects(resp, 'https://example.com/clip.mp4', fetch_redirect_response=False)
 
+    @override_settings(CLOUDINARY_AUTH_TOKEN_KEY=None)
     def test_no_format_param_redirects_to_raw_mp4(self):
         token = sign_video_url('https://res.cloudinary.com/demo/video/upload/v1/anime/clip.mp4')
         resp = self.client.get(reverse('stream_redirect', args=[token]))
