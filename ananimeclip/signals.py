@@ -19,11 +19,15 @@ asynchronously on Cloudinary's side (``eager_async=True``); the call we make
 here just queues it and returns quickly.
 """
 
+import logging
+
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
 from .models import Episode, Follow, MovieSource, Notification, VideoSource, WatchHistory, WatchLater
 from .transcoding import request_eager_transcoding
+
+logger = logging.getLogger(__name__)
 
 
 def _users_interested_in_anime(anime):
@@ -143,7 +147,7 @@ def notify_ticket_reply(sender, instance, created, **kwargs):
             try:
                 _send_mail(subject, body, from_email, [recipient.email], fail_silently=True)
             except Exception:
-                pass
+                logger.exception('Failed to send ticket reply notification to %s', recipient.email)
     else:
         # User replied — notify staff via the staff email setting.
         staff_email = getattr(_settings, 'SUPPORT_STAFF_EMAIL', '')
@@ -156,4 +160,4 @@ def notify_ticket_reply(sender, instance, created, **kwargs):
             try:
                 _send_mail(subject, body, from_email, [staff_email], fail_silently=True)
             except Exception:
-                pass
+                logger.exception('Failed to send ticket reply notification to staff %s', staff_email)

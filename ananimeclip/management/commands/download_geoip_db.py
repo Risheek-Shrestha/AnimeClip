@@ -31,8 +31,8 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         try:
             import requests
-        except ImportError:
-            raise CommandError('requests is required: pip install requests')
+        except ImportError as exc:
+            raise CommandError('requests is required: pip install requests') from exc
 
         license_key = os.getenv('MAXMIND_LICENSE_KEY', '')
         if not license_key:
@@ -56,7 +56,7 @@ class Command(BaseCommand):
             resp = requests.get(url, timeout=60, stream=True)
             resp.raise_for_status()
         except requests.RequestException as exc:
-            raise CommandError(f'Download failed: {exc}')
+            raise CommandError(f'Download failed: {exc}') from exc
 
         raw = io.BytesIO(resp.content)
         with tarfile.open(fileobj=raw, mode='r:gz') as tar:

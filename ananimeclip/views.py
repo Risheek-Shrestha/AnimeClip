@@ -2213,6 +2213,7 @@ def request_account_deletion(request):
 def export_user_data(request):
     """Download a JSON export of all data belonging to the logged-in user."""
     import json as _json
+
     from django.http import HttpResponse
 
     user = request.user
