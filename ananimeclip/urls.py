@@ -1,5 +1,5 @@
 from django.contrib.auth import views as auth_views
-from django.urls import path
+from django.urls import include, path
 
 from ananimeclip import reporting as report_views
 from ananimeclip import session_views, views
@@ -120,4 +120,13 @@ urlpatterns = [
     path('push/vapid-key/', push_views.vapid_public_key, name='push_vapid_key'),
     # Upgrade page
     path('upgrade/', views.upgrade, name='upgrade'),
+    # Password change (logged-in flow, separate from forgot-password reset)
+    path('account/password/', views.change_password, name='change_password'),
+    # Account deletion & GDPR data export
+    path('account/delete/', views.request_account_deletion, name='request_account_deletion'),
+    path('account/export/', views.export_user_data, name='export_user_data'),
+    # Simulcast / release calendar
+    path('schedule/', views.simulcast_calendar, name='simulcast_calendar'),
+    # i18n language switcher
+    path('i18n/', include('django.conf.urls.i18n')),
 ]

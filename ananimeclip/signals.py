@@ -108,3 +108,52 @@ def trigger_movie_source_transcoding(sender, instance, created, update_fields, *
         return
 
     request_eager_transcoding(instance.video_url)
+
+
+# ── Support Ticket Reply Email Notifications ──────────────────────────────
+from .support.models import TicketReply  # noqa: E402
+
+
+@receiver(post_save, sender=TicketReply)
+def notify_ticket_reply(sender, instance, created, **kwargs):
+    """Email the ticket owner whenever a staff member replies, and email staff
+    whenever a user replies to their own ticket."""
+    if not created:
+        return
+    ticket = instance.ticket
+    reply_author = instance.author
+    from django.conf import settings as _settings
+    from django.core.mail import send_mail as _send_mail
+
+    site_name = getattr(_settings, 'SITE_NAME', 'AnimeClip')
+    from_email = getattr(_settings, 'DEFAULT_FROM_EMAIL', 'noreply@animeclip.example.com')
+    ticket_url = f'{getattr(_settings, "SITE_URL", "https://animeclip.example.com")}/support/tickets/{ticket.pk}/'
+
+    if instance.is_staff_reply:
+        # Staff replied — notify the ticket owner.
+        recipient = ticket.user
+        if recipient.email and recipient != reply_author:
+            subject = f'[{site_name}] Reply to your support ticket: {ticket.subject}'
+            body = (
+                f'Hi {recipient.username},\n\n'
+                f'A staff member has replied to your support ticket #{ticket.pk}: "{ticket.subject}".\n\n'
+                f'You can view the reply here:\n{ticket_url}\n\n'
+                f'— The {site_name} Support Team'
+            )
+            try:
+                _send_mail(subject, body, from_email, [recipient.email], fail_silently=True)
+            except Exception:
+                pass
+    else:
+        # User replied — notify staff via the staff email setting.
+        staff_email = getattr(_settings, 'SUPPORT_STAFF_EMAIL', '')
+        if staff_email:
+            subject = f'[{site_name}] User reply on ticket #{ticket.pk}: {ticket.subject}'
+            body = (
+                f'{reply_author.username} has replied to ticket #{ticket.pk}: "{ticket.subject}".\n\n'
+                f'{ticket_url}'
+            )
+            try:
+                _send_mail(subject, body, from_email, [staff_email], fail_silently=True)
+            except Exception:
+                pass

@@ -744,3 +744,22 @@ class WatchPartyMember(models.Model):
 
     def __str__(self):
         return f'{self.user.username} in party {self.party.room_code}'
+
+
+class PushSubscription(models.Model):
+    """Web Push VAPID subscription — migrated here from web_push.py so the table is created."""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='push_subscriptions')
+    endpoint = models.URLField(max_length=500, unique=True)
+    p256dh = models.TextField()
+    auth = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        app_label = 'ananimeclip'
+
+    def __str__(self):
+        return f'{self.user.username} — {self.endpoint[:60]}'
+
+    @property
+    def subscription_info(self) -> dict:
+        return {'endpoint': self.endpoint, 'keys': {'p256dh': self.p256dh, 'auth': self.auth}}

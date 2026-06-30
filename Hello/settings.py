@@ -126,6 +126,7 @@ LANGUAGES = [
     ('en', 'English'),
     ('es', 'Español'),
     ('hi', 'हिन्दी'),
+    ('ja', '日本語'),
 ]
 LOCALE_PATHS = [BASE_DIR / 'locale']
 
@@ -169,6 +170,13 @@ else:
 # email-based flow: the user has to receive the email, open it, and click the
 # link before it expires. Django's own default is 259200 (3 days); we use that.
 PASSWORD_RESET_TIMEOUT = 60 * 60 * 24 * 3  # 3 days
+
+# ── Site identity (used in email notifications, data exports, etc.) ────────
+SITE_NAME = os.getenv('SITE_NAME', 'AnimeClip')
+SITE_URL = os.getenv('SITE_URL', 'https://animeclip.example.com')
+# Email address that receives staff-reply notifications for support tickets.
+# Set to a real inbox (e.g. support@yourdomain.com) in production.
+SUPPORT_STAFF_EMAIL = os.getenv('SUPPORT_STAFF_EMAIL', '')
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/'
 

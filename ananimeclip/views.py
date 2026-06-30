@@ -52,6 +52,7 @@ from .offline_downloads import (
     validate_download_token,
 )
 from .recommendation_service import get_recommendations, get_similar
+from .session_manager import MAX_CONCURRENT_STREAMS, enforce_stream_limit
 from .video_access import sign_video_url, to_hls_url, unsign_video_url
 
 logger = logging.getLogger('ananimeclip')
@@ -260,6 +261,17 @@ def index(request):
             .prefetch_related('episode__season__anime__media_images', 'movie__media_images')
             .order_by('-updated_at')[:8]
         )
+        # Annotate progress_pct so the "Continue Watching" row on the homepage
+        # can render the progress bar (same logic as the dedicated continue_watching view).
+        for entry in user_history:
+            if entry.episode and entry.episode.duration_mins:
+                total_secs = entry.episode.duration_mins * 60
+                entry.progress_pct = min(round(entry.progress_seconds / total_secs * 100), 100) if total_secs else 0
+            elif entry.movie and entry.movie.duration_mins:
+                total_secs = entry.movie.duration_mins * 60
+                entry.progress_pct = min(round(entry.progress_seconds / total_secs * 100), 100) if total_secs else 0
+            else:
+                entry.progress_pct = 0
         user_watch_later = list(
             WatchLater.objects.filter(**_wh_filter)
             .select_related('episode__season__anime', 'movie')
@@ -586,6 +598,15 @@ def signup(request):
 
 @login_required
 def streaming(request, episode_id):
+    # Enforce concurrent-stream limit before doing any DB work.
+    if not enforce_stream_limit(request, max_streams=MAX_CONCURRENT_STREAMS):
+        messages.error(
+            request,
+            f'You have reached the maximum of {MAX_CONCURRENT_STREAMS} simultaneous streams. '
+            'Please stop another stream before starting a new one.',
+        )
+        return redirect('index')
+
     # Cache only safe primitives (IDs), not live ORM objects.
     # Caching model instances can serve stale related data (e.g. comments) if
     # two users post simultaneously and one write races past the cache-delete.
@@ -723,6 +744,15 @@ def streaming(request, episode_id):
 
 @login_required
 def streaming_movie(request, movie_id):
+    # Enforce concurrent-stream limit before doing any DB work.
+    if not enforce_stream_limit(request, max_streams=MAX_CONCURRENT_STREAMS):
+        messages.error(
+            request,
+            f'You have reached the maximum of {MAX_CONCURRENT_STREAMS} simultaneous streams. '
+            'Please stop another stream before starting a new one.',
+        )
+        return redirect('index')
+
     # Cache only the movie ID, not the ORM object, to avoid stale pickled state.
     CACHE_KEY = f'streaming:movie:{movie_id}'
     cached = safe_cache_get(CACHE_KEY)
@@ -2129,3 +2159,131 @@ def upgrade(request):
 
     current_plan = get_plan(request)
     return render(request, 'upgrade.html', {'current_plan': current_plan})
+
+
+# ── Password Change ────────────────────────────────────────────────────────
+@login_required
+def change_password(request):
+    """Logged-in password change (distinct from the forgot-password reset flow)."""
+    from django.contrib.auth import update_session_auth_hash
+    from django.contrib.auth.forms import PasswordChangeForm
+
+    if request.method == 'POST':
+        form = PasswordChangeForm(request.user, request.POST)
+        if form.is_valid():
+            user = form.save()
+            # Keep the user logged in after changing their password.
+            update_session_auth_hash(request, user)
+            messages.success(request, 'Your password has been updated successfully.')
+            return redirect('profile')
+    else:
+        form = PasswordChangeForm(request.user)
+    return render(request, 'change_password.html', {'title': 'Change Password', 'form': form})
+
+
+# ── Account Deletion & Data Export (GDPR / DPDP) ─────────────────────────
+@login_required
+def request_account_deletion(request):
+    """Soft-delete: mark user inactive and anonymise PII. Actual removal via a
+    scheduled management command after a cooling-off period (30 days)."""
+    if request.method == 'POST':
+        confirm = request.POST.get('confirm', '').strip()
+        if confirm != request.user.username:
+            messages.error(request, 'Please type your username exactly to confirm deletion.')
+            return redirect('request_account_deletion')
+        user = request.user
+        # Anonymise & deactivate — preserves DB integrity while hiding PII.
+        user.is_active = False
+        user.email = f'deleted_{user.pk}@deleted.invalid'
+        user.first_name = ''
+        user.last_name = ''
+        user.save(update_fields=['is_active', 'email', 'first_name', 'last_name'])
+        profile = getattr(user, 'profile', None)
+        if profile:
+            profile.bio = ''
+            profile.save(update_fields=['bio'])
+        from django.contrib.auth import logout as auth_logout
+        auth_logout(request)
+        messages.success(request, 'Your account has been scheduled for deletion. You have been logged out.')
+        return redirect('index')
+    return render(request, 'account_deletion.html', {'title': 'Delete Account'})
+
+
+@login_required
+def export_user_data(request):
+    """Download a JSON export of all data belonging to the logged-in user."""
+    import json as _json
+    from django.http import HttpResponse
+
+    user = request.user
+    history = list(
+        WatchHistory.objects.filter(user=user)
+        .select_related('episode__season__anime', 'movie')
+        .values(
+            'episode__season__anime__title', 'episode__number',
+            'movie__title', 'progress_seconds', 'updated_at',
+        )
+    )
+    watch_later = list(
+        WatchLater.objects.filter(user=user)
+        .select_related('episode__season__anime', 'movie')
+        .values('episode__season__anime__title', 'episode__number', 'movie__title', 'added_at')
+    )
+    playlists_qs = Playlist.objects.filter(user=user).prefetch_related('items')
+    playlists_data = [
+        {
+            'name': pl.name,
+            'created_at': str(pl.created_at),
+            'items': list(pl.items.values('episode_id', 'movie_id', 'added_at')),
+        }
+        for pl in playlists_qs
+    ]
+
+    payload = {
+        'username': user.username,
+        'email': user.email,
+        'date_joined': str(user.date_joined),
+        'watch_history': [
+            {k: str(v) if not isinstance(v, (int, float, bool, type(None))) else v for k, v in row.items()}
+            for row in history
+        ],
+        'watch_later': [
+            {k: str(v) if not isinstance(v, (int, float, bool, type(None))) else v for k, v in row.items()}
+            for row in watch_later
+        ],
+        'playlists': playlists_data,
+    }
+    response = HttpResponse(
+        _json.dumps(payload, indent=2, default=str),
+        content_type='application/json',
+    )
+    response['Content-Disposition'] = f'attachment; filename="animeclip_data_{user.username}.json"'
+    return response
+
+
+# ── Simulcast / Release Calendar ──────────────────────────────────────────
+def simulcast_calendar(request):
+    """One-page calendar showing episodes grouped by release weekday."""
+    from .models import Season
+
+    DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+    seasons = (
+        Season.objects.exclude(release_day='')
+        .exclude(release_day__isnull=True)
+        .select_related('anime')
+        .prefetch_related('anime__media_images', 'episodes')
+        .order_by('release_time')
+    )
+    schedule: dict[str, list] = {day: [] for day in DAYS}
+    for season in seasons:
+        day = (season.release_day or '').capitalize()
+        if day in schedule:
+            schedule[day].append(season)
+
+    today = timezone.now().strftime('%A')
+    return render(request, 'simulcast_calendar.html', {
+        'title': 'Simulcast Calendar',
+        'schedule': schedule,
+        'days': DAYS,
+        'today': today,
+    })

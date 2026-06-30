@@ -1,0 +1,255 @@
+# Japanese translations for AnimeClip
+# Copyright (C) 2025 AnimeClip
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: AnimeClip\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-06-30 00:00+0000\n"
+"PO-Revision-Date: 2026-06-30 00:00+0000\n"
+"Last-Translator: AnimeClip Team\n"
+"Language-Team: Japanese\n"
+"Language: ja\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#: templates/base.html:71 templates/search_results.html:58
+msgid "Anime"
+msgstr "アニメ"
+
+#: templates/base.html:74 templates/search_results.html:33
+msgid "Movie"
+msgstr "映画"
+
+#: templates/base.html:77
+msgid "Coming Soon"
+msgstr "近日公開"
+
+#: templates/base.html:77
+msgid "Manga"
+msgstr "漫画"
+
+#: templates/base.html:84
+msgid "Categories"
+msgstr "カテゴリー"
+
+#: templates/base.html:88
+msgid "Action"
+msgstr "アクション"
+
+#: templates/base.html:89
+msgid "Adventure"
+msgstr "アドベンチャー"
+
+#: templates/base.html:90
+msgid "Comedy"
+msgstr "コメディ"
+
+#: templates/base.html:91
+msgid "Drama"
+msgstr "ドラマ"
+
+#: templates/base.html:92
+msgid "Fantasy"
+msgstr "ファンタジー"
+
+#: templates/base.html:93
+msgid "Horror"
+msgstr "ホラー"
+
+#: templates/base.html:94
+msgid "Isekai"
+msgstr "異世界"
+
+#: templates/base.html:95
+msgid "Romance"
+msgstr "ロマンス"
+
+#: templates/base.html:96
+msgid "Sci-Fi"
+msgstr "SF"
+
+#: templates/base.html:97
+msgid "Slice of Life"
+msgstr "日常系"
+
+#: templates/base.html:98
+msgid "View All"
+msgstr "すべて見る"
+
+#: templates/base.html:106
+msgid "Search"
+msgstr "検索"
+
+#: templates/base.html:110
+msgid "Search anime, movies…"
+msgstr "アニメ、映画を検索…"
+
+#: templates/base.html:111
+msgid "Search anime, movies"
+msgstr "アニメ、映画を検索"
+
+#: templates/base.html:119
+msgid "Language"
+msgstr "言語"
+
+#: templates/base.html:141
+msgid "Notifications"
+msgstr "通知"
+
+#: templates/base.html:162
+#, python-format
+msgid "Signed in as <strong>%(name)s</strong>"
+msgstr "<strong>%(name)s</strong> としてサインイン中"
+
+#: templates/base.html:163
+msgid "Account"
+msgstr "アカウント"
+
+#: templates/base.html:164
+msgid "Switch Profile"
+msgstr "プロフィール切替"
+
+#: templates/base.html:166
+msgid "Log Out"
+msgstr "ログアウト"
+
+#: templates/base.html:170
+msgid "Sign Up"
+msgstr "新規登録"
+
+#: templates/base.html:171 templates/login.html:41
+msgid "Log In"
+msgstr "ログイン"
+
+#: templates/base.html:204
+msgid ""
+"Discover a universe of anime, movies, and manga — curated for every kind of "
+"fan. Stream in HD, track your progress, and get personalised picks."
+msgstr ""
+"アニメ、映画、漫画の世界を探索しましょう。すべてのファンのために厳選されたコンテンツ。"
+"HDでストリーミング、視聴履歴の管理、パーソナライズされたおすすめ作品をお楽しみください。"
+
+#: templates/base.html:205
+msgid "Join the Community"
+msgstr "コミュニティに参加"
+
+#: templates/base.html:216
+msgid "Get Notified"
+msgstr "通知を受け取る"
+
+#: templates/base.html:217
+msgid "New episodes, season drops, and exclusives — delivered to your inbox."
+msgstr "新エピソード、シーズン公開、限定コンテンツをメールでお届けします。"
+
+#: templates/base.html:221
+msgid "your@email.com"
+msgstr "your@email.com"
+
+#: templates/base.html:222
+msgid "Subscribe"
+msgstr "登録する"
+
+#: templates/base.html:225
+msgid "By subscribing you agree to our terms and conditions"
+msgstr "登録することで利用規約に同意したことになります"
+
+#: templates/base.html:237
+msgid "&copy; 2025 All rights reserved by <a href=\"#\">Animeloop</a>."
+msgstr "&copy; 2025 <a href=\"#\">Animeloop</a> 無断複製禁止。"
+
+#: templates/base.html:242
+msgid "Privacy Policy"
+msgstr "プライバシーポリシー"
+
+#: templates/base.html:243
+msgid "Comments Policy"
+msgstr "コメントポリシー"
+
+#: templates/login.html:11
+msgid "Welcome Back"
+msgstr "おかえりなさい"
+
+#: templates/login.html:25 templates/signup.html:30
+msgid "Email address"
+msgstr "メールアドレス"
+
+#: templates/login.html:30
+msgid "Password"
+msgstr "パスワード"
+
+#: templates/login.html:37
+msgid "Forgot Password?"
+msgstr "パスワードをお忘れですか？"
+
+#: templates/login.html:49 templates/signup.html:50
+msgid "I wish to receive news and promotions from Animeloop by email."
+msgstr "Animeloopからのお知らせやキャンペーン情報をメールで受け取る"
+
+#: templates/login.html:54 templates/signup.html:55
+msgid ""
+"By continuing, you agree to Animeloop <a href=\"#\">Terms of Use</a> and <a "
+"href=\"#\">Privacy Policy</a>."
+msgstr ""
+"続行することで、Animeloopの<a href=\"#\">利用規約</a>と<a "
+"href=\"#\">プライバシーポリシー</a>に同意したことになります。"
+
+#: templates/login.html:58
+#, python-format
+msgid "Don't have an account? <a href=\"%(signup_url)s\">Sign Up</a>"
+msgstr "アカウントをお持ちでない方は<a href=\"%(signup_url)s\">新規登録</a>"
+
+#: templates/search_results.html:9
+#, python-format
+msgid "Search results for: \"%(query)s\""
+msgstr "「%(query)s」の検索結果"
+
+#: templates/search_results.html:14
+msgid "Movies"
+msgstr "映画"
+
+#: templates/search_results.html:28 templates/search_results.html:77
+msgid "Play Now"
+msgstr "今すぐ再生"
+
+#: templates/search_results.html:38 templates/search_results.html:41
+#: templates/search_results.html:95 templates/search_results.html:98
+msgid "Watch Later"
+msgstr "後で見る"
+
+#: templates/search_results.html:39 templates/search_results.html:42
+#: templates/search_results.html:96 templates/search_results.html:99
+msgid "Add to Playlist"
+msgstr "プレイリストに追加"
+
+#: templates/search_results.html:116
+#, python-format
+msgid "No results found for \"%(query)s\"."
+msgstr "「%(query)s」の結果は見つかりませんでした。"
+
+#: templates/signup.html:11 templates/signup.html:59
+msgid "Create Account"
+msgstr "アカウント作成"
+
+#: templates/signup.html:22
+msgid "Full name"
+msgstr "氏名"
+
+#: templates/signup.html:26
+msgid "Age"
+msgstr "年齢"
+
+#: templates/signup.html:34
+msgid "Create password"
+msgstr "パスワードを作成"
+
+#: templates/signup.html:41
+msgid "Confirm password"
+msgstr "パスワードの確認"
+
+#: templates/signup.html:64
+#, python-format
+msgid "Already have an account? <a href=\"%(login_url)s\">Log In</a>"
+msgstr "すでにアカウントをお持ちの方は<a href=\"%(login_url)s\">ログイン</a>"

@@ -25,29 +25,13 @@ import os
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
-from django.db import models
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 
+# PushSubscription now lives in models.py so it gets a proper migration.
+from .models import PushSubscription  # noqa: F401 – re-exported for convenience
+
 logger = logging.getLogger(__name__)
-
-
-class PushSubscription(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='push_subscriptions')
-    endpoint = models.URLField(max_length=500, unique=True)
-    p256dh = models.TextField()
-    auth = models.TextField()
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        app_label = 'ananimeclip'
-
-    def __str__(self):
-        return f'{self.user.username} — {self.endpoint[:60]}'
-
-    @property
-    def subscription_info(self) -> dict:
-        return {'endpoint': self.endpoint, 'keys': {'p256dh': self.p256dh, 'auth': self.auth}}
 
 
 def send_push_notification(subscription_info: dict, title: str, body: str, url: str = '/') -> bool:

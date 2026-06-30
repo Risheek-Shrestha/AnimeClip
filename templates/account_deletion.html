@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-5" style="max-width:520px;">
+  <h2 class="text-danger mb-3">Delete Account</h2>
+  <div class="alert alert-danger">
+    <strong>Warning:</strong> This action is permanent. Your account will be deactivated immediately
+    and all personal data anonymised. After a 30-day cooling-off period it will be permanently removed.
+    <br><br>
+    This complies with <strong>GDPR Art. 17</strong> and <strong>India's DPDP Act 2023</strong> right-to-erasure provisions.
+  </div>
+  {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags|default:'danger' }}">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+  <p class="text-light">To confirm, type your username <strong class="text-warning">{{ request.user.username }}</strong> below:</p>
+  <form method="post" novalidate>
+    {% csrf_token %}
+    <div class="mb-3">
+      <input type="text" name="confirm" class="form-control bg-dark text-light border-danger"
+             placeholder="Type your username here" autocomplete="off">
+    </div>
+    <button type="submit" class="btn btn-danger w-100">Permanently Delete My Account</button>
+    <a href="{% url 'profile' %}" class="btn btn-outline-secondary w-100 mt-2">Cancel — Keep My Account</a>
+  </form>
+  <hr class="border-secondary mt-4">
+  <p class="text-muted small">
+    Want a copy of your data first?
+    <a href="{% url 'export_user_data' %}" class="text-warning">Download my data (JSON)</a>
+  </p>
+</div>
+{% endblock %}

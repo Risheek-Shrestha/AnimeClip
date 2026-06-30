@@ -22,3 +22,11 @@ def split_filter(value, delimiter=','):
 def watermark_label(user):
     """Return an obfuscated user identifier for the canvas watermark overlay."""
     return get_watermark_label(user)
+
+
+@register.filter
+def dict_get(d, key):
+    """Look up a key in a dict from a template. Usage: {{ mydict|dict_get:key }}"""
+    if isinstance(d, dict):
+        return d.get(key, [])
+    return []

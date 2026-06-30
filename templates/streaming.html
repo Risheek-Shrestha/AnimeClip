@@ -34,6 +34,7 @@
                         data-genre="{{ anime.genres.first.name }}"
                         data-intro-start="{{ episode.intro_start_seconds }}"
                         data-intro-end="{{ episode.intro_end_seconds }}"
+                        data-thumbnail-url="{{ episode.thumbnail_url }}"
                         {% if hls_url %}data-hls-src="{{ hls_url }}"{% endif %}
                         {% if current_source.poster %}poster="{{ current_source.poster.url }}"
                         {% elif anime.thumb_img %}poster="{{ anime.thumb_img.image.url }}"
@@ -46,6 +47,13 @@
                         {% endfor %}
                         Your browser does not support the video tag.
                     </video>
+                    <!-- Scrub-preview thumbnail tooltip -->
+                    <div id="scrub-preview" style="display:none;position:absolute;bottom:56px;pointer-events:none;
+                         background:#000;border:2px solid rgba(255,255,255,.15);border-radius:4px;overflow:hidden;
+                         box-shadow:0 4px 16px rgba(0,0,0,.6);z-index:20;">
+                      <img id="scrub-preview-img" src="" alt="" style="width:160px;height:90px;object-fit:cover;display:block;">
+                      <div id="scrub-preview-time" style="text-align:center;font-size:11px;color:#fff;padding:2px 0;background:rgba(0,0,0,.7);"></div>
+                    </div>
                     {% if episode.intro_end_seconds %}
                     <button id="skip-intro-btn" class="skip-intro-btn" style="display:none">Skip Intro</button>
                     {% endif %}
@@ -576,6 +584,44 @@ if ('serviceWorker' in navigator) {
     btn.addEventListener('click', function () {
         video.currentTime = introEnd;
         btn.style.display = 'none';
+    });
+})();
+
+// ── Scrub Preview Thumbnail ───────────────────────────────────────────────
+(function () {
+    var video = document.getElementById('main-player');
+    var preview = document.getElementById('scrub-preview');
+    var previewImg = document.getElementById('scrub-preview-img');
+    var previewTime = document.getElementById('scrub-preview-time');
+    if (!video || !preview || !previewImg) return;
+    var thumbUrl = video.dataset.thumbnailUrl || '';
+    if (!thumbUrl) return;
+
+    function fmtTime(s) {
+        s = Math.floor(s);
+        var h = Math.floor(s / 3600);
+        var m = Math.floor((s % 3600) / 60);
+        var sec = s % 60;
+        if (h > 0) return h + ':' + String(m).padStart(2,'0') + ':' + String(sec).padStart(2,'0');
+        return m + ':' + String(sec).padStart(2,'0');
+    }
+
+    var progressBar = video.parentElement;
+    video.addEventListener('mousemove', function (e) {
+        var rect = video.getBoundingClientRect();
+        var x = e.clientX - rect.left;
+        var ratio = Math.max(0, Math.min(1, x / rect.width));
+        var t = ratio * (video.duration || 0);
+        if (!video.duration) return;
+        previewImg.src = thumbUrl;
+        previewTime.textContent = fmtTime(t);
+        var previewW = 164;
+        var left = Math.max(0, Math.min(x - previewW / 2, rect.width - previewW));
+        preview.style.left = left + 'px';
+        preview.style.display = 'block';
+    });
+    video.addEventListener('mouseleave', function () {
+        preview.style.display = 'none';
     });
 })();
 
