@@ -2257,11 +2257,11 @@ def export_user_data(request):
         'email': user.email,
         'date_joined': str(user.date_joined),
         'watch_history': [
-            {k: str(v) if not isinstance(v, (int, float, bool, type(None))) else v for k, v in row.items()}
+            {k: str(v) if not isinstance(v, int | float | bool | type(None)) else v for k, v in row.items()}
             for row in history
         ],
         'watch_later': [
-            {k: str(v) if not isinstance(v, (int, float, bool, type(None))) else v for k, v in row.items()}
+            {k: str(v) if not isinstance(v, int | float | bool | type(None)) else v for k, v in row.items()}
             for row in watch_later
         ],
         'playlists': playlists_data,
