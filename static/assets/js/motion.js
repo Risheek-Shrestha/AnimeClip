@@ -484,8 +484,35 @@
     });
   }
 
+  /* ── PRELOADER ──────────────────────────────────────── */
+  function initPreloader() {
+    const preloader = document.getElementById('preloader');
+    if (!preloader) return;
+    const bar = document.getElementById('preloader-bar');
+
+    function hide() {
+      if (bar) bar.style.width = '100%';
+      // Small delay so the bar's final width is visible before the fade.
+      setTimeout(() => {
+        preloader.classList.add('hide');
+        document.body.classList.remove('loading');
+        preloader.addEventListener('transitionend', () => preloader.remove(), { once: true });
+      }, 250);
+    }
+
+    if (document.readyState === 'complete') {
+      hide();
+    } else {
+      window.addEventListener('load', hide);
+      // Fallback in case some resource (e.g. a 404'd image) keeps the
+      // load event from firing in a reasonable time.
+      setTimeout(hide, 4000);
+    }
+  }
+
   /* ── INIT ───────────────────────────────────────────── */
   document.addEventListener('DOMContentLoaded', () => {
+    initPreloader();
     initCanvasBg();
     initCursor();
     initCardTilt();
@@ -504,5 +531,6 @@
     initAnimeBoxHover();
     initProgressBars();
   });
+
 
 })();
