@@ -8,7 +8,27 @@ function getCSRF() {
   return document.cookie.split('; ').find(r => r.startsWith('csrftoken'))?.split('=')[1];
 }
 
-// ── Watch Later ──────────────────────────────────────────────────────────────
+// ── Weekly schedule date slider ───────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function () {
+  if (window.jQuery && jQuery.fn.slick) {
+    const $slider = jQuery('.date-slider');
+    if ($slider.length && !$slider.hasClass('slick-initialized')) {
+      $slider.slick({
+        slidesToShow: 7,
+        slidesToScroll: 1,
+        infinite: false,
+        arrows: true,
+        prevArrow: $slider.find('.slick-prev'),
+        nextArrow: $slider.find('.slick-next'),
+        responsive: [
+          { breakpoint: 992, settings: { slidesToShow: 5 } },
+          { breakpoint: 576, settings: { slidesToShow: 3 } },
+        ],
+      });
+    }
+  }
+});
+
 document.addEventListener('DOMContentLoaded', function () {
   document.querySelectorAll('.watch-later-btn').forEach(btn => {
     btn.addEventListener('click', function (e) {
