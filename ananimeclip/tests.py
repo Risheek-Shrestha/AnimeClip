@@ -1389,7 +1389,7 @@ class TranscodingSignalTest(TestCase):
         episode = make_episode(anime)
         return episode
 
-    @patch('ananimeclip.signals.request_eager_transcoding')
+    @patch('ananimeclip.transcoding.request_eager_transcoding')
     def test_video_source_save_triggers_transcoding(self, mock_transcode):
         episode = self._make_episode_source()
         VideoSource.objects.create(
@@ -1400,13 +1400,13 @@ class TranscodingSignalTest(TestCase):
         )
         mock_transcode.assert_called_once_with(self.CL_URL)
 
-    @patch('ananimeclip.signals.request_eager_transcoding')
+    @patch('ananimeclip.transcoding.request_eager_transcoding')
     def test_video_source_without_url_does_not_transcode(self, mock_transcode):
         episode = self._make_episode_source()
         VideoSource.objects.create(episode=episode, label='Server 1', type='sub', video_url=None)
         mock_transcode.assert_not_called()
 
-    @patch('ananimeclip.signals.request_eager_transcoding')
+    @patch('ananimeclip.transcoding.request_eager_transcoding')
     def test_movie_source_save_triggers_transcoding(self, mock_transcode):
         movie = make_movie()
         MovieSource.objects.create(movie=movie, label='Server 1', type='sub', video_url=self.CL_URL)

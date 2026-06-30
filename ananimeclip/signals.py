@@ -12,11 +12,14 @@ post_save signal.
 Transcoding
 -----------
 When a VideoSource or MovieSource is saved with a Cloudinary video URL,
-``trigger_source_transcoding`` asks Cloudinary to eagerly pre-generate all
+``trigger_source_transcoding`` dispatches ``tasks.transcode_video_source``
+on Celery, which in turn asks Cloudinary to eagerly pre-generate all
 quality renditions (1080p, 720p, 480p, 360p as mp4 + HLS) via
 ``transcoding.request_eager_transcoding()``. The Cloudinary job itself runs
-asynchronously on Cloudinary's side (``eager_async=True``); the call we make
-here just queues it and returns quickly.
+asynchronously on Cloudinary's side (``eager_async=True``); the API call we
+make to queue it is dispatched to a Celery worker rather than run inline
+in the request/response cycle, so saving a video source never blocks on
+Cloudinary's API latency.
 """
 
 import logging
@@ -25,7 +28,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 
 from .models import Episode, Follow, MovieSource, Notification, VideoSource, WatchHistory, WatchLater
-from .transcoding import request_eager_transcoding
+from .tasks import transcode_video_source
 
 logger = logging.getLogger(__name__)
 
@@ -100,7 +103,7 @@ def trigger_source_transcoding(sender, instance, created, update_fields, **kwarg
     if not created and not _should_transcode(instance, update_fields):
         return
 
-    request_eager_transcoding(instance.video_url)
+    transcode_video_source.delay(instance.video_url)
 
 
 @receiver(post_save, sender=MovieSource)
@@ -111,7 +114,7 @@ def trigger_movie_source_transcoding(sender, instance, created, update_fields, *
     if not created and not _should_transcode(instance, update_fields):
         return
 
-    request_eager_transcoding(instance.video_url)
+    transcode_video_source.delay(instance.video_url)
 
 
 # ── Support Ticket Reply Email Notifications ──────────────────────────────

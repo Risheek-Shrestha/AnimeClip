@@ -69,3 +69,27 @@ def warm_trending_cache(self):
     except Exception as exc:
         logger.exception('warm_trending_cache failed: %s', exc)
         raise self.retry(exc=exc, countdown=60) from None
+
+
+@shared_task(name='ananimeclip.tasks.transcode_video_source')
+def transcode_video_source(video_url):
+    """
+    Queue eager Cloudinary transcoding for *video_url* on a background worker.
+
+    This used to be called synchronously from the VideoSource/MovieSource
+    post_save signal (see signals.py) and from the admin's bulk "Queue
+    eager Cloudinary transcoding" action (see admin.py). Both call sites
+    ran a blocking Cloudinary API request inline on the web request —
+    saving a video source (or bulk-triggering transcoding for many rows
+    at once in the admin) would hang the HTTP response, and a slow or
+    unreachable Cloudinary API would turn into a request timeout for
+    site staff. Routing it through Celery keeps those requests fast and
+    lets Cloudinary API latency live entirely on a worker.
+
+    request_eager_transcoding() already logs and degrades gracefully on
+    failure (bad URL, Cloudinary API error), so this is a thin dispatch
+    wrapper rather than something that needs its own retry handling.
+    """
+    from ananimeclip.transcoding import request_eager_transcoding
+
+    request_eager_transcoding(video_url)

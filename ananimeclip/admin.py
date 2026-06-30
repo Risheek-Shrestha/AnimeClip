@@ -207,24 +207,28 @@ def trigger_transcoding_action(modeladmin, request, queryset):
     This is useful to manually re-trigger transcoding after a new video is
     uploaded via the Cloudinary upload widget, or if a previous transcoding
     job failed silently.
+
+    Dispatches each job to Celery (tasks.transcode_video_source) rather
+    than calling Cloudinary's API inline: looping over a large selection
+    and waiting on a synchronous Cloudinary request per row would block
+    this admin request for a long time and risk a worker timeout.
     """
-    from .transcoding import request_eager_transcoding
+    from .tasks import transcode_video_source
+    from .transcoding import _extract_public_id
 
     queued = 0
     skipped = 0
     for source in queryset:
-        if source.video_url:
-            ok = request_eager_transcoding(source.video_url)
-            if ok:
-                queued += 1
-            else:
-                skipped += 1
+        if source.video_url and _extract_public_id(source.video_url):
+            transcode_video_source.delay(source.video_url)
+            queued += 1
         else:
             skipped += 1
 
     modeladmin.message_user(
         request,
-        f'Queued eager transcoding for {queued} source(s). {skipped} skipped (no URL or non-Cloudinary URL).',
+        f'Queued eager transcoding in the background for {queued} source(s). '
+        f'{skipped} skipped (no URL or non-Cloudinary URL).',
     )
 
 

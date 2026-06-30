@@ -306,6 +306,11 @@ if 'test' in sys.argv:
     STORAGES['staticfiles'] = {
         'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage',
     }
+    # Run Celery tasks synchronously in-process so tests stay deterministic
+    # and don't require a running broker/worker (e.g. signals.py dispatches
+    # transcode_video_source.delay() on every VideoSource/MovieSource save).
+    CELERY_TASK_ALWAYS_EAGER = True
+    CELERY_TASK_EAGER_PROPAGATES = True
 
 # ============================================================
 # AXES — brute-force login protection
