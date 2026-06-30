@@ -11,6 +11,7 @@ The consumer broadcasts to all group members:
 
 Room group name: watch_party_<room_code>
 """
+
 from __future__ import annotations
 
 import json
@@ -66,19 +67,16 @@ try:
             msg_type = data.get('type')
 
             if msg_type == 'sync':
+
                 @database_sync_to_async
                 def update_party():
                     try:
-                        party = WatchParty.objects.get(
-                            room_code=self.room_code, host=user, is_active=True
-                        )
+                        party = WatchParty.objects.get(room_code=self.room_code, host=user, is_active=True)
                         party.playback_position = float(data.get('position', party.playback_position))
                         party.is_playing = bool(data.get('is_playing', party.is_playing))
                         party.updated_at = timezone.now()
                         party.save(update_fields=['playback_position', 'is_playing', 'updated_at'])
-                        members = list(
-                            party.members.select_related('user').values_list('user__username', flat=True)
-                        )
+                        members = list(party.members.select_related('user').values_list('user__username', flat=True))
                         return party, members
                     except WatchParty.DoesNotExist:
                         return None, []
@@ -100,13 +98,17 @@ try:
                 pass  # connection keepalive; no broadcast needed
 
         async def party_state(self, event):
-            await self.send(text_data=json.dumps({
-                'type': 'state',
-                'position': event['position'],
-                'is_playing': event['is_playing'],
-                'host': event['host'],
-                'members': event['members'],
-            }))
+            await self.send(
+                text_data=json.dumps(
+                    {
+                        'type': 'state',
+                        'position': event['position'],
+                        'is_playing': event['is_playing'],
+                        'host': event['host'],
+                        'members': event['members'],
+                    }
+                )
+            )
 
 except ImportError:
     pass

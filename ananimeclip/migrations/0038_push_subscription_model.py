@@ -5,7 +5,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('ananimeclip', '0037_feature_pack'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
@@ -20,11 +19,14 @@ class Migration(migrations.Migration):
                 ('p256dh', models.TextField()),
                 ('auth', models.TextField()),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('user', models.ForeignKey(
-                    on_delete=django.db.models.deletion.CASCADE,
-                    related_name='push_subscriptions',
-                    to=settings.AUTH_USER_MODEL,
-                )),
+                (
+                    'user',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='push_subscriptions',
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
                 'app_label': 'ananimeclip',

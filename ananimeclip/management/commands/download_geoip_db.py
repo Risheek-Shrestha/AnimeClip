@@ -17,6 +17,7 @@ to BASE_DIR/geoip/GeoLite2-Country.mmdb.
 Add to your crontab or Celery beat to refresh monthly (MaxMind updates weekly):
     0 3 1 * * cd /app && python manage.py download_geoip_db
 """
+
 import io
 import os
 import tarfile
@@ -60,9 +61,7 @@ class Command(BaseCommand):
 
         raw = io.BytesIO(resp.content)
         with tarfile.open(fileobj=raw, mode='r:gz') as tar:
-            mmdb_member = next(
-                (m for m in tar.getmembers() if m.name.endswith('.mmdb')), None
-            )
+            mmdb_member = next((m for m in tar.getmembers() if m.name.endswith('.mmdb')), None)
             if mmdb_member is None:
                 raise CommandError('Could not find .mmdb file in the downloaded archive.')
             f = tar.extractfile(mmdb_member)
@@ -71,7 +70,5 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS(f'GeoLite2-Country database saved to: {db_path}'))
         self.stdout.write(
-            self.style.SUCCESS(
-                f'Set GEOIP2_DB_PATH={db_path!r} in your environment to activate geo-blocking.'
-            )
+            self.style.SUCCESS(f'Set GEOIP2_DB_PATH={db_path!r} in your environment to activate geo-blocking.')
         )

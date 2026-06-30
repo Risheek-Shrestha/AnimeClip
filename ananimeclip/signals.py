@@ -153,10 +153,7 @@ def notify_ticket_reply(sender, instance, created, **kwargs):
         staff_email = getattr(_settings, 'SUPPORT_STAFF_EMAIL', '')
         if staff_email:
             subject = f'[{site_name}] User reply on ticket #{ticket.pk}: {ticket.subject}'
-            body = (
-                f'{reply_author.username} has replied to ticket #{ticket.pk}: "{ticket.subject}".\n\n'
-                f'{ticket_url}'
-            )
+            body = f'{reply_author.username} has replied to ticket #{ticket.pk}: "{ticket.subject}".\n\n{ticket_url}'
             try:
                 _send_mail(subject, body, from_email, [staff_email], fail_silently=True)
             except Exception:

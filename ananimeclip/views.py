@@ -2203,6 +2203,7 @@ def request_account_deletion(request):
             profile.bio = ''
             profile.save(update_fields=['bio'])
         from django.contrib.auth import logout as auth_logout
+
         auth_logout(request)
         messages.success(request, 'Your account has been scheduled for deletion. You have been logged out.')
         return redirect('index')
@@ -2221,8 +2222,11 @@ def export_user_data(request):
         WatchHistory.objects.filter(user=user)
         .select_related('episode__season__anime', 'movie')
         .values(
-            'episode__season__anime__title', 'episode__number',
-            'movie__title', 'progress_seconds', 'updated_at',
+            'episode__season__anime__title',
+            'episode__number',
+            'movie__title',
+            'progress_seconds',
+            'updated_at',
         )
     )
     watch_later = list(
@@ -2282,9 +2286,13 @@ def simulcast_calendar(request):
             schedule[day].append(season)
 
     today = timezone.now().strftime('%A')
-    return render(request, 'simulcast_calendar.html', {
-        'title': 'Simulcast Calendar',
-        'schedule': schedule,
-        'days': DAYS,
-        'today': today,
-    })
+    return render(
+        request,
+        'simulcast_calendar.html',
+        {
+            'title': 'Simulcast Calendar',
+            'schedule': schedule,
+            'days': DAYS,
+            'today': today,
+        },
+    )

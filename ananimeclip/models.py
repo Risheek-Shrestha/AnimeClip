@@ -748,6 +748,7 @@ class WatchPartyMember(models.Model):
 
 class PushSubscription(models.Model):
     """Web Push VAPID subscription — migrated here from web_push.py so the table is created."""
+
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='push_subscriptions')
     endpoint = models.URLField(max_length=500, unique=True)
     p256dh = models.TextField()
