@@ -2155,8 +2155,8 @@ def service_worker(request):
 @login_required
 def upgrade(request):
     """Upgrade/upsell page with a real Stripe Checkout button (see billing.py)."""
-    from .subscription import get_plan
     from . import billing
+    from .subscription import get_plan
 
     current_plan = get_plan(request)
     return render(
