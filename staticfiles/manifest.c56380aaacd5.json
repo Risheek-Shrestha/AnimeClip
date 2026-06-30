@@ -1,0 +1,59 @@
+{
+  "name": "AnimeClip",
+  "short_name": "AnimeClip",
+  "description": "Discover a universe of anime and movies — stream in HD, track your progress, get personalised picks.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0f0f1a",
+  "theme_color": "#0f0f1a",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/static/assets/media/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/assets/media/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Trending",
+      "short_name": "Trending",
+      "description": "See what's hot right now",
+      "url": "/trending/",
+      "icons": [{ "src": "/static/assets/media/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Continue Watching",
+      "short_name": "Continue",
+      "description": "Pick up where you left off",
+      "url": "/continue-watching/",
+      "icons": [{ "src": "/static/assets/media/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "My Favourites",
+      "short_name": "Favourites",
+      "description": "Your saved anime and movies",
+      "url": "/favourites/",
+      "icons": [{ "src": "/static/assets/media/icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/static/assets/media/banner/banner-1.jpg",
+      "sizes": "1280x720",
+      "type": "image/jpeg",
+      "form_factor": "wide",
+      "label": "AnimeClip home screen"
+    }
+  ],
+  "categories": ["entertainment"],
+  "lang": "en"
+}

@@ -1,0 +1,48 @@
+/* ── Playback speed controls ──────────────────────────────────────────────── */
+.player-speed-controls {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  margin: .5rem 0;
+  flex-wrap: wrap;
+}
+.speed-label-prefix { font-size: .75rem; color: #aaa; }
+.speed-label { font-size: .8rem; min-width: 2.2rem; color: #fff; font-weight: 600; }
+.speed-options { display: flex; gap: .25rem; flex-wrap: wrap; }
+.speed-btn {
+  background: rgba(255,255,255,.12);
+  border: 1px solid rgba(255,255,255,.2);
+  color: #ddd;
+  border-radius: 4px;
+  padding: .2rem .5rem;
+  font-size: .75rem;
+  cursor: pointer;
+  transition: background .15s, color .15s;
+}
+.speed-btn:hover,
+.speed-btn.active {
+  background: var(--primary-color, #e53935);
+  border-color: transparent;
+  color: #fff;
+}
+/* ── On-screen display ────────────────────────────────────────────────────── */
+.player-osd {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0,0,0,.7);
+  color: #fff;
+  padding: .5rem 1.2rem;
+  border-radius: 8px;
+  font-size: 1.5rem;
+  font-weight: 700;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .15s;
+  z-index: 50;
+  white-space: nowrap;
+}
+.player-osd.visible { opacity: 1; }
+/* ── PiP button ───────────────────────────────────────────────────────────── */
+#pip-btn.is-active { color: var(--primary-color, #e53935); }

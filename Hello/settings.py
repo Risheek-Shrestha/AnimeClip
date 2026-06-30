@@ -308,14 +308,14 @@ CONTENT_SECURITY_POLICY = {
             'https://upload-widget.cloudinary.com',
             'https://www.gstatic.com',  # Chromecast sender SDK (cast_airplay.js)
         ],
-        'style-src': ["'self'", "'unsafe-inline'"],
+        'style-src': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
         'img-src': ["'self'", 'data:', 'https://res.cloudinary.com'],
         'media-src': [
             "'self'",
             'blob:',  # hls.js feeds segments to <video> via a MediaSource blob: URL
             'https://res.cloudinary.com',
         ],
-        'font-src': ["'self'", 'data:'],
+        'font-src': ["'self'", 'data:', 'https://fonts.gstatic.com'],
         'connect-src': ["'self'", 'https://res.cloudinary.com', 'https://api.cloudinary.com'],
         'frame-src': [
             "'self'",
