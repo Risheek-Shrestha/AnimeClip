@@ -8,7 +8,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib.postgres.search import SearchQuery, SearchRank, SearchVector
 from django.core.cache import cache
-from django.db.models import Max, Prefetch, Q
+from django.db.models import Count, Max, Prefetch, Q
 from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -230,6 +230,36 @@ def _get_public_index_context():
     )
     attach_episode_info(completed_animes)
 
+    trending_animes = list(
+        Anime.objects.order_by('-rating')[:4].prefetch_related(
+            'media_images',
+            Prefetch('seasons', queryset=Season.objects.prefetch_related('episodes__sources')),
+        )
+    )
+    attach_episode_info(trending_animes)
+
+    all_time_favorite_animes = list(
+        Anime.objects.order_by('-rating')[:8].prefetch_related(
+            'media_images',
+            Prefetch('seasons', queryset=Season.objects.prefetch_related('episodes__sources')),
+        )
+    )
+    attach_episode_info(all_time_favorite_animes)
+
+    genre_counts = Genre.objects.annotate(anime_count=Count('anime')).filter(anime_count__gte=1).order_by('-anime_count')
+    category_sections = []
+    for genre in genre_counts[:4]:
+        genre_animes = list(Anime.objects.filter(genres=genre).prefetch_related('media_images').order_by('-rating')[:10])
+        attach_episode_info(genre_animes)
+        if genre_animes:
+            category_sections.append({'name': genre.name, 'animes': genre_animes})
+
+    popular_categories = []
+    for genre in genre_counts[:8]:
+        rep = Anime.objects.filter(genres=genre).prefetch_related('media_images').order_by('-rating').first()
+        if rep:
+            popular_categories.append({'name': genre.name, 'anime': rep})
+
     ctx = {
         'today': today,
         'week_days': week_days,
@@ -240,6 +270,10 @@ def _get_public_index_context():
         'top_animes': top_animes,
         'new_animes': new_animes,
         'completed_animes': completed_animes,
+        'trending_animes': trending_animes,
+        'all_time_favorite_animes': all_time_favorite_animes,
+        'category_sections': category_sections,
+        'popular_categories': popular_categories,
     }
     safe_cache_set(CACHE_KEY, ctx, timeout=300)
     return ctx
@@ -290,7 +324,7 @@ def index(request):
         request,
         'index.html',
         {
-            'title': 'Animeloop',
+            'title': 'AnimeClip',
             **ctx,
             'user_history': user_history,
             'user_watch_later': user_watch_later,
@@ -332,6 +366,21 @@ def movies(request):
                 Movie.objects.filter(is_popular=True).prefetch_related('media_images', 'sources', 'genres')
             ),
         }
+        movie_genre_counts = Genre.objects.annotate(movie_count=Count('movie')).filter(movie_count__gte=1).order_by('-movie_count')
+        movie_category_sections = []
+        for genre in movie_genre_counts[:4]:
+            gms = list(Movie.objects.filter(genres=genre).prefetch_related('media_images').order_by('-rating')[:10])
+            if gms:
+                movie_category_sections.append({'name': genre.name, 'movies': gms})
+        movie_popular_categories = []
+        for genre in movie_genre_counts[:8]:
+            rep = Movie.objects.filter(genres=genre).prefetch_related('media_images').order_by('-rating').first()
+            if rep:
+                movie_popular_categories.append({'name': genre.name, 'movie': rep})
+        public['trending_movies'] = list(Movie.objects.order_by('-rating')[:4].prefetch_related('media_images', 'sources', 'genres'))
+        public['all_time_favorite_movies'] = list(Movie.objects.order_by('-rating')[:8].prefetch_related('media_images', 'sources', 'genres'))
+        public['category_sections'] = movie_category_sections
+        public['popular_categories'] = movie_popular_categories
         safe_cache_set(CACHE_KEY, public, timeout=300)
 
     public = filter_movies_context(public, request)
@@ -364,11 +413,12 @@ def movies(request):
         request,
         'movies.html',
         {
-            'title': 'Animeloop - Movies',
+            'title': 'AnimeClip - Movies',
             **public,
             'user_history': user_history,
             'user_watch_later': user_watch_later,
             'recommended_movies': recommended_movies,
+            'top_rated_tabs': ['today', 'week', 'month', 'year'],
         },
     )
 

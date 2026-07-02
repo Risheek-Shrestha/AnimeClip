@@ -88,9 +88,15 @@ def filter_index_context(ctx, request):
     if not restricted_to_pg13(request):
         return ctx
     ctx = dict(ctx)
-    for key in ('featured_animes', 'Recent_animes', 'Popular_animes', 'top_animes', 'new_animes', 'completed_animes'):
+    for key in ('featured_animes', 'Recent_animes', 'Popular_animes', 'top_animes', 'new_animes', 'completed_animes',
+                'trending_animes', 'all_time_favorite_animes'):
         if key in ctx:
             ctx[key] = _drop_adult(ctx[key])
+    if 'category_sections' in ctx:
+        ctx['category_sections'] = [
+            {**s, 'animes': _drop_adult(s.get('animes', []))} for s in ctx['category_sections']
+        ]
+        ctx['category_sections'] = [s for s in ctx['category_sections'] if s['animes']]
     if ctx.get('coming_soon_season') is not None:
         if getattr(ctx['coming_soon_season'].anime, 'age_rating', None) == ADULT_RATING:
             ctx['coming_soon_season'] = None
@@ -104,9 +110,15 @@ def filter_movies_context(ctx, request):
     if not restricted_to_pg13(request):
         return ctx
     ctx = dict(ctx)
-    for key in ('featured_movies', 'recent_movies', 'top_rated_movies', 'popular_movies'):
+    for key in ('featured_movies', 'recent_movies', 'top_rated_movies', 'popular_movies',
+                'trending_movies', 'all_time_favorite_movies'):
         if key in ctx:
             ctx[key] = _drop_adult(ctx[key])
+    if 'category_sections' in ctx:
+        ctx['category_sections'] = [
+            {**s, 'movies': _drop_adult(s.get('movies', []))} for s in ctx['category_sections']
+        ]
+        ctx['category_sections'] = [s for s in ctx['category_sections'] if s['movies']]
     if ctx.get('coming_soon_movie') is not None:
         if getattr(ctx['coming_soon_movie'], 'age_rating', None) == ADULT_RATING:
             ctx['coming_soon_movie'] = None

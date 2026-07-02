@@ -184,8 +184,8 @@ input:focus, .form-control:focus {
 }
 input::placeholder, .form-control::placeholder { color: var(--c-text-3); }
 input { height: 44px; }
-input[type='checkbox']:checked  { accent-color: var(--c-gold); }
-input[type='radio']:checked     { accent-color: var(--c-gold); }
+input[type='checkbox']:checked:not(.toggle-switch) { accent-color: var(--c-gold); }
+input[type='radio']:checked:not(.toggle-switch)     { accent-color: var(--c-gold); }
 input[type='range']::-webkit-slider-thumb { background: var(--c-gold); }
 .input-group-text {
   border-color: var(--c-border);
@@ -283,6 +283,12 @@ a.text-box:hover, p.text-box:hover {
   transition: var(--transition);
   overflow: hidden;
   cursor: none;
+}
+.anime-btn { border: 1px solid var(--c-gold); color: var(--c-text-1); }
+.anime-btn:hover {
+  background: var(--c-gold);
+  color: var(--c-dark);
+  box-shadow: 0 0 24px var(--c-gold-glow);
 }
 .anime-btn.light { border: 1px solid var(--c-gold); color: var(--c-text-1); }
 .anime-btn.light:hover {

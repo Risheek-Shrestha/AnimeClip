@@ -86,3 +86,14 @@ document.addEventListener('DOMContentLoaded', function () {
       });
   });
 });
+// Genre gallery scroll buttons
+document.addEventListener('DOMContentLoaded', function () {
+  document.querySelectorAll('.genre-scroll-prev, .genre-scroll-next').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var track = document.getElementById(btn.getAttribute('data-target'));
+      if (!track) return;
+      var amt = track.clientWidth * 0.75;
+      track.scrollBy({ left: btn.classList.contains('genre-scroll-next') ? amt : -amt, behavior: 'smooth' });
+    });
+  });
+});

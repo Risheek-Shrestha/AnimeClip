@@ -44,15 +44,16 @@
                         </span>
                     </div>
 
-                    <div class="toggle-row mb-3 text-start">
-                        <input type="checkbox" class="toggle-switch" id="check">
-                        <label class="checkbox-label" for="check">
-                            {% trans "I wish to receive news and promotions from Animeloop by email." %}
-                        </label>
-                    </div>
+                    <label class="toggle-row toggle-row-standalone text-start" for="check">
+                        <input type="checkbox" class="toggle-switch-input" id="check">
+                        <span class="toggle-box" aria-hidden="true"></span>
+                        <span class="checkbox-label">
+                            {% trans "I wish to receive news and promotions from AnimeClip by email." %}
+                        </span>
+                    </label>
 
                     <p class="policy">
-                        {% blocktrans %}By continuing, you agree to Animeloop <a href="#">Terms of Use</a> and <a href="#">Privacy Policy</a>.{% endblocktrans %}
+                        {% blocktrans %}By continuing, you agree to AnimeClip <a href="#">Terms of Use</a> and <a href="#">Privacy Policy</a>.{% endblocktrans %}
                     </p>
 
                     <button type="submit" class="anime-btn btn-dark border-change w-100">

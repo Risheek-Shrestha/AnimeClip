@@ -54,6 +54,7 @@
   <link rel="stylesheet" href="{% static 'assets/css/preloader.css' %}">
 </noscript>
   <link rel="stylesheet" href="{% static 'css/player_enhancements.css' %}">
+  <link rel="stylesheet" href="{% static 'css/site_overhaul.css' %}">
 </head>
 
 <body class="sticky-header">
@@ -64,7 +65,7 @@
 
 <div id="preloader" aria-hidden="true">
   <canvas id="preloader-canvas"></canvas>
-  <div id="preloader-text">Animeloop</div>
+  <div id="preloader-text">AnimeClip</div>
   <div id="preloader-bar-wrap">
     <div id="preloader-bar"></div>
   </div>
@@ -83,8 +84,13 @@
   <header class="header style-1">
     <div class="container">
       <nav class="navbar navbar-expand-lg">
-        <a class="navbar-brand" href="{% url 'index' %}">
-          <img src="{% static 'assets/media/logo.png' %}" alt="Animeloop" width="140" height="40">
+        <a class="navbar-brand brand-logo" href="{% url 'index' %}" aria-label="AnimeClip">
+          <svg width="28" height="28" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <circle cx="24" cy="24" r="22" stroke="currentColor" stroke-width="2.5" opacity="0.35"/>
+            <path d="M19 15.5L33 24L19 32.5V15.5Z" fill="#f4c542"/>
+            <path d="M30 12L34 16M34 12L30 16" stroke="#f4c542" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <span>Anime<span class="brand-clip">Clip</span></span>
         </a>
         <button class="navbar-toggler" type="button"
                 data-bs-toggle="collapse" data-bs-target="#mynavbar"
@@ -210,8 +216,14 @@
         <div class="col-lg-5 col-sm-12">
           <div class="footer-widget">
             <a href="{% url 'index' %}">
-              <img alt="Animeloop" src="{% static 'assets/media/logo.png' %}"
-                   width="140" height="40" loading="lazy">
+              <a href="{% url 'index' %}" class="brand-logo">
+                <svg width="24" height="24" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <circle cx="24" cy="24" r="22" stroke="currentColor" stroke-width="2.5" opacity="0.35"/>
+                  <path d="M19 15.5L33 24L19 32.5V15.5Z" fill="#f4c542"/>
+                  <path d="M30 12L34 16M34 12L30 16" stroke="#f4c542" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <span>Anime<span class="brand-clip">Clip</span></span>
+              </a>
             </a>
             <p class="mb-5">{% blocktrans %}Discover a universe of anime, movies, and manga — curated for every kind of fan. Stream in HD, track your progress, and get personalised picks.{% endblocktrans %}</p>
             <h6 class="mb-2">{% trans "Join the Community" %}</h6>
@@ -246,7 +258,7 @@
       <div class="row">
         <div class="col-lg-6 col-12">
           <div class="footer-copyright">
-            <span class="copyright-text">{% blocktrans %}&copy; 2025 All rights reserved by <a href="#">Animeloop</a>.{% endblocktrans %}</span>
+            <span class="copyright-text">{% blocktrans %}&copy; 2025 All rights reserved by <a href="#">AnimeClip</a>.{% endblocktrans %}</span>
           </div>
         </div>
         <div class="col-lg-6 col-12">

@@ -1,496 +1,385 @@
 {% extends 'base.html' %}
 {% load static %}
-
 {% block body %}
 
-<!-- BANNER -->
+<!-- ══ HERO BANNER ══ -->
 <section class="banner style-2 banner-slider">
-    {% for movie in featured_movies %}
-    <div class="banner-block overflow-hidden style-1{% if movie.thumb_img %} bg-cover{% endif %}"
-         {% if movie.thumb_img %}
-         style="background-image:url('{{ movie.thumb_img.image.url }}');"
-         {% endif %}>
-        <div class="container">
-            <h2 class="title">{{ movie.title|upper }}</h2>
-            <p class="text">
-                {% for genre in movie.genres.all %}
-                {{ genre.name }}{% if not forloop.last %}, {% endif %}
-                {% endfor %}
-            </p>
-            <p class="light-text">{{ movie.release_date }}</p>
-            <div class="banner-content">
-                <p class="light-text">MOVIE SUMMARY</p>
-                <p>{{ movie.description|truncatewords:30 }}</p>
-                <a class="play-butn ripple-host" href="{% url 'streaming_movie' movie.id %}">PLAY NOW</a>
-            </div>
-        </div>
-    </div>
-    {% endfor %}
-</section>
-
-<div class="sec-divider"></div>
-
-<!-- RECENTLY UPDATED -->
-<section class="recent sec-mar" data-reveal>
+  {% for movie in featured_movies %}
+  <div class="banner-block overflow-hidden style-1{% if movie.thumb_img %} bg-cover{% endif %}"
+       {% if movie.thumb_img %}style="background-image:url('{{ movie.thumb_img.image.url }}');"{% endif %}>
+    <div class="banner-depth-layer"></div>
     <div class="container">
-        <div class="heading style-1 d-flex justify-content-between align-items-center">
-            <h2>Recently Updated</h2>
-            <a href="{% url 'all_recent_movies' %}" class="anime-btn2 dark ripple-host">
-                View All <i class="fas fa-arrow-right ms-1"></i>
-            </a>
+      <div class="banner-content">
+        <div class="row align-items-center">
+          <div class="col-lg-5 col-12">
+            <h2 class="title">{{ movie.title|upper }}</h2>
+            <p class="text">{% for genre in movie.genres.all %}{{ genre.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>
+            {% if movie.release_date %}<p class="light-text">{{ movie.release_date }}</p>{% endif %}
+            <p class="light-text">MOVIE SUMMARY</p>
+            <p>{{ movie.description|truncatewords:30 }}</p>
+            <a class="play-butn ripple-host" href="{% url 'streaming_movie' movie.id %}"><span>Play Now</span></a>
+          </div>
+          <div class="col-lg-7 col-12">
+            {% if movie.banner_img %}<img src="{{ movie.banner_img.image.url }}" alt="{{ movie.title }}">
+            {% elif movie.thumb_img %}<img src="{{ movie.thumb_img.image.url }}" alt="{{ movie.title }}">{% endif %}
+          </div>
         </div>
-        <div class="row">
-            {% for movie in recent_movies|slice:":4" %}
-            <div class="col-xl-3 col-lg-4 col-sm-6 col-12">
-                <div class="anime-blog">
-                    <div class="img-block">
-                        {% if movie.poster_img %}
-                        <img src="{{ movie.poster_img.image.url }}" alt="{{ movie.title }}">
-                        {% elif movie.thumb_img %}
-                        <img src="{{ movie.thumb_img.image.url }}" alt="{{ movie.title }}">
-                        {% endif %}
-                        <div class="action-overlay">
-                            <a href="{% url 'streaming_movie' movie.id %}">
-                                <i class="fas fa-play-circle me-1"></i> Play Now
-                            </a>
-                        </div>
-                        <div class="card-glow-edge"></div>
-                        <div class="card-shine"></div>
-                    </div>
-                    <div class="detail">
-                        <div class="tags"><p class="text">Movie</p></div>
-                        <div class="dropdown">
-                            <button type="button" class="dropdown-toggle" data-bs-toggle="dropdown">
-                                <svg width="28" height="20" viewBox="0 0 32 22" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <rect x="0.145" y="0" width="21.44" height="2.68" rx="1.34" fill="currentColor" opacity="0.5"/>
-                                    <rect x="0.145" y="7.41" width="21.44" height="2.68" rx="1.34" fill="currentColor" opacity="0.5"/>
-                                    <rect x="0.145" y="14.83" width="16.49" height="2.68" rx="1.34" fill="currentColor" opacity="0.5"/>
-                                    <path d="M19.88 16.07c0-.65.53-1.18 1.18-1.18h9.18c.65 0 1.18.53 1.18 1.18s-.53 1.18-1.18 1.18h-9.18c-.65 0-1.18-.53-1.18-1.18z" fill="currentColor" opacity="0.5"/>
-                                    <path d="M25.66 22c-.64 0-1.16-.52-1.16-1.16v-9.55c0-.64.52-1.16 1.16-1.16s1.16.52 1.16 1.16v9.55c0 .64-.52 1.16-1.16 1.16z" fill="currentColor" opacity="0.5"/>
-                                </svg>
-                            </button>
-                            <ul class="dropdown-menu bg-color-black pt-3 pb-3 ps-3 pe-3">
-                                {% if user.is_authenticated %}
-                                <li><a href="#" class="none watch-later-btn" data-movie-id="{{ movie.id }}"><i class="fa fa-clock me-2"></i> Watch Later</a></li>
-                                <li><a href="#" class="add-to-playlist-btn" data-movie-id="{{ movie.id }}" data-bs-toggle="modal" data-bs-target="#playlistModal"><i class="fas fa-plus me-2"></i> Add to Playlist</a></li>
-                                {% else %}
-                                <li><a href="{% url 'login' %}"><i class="fa fa-clock me-2"></i> Watch Later</a></li>
-                                <li><a href="{% url 'login' %}"><i class="fas fa-plus me-2"></i> Add to Playlist</a></li>
-                                {% endif %}
-                            </ul>
-                        </div>
-                    </div>
-                    <a href="{% url 'streaming_movie' movie.id %}"><p>{{ movie.title }}</p></a>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
+      </div>
     </div>
+  </div>
+  {% endfor %}
 </section>
-
 <div class="sec-divider"></div>
 
 {% if user.is_authenticated %}
-
 {% if user_history %}
-<!-- CONTINUE WATCHING -->
 <section class="recent sec-mar" data-reveal>
-    <div class="container">
-        <div class="heading style-1 d-flex justify-content-between align-items-center">
-            <h2>Continue Watching</h2>
-            <a href="{% url 'continue_watching' %}" class="anime-btn2 dark ripple-host">
-                View All <i class="fas fa-arrow-right ms-1"></i>
-            </a>
-        </div>
-        <div class="row">
-            {% for entry in user_history %}
-            {% if entry.movie %}
-            <div class="col-xl-3 col-lg-4 col-sm-6 col-12">
-                <div class="anime-blog">
-                    <div class="img-block">
-                        <a href="{% url 'streaming_movie' entry.movie.id %}">
-                            {% if entry.movie.poster_img %}
-                            <img src="{{ entry.movie.poster_img.image.url }}" alt="{{ entry.movie.title }}">
-                            {% elif entry.movie.thumb_img %}
-                            <img src="{{ entry.movie.thumb_img.image.url }}" alt="{{ entry.movie.title }}">
-                            {% endif %}
-                        </a>
-                        <div class="cw-bar-wrap">
-                            <div class="cw-bar-fill" style="--progress: {{ entry.progress_pct }};"></div>
-                        </div>
-                        <div class="action-overlay">
-                            <a href="{% url 'streaming_movie' entry.movie.id %}">
-                                <i class="fas fa-play-circle me-1"></i> Resume
-                            </a>
-                        </div>
-                        <div class="card-glow-edge"></div>
-                        <div class="card-shine"></div>
-                    </div>
-                    <div class="detail">
-                        <div class="tags"><p class="text">Movie</p></div>
-                    </div>
-                    <a href="{% url 'streaming_movie' entry.movie.id %}"><p>{{ entry.movie.title }}</p></a>
-                    <p class="entry-timestamp">{{ entry.updated_at|timesince }} ago</p>
-                </div>
-            </div>
-            {% endif %}
-            {% endfor %}
-        </div>
+  <div class="container">
+    <div class="heading style-1 d-flex justify-content-between align-items-center">
+      <h2>Continue Watching</h2>
+      <a href="{% url 'continue_watching' %}" class="anime-btn2 dark ripple-host">View All <i class="fas fa-arrow-right ms-1"></i></a>
     </div>
+    <div class="row">
+      {% for entry in user_history %}{% if entry.movie %}
+      <div class="col-xl-3 col-lg-4 col-sm-6 col-12 reveal-card">
+        <div class="anime-blog"><div class="img-block">
+          <a href="{% url 'streaming_movie' entry.movie.id %}">
+            {% if entry.movie.poster_img %}<img src="{{ entry.movie.poster_img.image.url }}" alt="{{ entry.movie.title }}">
+            {% elif entry.movie.thumb_img %}<img src="{{ entry.movie.thumb_img.image.url }}" alt="{{ entry.movie.title }}">{% endif %}
+          </a>
+          <div class="cw-bar-wrap"><div class="cw-bar-fill" style="--progress: {{ entry.progress_pct }};"></div></div>
+          <div class="action-overlay"><a href="{% url 'streaming_movie' entry.movie.id %}"><i class="fas fa-play-circle me-1"></i> Resume</a></div>
+          <div class="card-glow-edge"></div><div class="card-shine"></div>
+        </div>
+        <div class="detail"><div class="tags"><p class="text">Movie</p></div></div>
+        <a href="{% url 'streaming_movie' entry.movie.id %}"><p>{{ entry.movie.title }}</p></a></div>
+      </div>
+      {% endif %}{% endfor %}
+    </div>
+  </div>
 </section>
 <div class="sec-divider"></div>
 {% endif %}
 
 {% if user_watch_later %}
-<!-- WATCH LATER -->
 <section class="recent sec-mar" data-reveal>
-    <div class="container">
-        <div class="heading style-1 d-flex justify-content-between align-items-center">
-            <h2>Watch Later</h2>
-            <a href="{% url 'watch_later' %}" class="anime-btn2 dark ripple-host">
-                View All <i class="fas fa-arrow-right ms-1"></i>
-            </a>
-        </div>
-        <div class="row">
-            {% for item in user_watch_later %}
-            {% if item.movie %}
-            <div class="col-xl-3 col-lg-4 col-sm-6 col-12">
-                <div class="anime-blog">
-                    <div class="img-block">
-                        <a href="{% url 'streaming_movie' item.movie.id %}">
-                            {% if item.movie.poster_img %}
-                            <img src="{{ item.movie.poster_img.image.url }}" alt="{{ item.movie.title }}">
-                            {% elif item.movie.thumb_img %}
-                            <img src="{{ item.movie.thumb_img.image.url }}" alt="{{ item.movie.title }}">
-                            {% endif %}
-                        </a>
-                        <div class="action-overlay">
-                            <a href="{% url 'streaming_movie' item.movie.id %}">
-                                <i class="fas fa-play-circle me-1"></i> Play
-                            </a>
-                        </div>
-                        <div class="card-glow-edge"></div>
-                        <div class="card-shine"></div>
-                    </div>
-                    <div class="detail">
-                        <div class="tags"><p class="text">Movie</p></div>
-                        <form method="POST" action="{% url 'toggle_watch_later' %}" class="d-inline">
-                            {% csrf_token %}
-                            <input type="hidden" name="movie_id" value="{{ item.movie.id }}">
-                            <button type="submit" class="dropdown-toggle border-0 bg-transparent" title="Remove">
-                                <i class="fas fa-times watch-later-remove-icon"></i>
-                            </button>
-                        </form>
-                    </div>
-                    <a href="{% url 'streaming_movie' item.movie.id %}"><p>{{ item.movie.title }}</p></a>
-                </div>
-            </div>
-            {% endif %}
-            {% endfor %}
-        </div>
+  <div class="container">
+    <div class="heading style-1 d-flex justify-content-between align-items-center">
+      <h2>Watch Later</h2>
+      <a href="{% url 'watch_later' %}" class="anime-btn2 dark ripple-host">View All <i class="fas fa-arrow-right ms-1"></i></a>
     </div>
+    <div class="row">
+      {% for item in user_watch_later %}{% if item.movie %}
+      <div class="col-xl-3 col-lg-4 col-sm-6 col-12 reveal-card">
+        <div class="anime-blog"><div class="img-block">
+          <a href="{% url 'streaming_movie' item.movie.id %}">
+            {% if item.movie.poster_img %}<img src="{{ item.movie.poster_img.image.url }}" alt="{{ item.movie.title }}">
+            {% elif item.movie.thumb_img %}<img src="{{ item.movie.thumb_img.image.url }}" alt="{{ item.movie.title }}">{% endif %}
+          </a>
+          <div class="action-overlay"><a href="{% url 'streaming_movie' item.movie.id %}"><i class="fas fa-play-circle me-1"></i> Play</a></div>
+          <div class="card-glow-edge"></div><div class="card-shine"></div>
+        </div>
+        <div class="detail"><div class="tags"><p class="text">Movie</p></div>
+          <form method="POST" action="{% url 'toggle_watch_later' %}" class="d-inline">{% csrf_token %}
+            <input type="hidden" name="movie_id" value="{{ item.movie.id }}">
+            <button type="submit" class="dropdown-toggle border-0 bg-transparent"><i class="fas fa-times watch-later-remove-icon"></i></button>
+          </form>
+        </div>
+        <a href="{% url 'streaming_movie' item.movie.id %}"><p>{{ item.movie.title }}</p></a></div>
+      </div>
+      {% endif %}{% endfor %}
+    </div>
+  </div>
 </section>
 <div class="sec-divider"></div>
 {% endif %}
 
 {% if recommended_movies %}
-<!-- ══ PERSONALISED RECOMMENDATIONS ══ -->
 <section class="popular sec-mar" data-reveal>
-    <div class="container">
-        <div class="heading style-1 d-flex justify-content-between align-items-center">
-            <h2>Movies For You</h2>
-            <a href="{% url 'all_popular_movies' %}" class="anime-btn2 dark ripple-host">View All <i class="fas fa-arrow-right ms-1"></i></a>
-        </div>
-        <div class="row">
-            {% for movie in recommended_movies|slice:":4" %}
-            <div class="col-xl-3 col-lg-4 col-sm-6 col-12">
-                <div class="anime-blog">
-                    <div class="img-block">
-                        {% if movie.poster_img %}<img src="{{ movie.poster_img.image.url }}" alt="{{ movie.title }}">
-                        {% elif movie.thumb_img %}<img src="{{ movie.thumb_img.image.url }}" alt="{{ movie.title }}">{% endif %}
-                        <div class="action-overlay"><a href="{% url 'streaming_movie' movie.id %}"><i class="fas fa-play-circle me-1"></i> Play Now</a></div>
-                        <div class="card-glow-edge"></div>
-                        <div class="card-shine"></div>
-                    </div>
-                    <div class="detail">
-                        <div class="tags">
-                            {% for genre in movie.genres.all|slice:":2" %}
-                            <span class="text-box">{{ genre.name }}</span>
-                            {% endfor %}
-                        </div>
-                        <div class="dropdown">
-                            <button type="button" class="dropdown-toggle" data-bs-toggle="dropdown">
-                                <svg width="28" height="20" viewBox="0 0 32 22" fill="none"><rect x="0.145" y="0" width="21.44" height="2.68" rx="1.34" fill="currentColor" opacity="0.5"/><rect x="0.145" y="7.41" width="21.44" height="2.68" rx="1.34" fill="currentColor" opacity="0.5"/><rect x="0.145" y="14.83" width="16.49" height="2.68" rx="1.34" fill="currentColor" opacity="0.5"/><path d="M19.88 16.07c0-.65.53-1.18 1.18-1.18h9.18c.65 0 1.18.53 1.18 1.18s-.53 1.18-1.18 1.18h-9.18c-.65 0-1.18-.53-1.18-1.18z" fill="currentColor" opacity="0.5"/><path d="M25.66 22c-.64 0-1.16-.52-1.16-1.16v-9.55c0-.64.52-1.16 1.16-1.16s1.16.52 1.16 1.16v9.55c0 .64-.52 1.16-1.16 1.16z" fill="currentColor" opacity="0.5"/></svg>
-                            </button>
-                            <ul class="dropdown-menu bg-color-black pt-3 pb-3 ps-3 pe-3">
-                                <li><a href="#" class="none watch-later-btn" data-movie-id="{{ movie.id }}"><i class="fa fa-clock me-2"></i> Watch Later</a></li>
-                                <li><a href="#" class="add-to-playlist-btn" data-movie-id="{{ movie.id }}" data-bs-toggle="modal" data-bs-target="#playlistModal"><i class="fas fa-plus me-2"></i> Add to Playlist</a></li>
-                            </ul>
-                        </div>
-                    </div>
-                    <a href="{% url 'streaming_movie' movie.id %}"><p>{{ movie.title }}</p></a>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
+  <div class="container">
+    <div class="heading style-1 d-flex justify-content-between align-items-center">
+      <h2>Movies For You</h2>
+      <a href="{% url 'all_popular_movies' %}" class="anime-btn2 dark ripple-host">View All <i class="fas fa-arrow-right ms-1"></i></a>
     </div>
+    <div class="row">
+      {% for movie in recommended_movies|slice:":4" %}
+      <div class="col-xl-3 col-lg-4 col-sm-6 col-12 reveal-card">
+        <div class="anime-blog"><div class="img-block">
+          {% if movie.poster_img %}<img src="{{ movie.poster_img.image.url }}" alt="{{ movie.title }}">
+          {% elif movie.thumb_img %}<img src="{{ movie.thumb_img.image.url }}" alt="{{ movie.title }}">{% endif %}
+          <div class="action-overlay"><a href="{% url 'streaming_movie' movie.id %}"><i class="fas fa-play-circle me-1"></i> Play Now</a></div>
+          <div class="card-glow-edge"></div><div class="card-shine"></div>
+        </div>
+        <div class="detail"><div class="tags">{% for g in movie.genres.all|slice:":2" %}<span class="text-box">{{ g.name }}</span>{% endfor %}</div></div>
+        <a href="{% url 'streaming_movie' movie.id %}"><p>{{ movie.title }}</p></a></div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+<div class="sec-divider"></div>
+{% endif %}
+{% endif %}
+
+<!-- ══ TRENDING MOVIES ══ -->
+{% if trending_movies %}
+<section class="trending-shows sec-mar" data-reveal>
+  <div class="container">
+    <div class="heading style-1 d-flex justify-content-between align-items-center">
+      <h2>Trending Movies</h2>
+      <a href="{% url 'all_popular_movies' %}" class="anime-btn2 dark ripple-host">View All <i class="fas fa-arrow-right ms-1"></i></a>
+    </div>
+    <div class="row g-3">
+      {% for movie in trending_movies %}
+      <div class="col-lg-6 col-12 reveal-card">
+        <a class="trending-card" href="{% url 'streaming_movie' movie.id %}">
+          <div class="rank-num">
+            <span class="rank-label">TRENDING</span>
+            <span class="rank-number">{{ forloop.counter|stringformat:"02d" }}</span>
+          </div>
+          <div class="rank-poster">
+            {% if movie.thumb_img %}<img src="{{ movie.thumb_img.image.url }}" alt="{{ movie.title }}">
+            {% elif movie.poster_img %}<img src="{{ movie.poster_img.image.url }}" alt="{{ movie.title }}">{% endif %}
+            <span class="rank-play"><i class="fas fa-play"></i></span>
+            <span class="rank-title">{{ movie.title }}</span>
+          </div>
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
 </section>
 <div class="sec-divider"></div>
 {% endif %}
 
-{% endif %}
-
-<!-- RECOMMENDATION -->
-<section class="popular sec-mar" data-reveal>
-    <div class="container">
-        <div class="heading style-1 d-flex justify-content-between align-items-center">
-            <h2>Recommendation</h2>
-            <a href="{% url 'all_popular_movies' %}" class="anime-btn2 dark ripple-host">
-                View All <i class="fas fa-arrow-right ms-1"></i>
-            </a>
-        </div>
-        <div class="row">
-            {% for movie in popular_movies|slice:":4" %}
-            <div class="col-xl-3 col-lg-4 col-sm-6 col-12">
-                <div class="anime-blog">
-                    <div class="img-block">
-                        {% if movie.card_img %}
-                        <img src="{{ movie.card_img.image.url }}" alt="{{ movie.title }}">
-                        {% elif movie.poster_img %}
-                        <img src="{{ movie.poster_img.image.url }}" alt="{{ movie.title }}">
-                        {% endif %}
-                        <div class="action-overlay">
-                            <a href="{% url 'streaming_movie' movie.id %}">
-                                <i class="fas fa-play-circle me-1"></i> Play Now
-                            </a>
-                        </div>
-                        <div class="card-glow-edge"></div>
-                        <div class="card-shine"></div>
-                    </div>
-                    <div class="detail">
-                        <div class="tags"><p class="text">Movie</p></div>
-                        <div class="dropdown">
-                            <button type="button" class="dropdown-toggle" data-bs-toggle="dropdown">
-                                <svg width="28" height="20" viewBox="0 0 32 22" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <rect x="0.145" y="0" width="21.44" height="2.68" rx="1.34" fill="currentColor" opacity="0.5"/>
-                                    <rect x="0.145" y="7.41" width="21.44" height="2.68" rx="1.34" fill="currentColor" opacity="0.5"/>
-                                    <rect x="0.145" y="14.83" width="16.49" height="2.68" rx="1.34" fill="currentColor" opacity="0.5"/>
-                                    <path d="M19.88 16.07c0-.65.53-1.18 1.18-1.18h9.18c.65 0 1.18.53 1.18 1.18s-.53 1.18-1.18 1.18h-9.18c-.65 0-1.18-.53-1.18-1.18z" fill="currentColor" opacity="0.5"/>
-                                    <path d="M25.66 22c-.64 0-1.16-.52-1.16-1.16v-9.55c0-.64.52-1.16 1.16-1.16s1.16.52 1.16 1.16v9.55c0 .64-.52 1.16-1.16 1.16z" fill="currentColor" opacity="0.5"/>
-                                </svg>
-                            </button>
-                            <ul class="dropdown-menu bg-color-black pt-3 pb-3 ps-3 pe-3">
-                                {% if user.is_authenticated %}
-                                <li><a href="#" class="none watch-later-btn" data-movie-id="{{ movie.id }}"><i class="fa fa-clock me-2"></i> Watch Later</a></li>
-                                <li><a href="#" class="add-to-playlist-btn" data-movie-id="{{ movie.id }}" data-bs-toggle="modal" data-bs-target="#playlistModal"><i class="fas fa-plus me-2"></i> Add to Playlist</a></li>
-                                {% else %}
-                                <li><a href="{% url 'login' %}"><i class="fa fa-clock me-2"></i> Watch Later</a></li>
-                                <li><a href="{% url 'login' %}"><i class="fas fa-plus me-2"></i> Add to Playlist</a></li>
-                                {% endif %}
-                            </ul>
-                        </div>
-                    </div>
-                    <a href="{% url 'streaming_movie' movie.id %}"><p>{{ movie.title }}</p></a>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-
-        {% if not user.is_authenticated %}
-        <div class="rec-guest-nudge text-center mt-5 py-5" data-reveal>
-            <i class="fas fa-film mb-3 rec-icon-gold d-block"></i>
-            <h4>Unlock Personalised Movie Picks</h4>
-            <p class="light-text mb-4">Create a free account and we'll surface movies tailored to your taste.</p>
-            <a href="{% url 'signup' %}" class="anime-btn light ripple-host me-3">Sign Up Free</a>
-            <a href="{% url 'login' %}" class="anime-btn2 dark ripple-host">Log In</a>
-        </div>
-        {% endif %}
+<!-- ══ RECENTLY RELEASED ══ -->
+<section class="recent sec-mar" data-reveal>
+  <div class="container">
+    <div class="heading style-1 d-flex justify-content-between align-items-center">
+      <h2>Recently Released</h2>
+      <a href="{% url 'all_recent_movies' %}" class="anime-btn2 dark ripple-host">View All <i class="fas fa-arrow-right ms-1"></i></a>
     </div>
+    <div class="row">
+      {% for movie in recent_movies|slice:":4" %}
+      <div class="col-xl-3 col-lg-4 col-sm-6 col-12 reveal-card">
+        <div class="anime-blog"><div class="img-block">
+          {% if movie.poster_img %}<img src="{{ movie.poster_img.image.url }}" alt="{{ movie.title }}">
+          {% elif movie.thumb_img %}<img src="{{ movie.thumb_img.image.url }}" alt="{{ movie.title }}">{% endif %}
+          <div class="action-overlay"><a href="{% url 'streaming_movie' movie.id %}"><i class="fas fa-play-circle me-1"></i> Play Now</a></div>
+          <div class="card-glow-edge"></div><div class="card-shine"></div>
+        </div>
+        <div class="detail"><div class="tags"><p class="text">Movie</p></div>
+          <div class="dropdown">
+            <button type="button" class="dropdown-toggle" data-bs-toggle="dropdown">
+              <svg width="28" height="20" viewBox="0 0 32 22" fill="none"><rect x="0.145" y="0" width="21.44" height="2.68" rx="1.34" fill="currentColor" opacity="0.5"/><rect x="0.145" y="7.41" width="21.44" height="2.68" rx="1.34" fill="currentColor" opacity="0.5"/><rect x="0.145" y="14.83" width="16.49" height="2.68" rx="1.34" fill="currentColor" opacity="0.5"/></svg>
+            </button>
+            <ul class="dropdown-menu bg-color-black pt-3 pb-3 ps-3 pe-3">
+              {% if user.is_authenticated %}
+              <li><a href="#" class="none watch-later-btn" data-movie-id="{{ movie.id }}"><i class="fa fa-clock me-2"></i> Watch Later</a></li>
+              <li><a href="#" class="add-to-playlist-btn" data-movie-id="{{ movie.id }}" data-bs-toggle="modal" data-bs-target="#playlistModal"><i class="fas fa-plus me-2"></i> Add to Playlist</a></li>
+              {% else %}
+              <li><a href="{% url 'login' %}"><i class="fa fa-clock me-2"></i> Watch Later</a></li>
+              <li><a href="{% url 'login' %}"><i class="fas fa-plus me-2"></i> Add to Playlist</a></li>
+              {% endif %}
+            </ul>
+          </div>
+        </div>
+        <a href="{% url 'streaming_movie' movie.id %}"><p>{{ movie.title }}</p></a></div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
 </section>
-
 <div class="sec-divider"></div>
 
+<!-- ══ POPULAR MOVIES ══ -->
+<section class="popular sec-mar" data-reveal>
+  <div class="container">
+    <div class="heading style-1 d-flex justify-content-between align-items-center">
+      <h2>Popular Movies</h2>
+      <a href="{% url 'all_popular_movies' %}" class="anime-btn2 dark ripple-host">View All <i class="fas fa-arrow-right ms-1"></i></a>
+    </div>
+    <div class="row">
+      {% for movie in popular_movies|slice:":4" %}
+      <div class="col-xl-3 col-lg-4 col-sm-6 col-12 reveal-card">
+        <div class="anime-blog"><div class="img-block">
+          {% if movie.card_img %}<img src="{{ movie.card_img.image.url }}" alt="{{ movie.title }}">
+          {% elif movie.poster_img %}<img src="{{ movie.poster_img.image.url }}" alt="{{ movie.title }}">
+          {% elif movie.thumb_img %}<img src="{{ movie.thumb_img.image.url }}" alt="{{ movie.title }}">{% endif %}
+          <div class="action-overlay"><a href="{% url 'streaming_movie' movie.id %}"><i class="fas fa-play-circle me-1"></i> Play Now</a></div>
+          <div class="card-glow-edge"></div><div class="card-shine"></div>
+        </div>
+        <div class="detail"><div class="tags"><p class="text">Movie</p></div>
+          <div class="dropdown">
+            <button type="button" class="dropdown-toggle" data-bs-toggle="dropdown">
+              <svg width="28" height="20" viewBox="0 0 32 22" fill="none"><rect x="0.145" y="0" width="21.44" height="2.68" rx="1.34" fill="currentColor" opacity="0.5"/><rect x="0.145" y="7.41" width="21.44" height="2.68" rx="1.34" fill="currentColor" opacity="0.5"/><rect x="0.145" y="14.83" width="16.49" height="2.68" rx="1.34" fill="currentColor" opacity="0.5"/></svg>
+            </button>
+            <ul class="dropdown-menu bg-color-black pt-3 pb-3 ps-3 pe-3">
+              {% if user.is_authenticated %}
+              <li><a href="#" class="none watch-later-btn" data-movie-id="{{ movie.id }}"><i class="fa fa-clock me-2"></i> Watch Later</a></li>
+              <li><a href="#" class="add-to-playlist-btn" data-movie-id="{{ movie.id }}" data-bs-toggle="modal" data-bs-target="#playlistModal"><i class="fas fa-plus me-2"></i> Add to Playlist</a></li>
+              {% else %}
+              <li><a href="{% url 'login' %}"><i class="fa fa-clock me-2"></i> Watch Later</a></li>
+              <li><a href="{% url 'login' %}"><i class="fas fa-plus me-2"></i> Add to Playlist</a></li>
+              {% endif %}
+            </ul>
+          </div>
+        </div>
+        <a href="{% url 'streaming_movie' movie.id %}"><p>{{ movie.title }}</p></a></div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+<div class="sec-divider"></div>
+
+<!-- ══ COMING SOON ══ -->
 {% if coming_soon_movie %}
-<!-- COMING SOON -->
 <section class="coming-out style-1 sec-mar sec-pad" data-reveal>
-    <div class="container">
-        <div class="comingOut-content">
-            <h2 class="title">{{ coming_soon_movie.title|upper }}</h2>
-            <p class="light-text">
-                {% for genre in coming_soon_movie.genres.all %}
-                {{ genre.name }}{% if not forloop.last %}, {% endif %}
-                {% endfor %}
-            </p>
-            <a href="{% url 'streaming_movie' coming_soon_movie.id %}" class="text-box active ripple-host">Watch</a>
-            <p class="copyright-text">Releasing on {{ coming_soon_movie.release_date }}</p>
-        </div>
+  <div class="container">
+    <div class="comingOut-content">
+      <span class="coming-soon-badge">Coming Soon!</span>
+      <h2 class="title">{{ coming_soon_movie.title|upper }}</h2>
+      <p class="text">{% for g in coming_soon_movie.genres.all %}{{ g.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>
+      <p>{{ coming_soon_movie.description|truncatewords:25 }}</p>
+      <a href="{% url 'streaming_movie' coming_soon_movie.id %}" class="text-box active ripple-host">Watch</a>
+      {% if coming_soon_movie.release_date %}<p class="copyright-text mt-3">Releasing on {{ coming_soon_movie.release_date }}</p>{% endif %}
     </div>
+  </div>
 </section>
 <div class="sec-divider"></div>
 {% endif %}
 
-<!-- TOP RATED -->
-<section class="schedule style-1 sec-mar" data-reveal="left">
-    <div class="container">
-        <div class="heading style-1">
-            <h2>Top Rated</h2>
-        </div>
-        <div class="schedule-box">
-            <div class="card">
-                <div class="card-header">
-                    <ul class="nav nav-tabs card-header-tabs" data-bs-tabs="tabs" role="tablist">
-                        <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#today"><p>Today</p><h2>Today</h2></a></li>
-                        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#week"><p>This Week</p><h2>Week</h2></a></li>
-                        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#month"><p>This Month</p><h2>Month</h2></a></li>
-                        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#year"><p>This Year</p><h2>Year</h2></a></li>
-                    </ul>
-                </div>
-                <div class="card-body style-1 tab-content">
-                    <div class="row justify-content-between mb-3">
-                        <div class="col-lg-2 col-md-3 col-sm-3"><h4>Movie Details</h4></div>
-                        <div class="col-lg-2 col-md-3 col-sm-0 text-end"><h4>Rating</h4></div>
-                    </div>
-
-                    <div class="tab-pane fade show active" id="today" role="tabpanel">
-                        {% for movie in top_rated_movies %}
-                        <div class="row-wrap">
-                            <a href="{% url 'streaming_movie' movie.id %}">
-                                <div class="row align-items-center">
-                                    <div class="col-xl-8 col-lg-8 col-md-7 col-sm-10 col-12">
-                                        <div class="row align-items-center">
-                                            <div class="col-xl-1 col-lg-2 col-md-2 col-sm-2 col-3 ps-0 pe-0 text-end">
-                                                {% if movie.thumb_img %}
-                                                <img src="{{ movie.thumb_img.image.url }}" alt="{{ movie.title }}" class="schedule-thumb">
-                                                {% endif %}
-                                            </div>
-                                            <div class="col-xl-8 col-lg-8 col-md-7 col-sm-7 col-9">
-                                                <div class="schedule-content align-middle">
-                                                    <p class="small-title">{{ movie.title }}</p>
-                                                    {% for genre in movie.genres.all %}
-                                                    <p class="text-box">{{ genre.name }}</p>
-                                                    {% endfor %}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-xl-3 col-lg-3 col-md-3 col-sm-0 col-0 text-end">
-                                        <p class="text">{{ movie.rating }}</p>
-                                    </div>
-                                </div>
-                            </a>
-                            {% if not forloop.last %}<hr>{% endif %}
-                        </div>
-                        {% empty %}
-                        <p class="text text-center py-4">No movies found.</p>
-                        {% endfor %}
-                    </div>
-
-                    <div class="tab-pane fade" id="week" role="tabpanel">
-                        {% for movie in top_rated_movies %}
-                        <div class="row-wrap">
-                            <a href="{% url 'streaming_movie' movie.id %}">
-                                <div class="row align-items-center">
-                                    <div class="col-xl-8 col-lg-8 col-md-7 col-sm-10 col-12">
-                                        <div class="row align-items-center">
-                                            <div class="col-xl-1 col-lg-2 col-md-2 col-sm-2 col-3 ps-0 pe-0 text-end">
-                                                {% if movie.thumb_img %}
-                                                <img src="{{ movie.thumb_img.image.url }}" alt="{{ movie.title }}" class="schedule-thumb">
-                                                {% endif %}
-                                            </div>
-                                            <div class="col-xl-8 col-lg-8 col-md-7 col-sm-7 col-9">
-                                                <div class="schedule-content align-middle">
-                                                    <p class="small-title">{{ movie.title }}</p>
-                                                    {% for genre in movie.genres.all %}
-                                                    <p class="text-box">{{ genre.name }}</p>
-                                                    {% endfor %}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-xl-3 col-lg-3 col-md-3 col-sm-0 col-0 text-end">
-                                        <p class="text">{{ movie.rating }}</p>
-                                    </div>
-                                </div>
-                            </a>
-                            {% if not forloop.last %}<hr>{% endif %}
-                        </div>
-                        {% empty %}
-                        <p class="text text-center py-4">No movies found.</p>
-                        {% endfor %}
-                    </div>
-
-                    <div class="tab-pane fade" id="month" role="tabpanel">
-                        {% for movie in top_rated_movies %}
-                        <div class="row-wrap">
-                            <a href="{% url 'streaming_movie' movie.id %}">
-                                <div class="row align-items-center">
-                                    <div class="col-xl-8 col-lg-8 col-md-7 col-sm-10 col-12">
-                                        <div class="row align-items-center">
-                                            <div class="col-xl-1 col-lg-2 col-md-2 col-sm-2 col-3 ps-0 pe-0 text-end">
-                                                {% if movie.thumb_img %}
-                                                <img src="{{ movie.thumb_img.image.url }}" alt="{{ movie.title }}" class="schedule-thumb">
-                                                {% endif %}
-                                            </div>
-                                            <div class="col-xl-8 col-lg-8 col-md-7 col-sm-7 col-9">
-                                                <div class="schedule-content align-middle">
-                                                    <p class="small-title">{{ movie.title }}</p>
-                                                    {% for genre in movie.genres.all %}
-                                                    <p class="text-box">{{ genre.name }}</p>
-                                                    {% endfor %}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-xl-3 col-lg-3 col-md-3 col-sm-0 col-0 text-end">
-                                        <p class="text">{{ movie.rating }}</p>
-                                    </div>
-                                </div>
-                            </a>
-                            {% if not forloop.last %}<hr>{% endif %}
-                        </div>
-                        {% empty %}
-                        <p class="text text-center py-4">No movies found.</p>
-                        {% endfor %}
-                    </div>
-
-                    <div class="tab-pane fade" id="year" role="tabpanel">
-                        {% for movie in top_rated_movies %}
-                        <div class="row-wrap">
-                            <a href="{% url 'streaming_movie' movie.id %}">
-                                <div class="row align-items-center">
-                                    <div class="col-xl-8 col-lg-8 col-md-7 col-sm-10 col-12">
-                                        <div class="row align-items-center">
-                                            <div class="col-xl-1 col-lg-2 col-md-2 col-sm-2 col-3 ps-0 pe-0 text-end">
-                                                {% if movie.thumb_img %}
-                                                <img src="{{ movie.thumb_img.image.url }}" alt="{{ movie.title }}" class="schedule-thumb">
-                                                {% endif %}
-                                            </div>
-                                            <div class="col-xl-8 col-lg-8 col-md-7 col-sm-7 col-9">
-                                                <div class="schedule-content align-middle">
-                                                    <p class="small-title">{{ movie.title }}</p>
-                                                    {% for genre in movie.genres.all %}
-                                                    <p class="text-box">{{ genre.name }}</p>
-                                                    {% endfor %}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-xl-3 col-lg-3 col-md-3 col-sm-0 col-0 text-end">
-                                        <p class="text">{{ movie.rating }}</p>
-                                    </div>
-                                </div>
-                            </a>
-                            {% if not forloop.last %}<hr>{% endif %}
-                        </div>
-                        {% empty %}
-                        <p class="text text-center py-4">No movies found.</p>
-                        {% endfor %}
-                    </div>
-
-                </div>
-            </div>
-        </div>
+<!-- ══ GENRE GALLERIES ══ -->
+{% for section in category_sections %}
+<section class="category-gallery sec-mar" data-reveal>
+  <div class="container">
+    <div class="heading style-1 d-flex justify-content-between align-items-center mb-3">
+      <h2>{{ section.name }}</h2>
+      <div class="d-flex gap-2">
+        <button type="button" class="genre-scroll-btn genre-scroll-prev" data-target="movie-track-{{ forloop.counter }}" aria-label="Prev"><i class="fas fa-chevron-left"></i></button>
+        <button type="button" class="genre-scroll-btn genre-scroll-next" data-target="movie-track-{{ forloop.counter }}" aria-label="Next"><i class="fas fa-chevron-right"></i></button>
+      </div>
     </div>
+    <div class="genre-track" id="movie-track-{{ forloop.counter }}">
+      {% for movie in section.movies %}
+      <a class="genre-card" href="{% url 'streaming_movie' movie.id %}">
+        {% if movie.thumb_img %}<img src="{{ movie.thumb_img.image.url }}" alt="{{ movie.title }}">
+        {% elif movie.poster_img %}<img src="{{ movie.poster_img.image.url }}" alt="{{ movie.title }}">{% endif %}
+        <span class="genre-card-title">{{ movie.title }}</span>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+<div class="sec-divider"></div>
+{% endfor %}
+
+<!-- ══ POPULAR CATEGORIES ══ -->
+{% if popular_categories %}
+<section class="popular-categories sec-mar" data-reveal>
+  <div class="container">
+    <div class="row align-items-center mb-4">
+      <div class="col-lg-4 col-12 mb-3 mb-lg-0">
+        <h2 class="mb-2">Popular Categories</h2>
+        <p class="light-text">Explore movies grouped by the genres fans love most.</p>
+      </div>
+      <div class="col-lg-8 col-12">
+        <div class="popular-categories-grid">
+          {% for cat in popular_categories %}
+          <a class="pc-card reveal-card" href="/category/{{ cat.name|lower|urlencode }}/">
+            {% if cat.movie.thumb_img %}<img src="{{ cat.movie.thumb_img.image.url }}" alt="{{ cat.name }}">
+            {% elif cat.movie.poster_img %}<img src="{{ cat.movie.poster_img.image.url }}" alt="{{ cat.name }}">{% endif %}
+            <span>{{ cat.name }}</span>
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<div class="sec-divider"></div>
+{% endif %}
+
+<!-- ══ ALL-TIME FAVORITES ══ -->
+{% if all_time_favorite_movies %}
+<section class="all-time-favorites sec-mar" data-reveal>
+  <div class="container">
+    <div class="heading style-1 d-flex justify-content-between align-items-center">
+      <h2>All-Time Favorite Movies</h2>
+      <a href="{% url 'all_popular_movies' %}" class="anime-btn2 dark ripple-host">View All <i class="fas fa-arrow-right ms-1"></i></a>
+    </div>
+    <div class="row">
+      {% for movie in all_time_favorite_movies %}
+      <div class="col-xl-3 col-lg-4 col-sm-6 col-12 reveal-card">
+        <div class="anime-blog" style="position:relative;">
+          <span class="fav-rank">{{ forloop.counter }}</span>
+          <div class="img-block">
+            {% if movie.poster_img %}<img src="{{ movie.poster_img.image.url }}" alt="{{ movie.title }}">
+            {% elif movie.thumb_img %}<img src="{{ movie.thumb_img.image.url }}" alt="{{ movie.title }}">{% endif %}
+            <div class="action-overlay"><a href="{% url 'streaming_movie' movie.id %}"><i class="fas fa-play-circle me-1"></i> Play Now</a></div>
+            <div class="card-glow-edge"></div><div class="card-shine"></div>
+          </div>
+          <div class="detail"><div class="tags"><p class="text">{% if movie.rating %}★ {{ movie.rating }}{% endif %}</p></div></div>
+          <a href="{% url 'streaming_movie' movie.id %}"><p>{{ movie.title }}</p></a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+<div class="sec-divider"></div>
+{% endif %}
+
+<!-- ══ TOP RATED ══ -->
+<section class="schedule style-1 sec-mar" data-reveal="left">
+  <div class="container">
+    <div class="heading style-1"><h2>Top Rated</h2></div>
+    <div class="schedule-box">
+      <div class="card">
+        <div class="card-header">
+          <ul class="nav nav-tabs card-header-tabs" data-bs-tabs="tabs" role="tablist">
+            <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#tab-today"><p>Today</p><h2>Today</h2></a></li>
+            <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-week"><p>This Week</p><h2>Week</h2></a></li>
+            <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-month"><p>This Month</p><h2>Month</h2></a></li>
+            <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-year"><p>This Year</p><h2>Year</h2></a></li>
+          </ul>
+        </div>
+        <div class="card-body style-1 tab-content">
+          <div class="row justify-content-between mb-3">
+            <div class="col-lg-2 col-md-3 col-sm-3"><h4>Movie Details</h4></div>
+            <div class="col-lg-2 col-md-3 col-sm-0 text-end"><h4>Rating</h4></div>
+          </div>
+          {% for tab_id in top_rated_tabs %}
+          <div class="tab-pane fade{% if forloop.first %} show active{% endif %}" id="tab-{{ tab_id }}" role="tabpanel">
+            {% for movie in top_rated_movies %}
+            <div class="row-wrap">
+              <a href="{% url 'streaming_movie' movie.id %}">
+                <div class="row align-items-center">
+                  <div class="col-xl-8 col-lg-8 col-md-7 col-sm-10 col-12">
+                    <div class="row align-items-center">
+                      <div class="col-xl-1 col-lg-2 col-md-2 col-sm-2 col-3 ps-0 pe-0 text-end">
+                        {% if movie.thumb_img %}<img src="{{ movie.thumb_img.image.url }}" alt="{{ movie.title }}" class="schedule-thumb">{% endif %}
+                      </div>
+                      <div class="col-xl-8 col-lg-8 col-md-7 col-sm-7 col-9">
+                        <div class="schedule-content align-middle">
+                          <p class="small-title">{{ movie.title }}</p>
+                          {% for g in movie.genres.all %}<p class="text-box">{{ g.name }}</p>{% endfor %}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-xl-3 col-lg-3 col-md-3 col-sm-0 col-0 text-end"><p class="text">{{ movie.rating }}</p></div>
+                </div>
+              </a>{% if not forloop.last %}<hr>{% endif %}
+            </div>
+            {% empty %}<p class="text text-center py-4">No movies found.</p>{% endfor %}
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
 </section>
 
 {% include "_playlist_modal.html" %}

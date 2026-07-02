@@ -152,6 +152,7 @@
     document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
 
     document.querySelectorAll('a,button,.anime-blog,.play-butn').forEach(el => {
+      if (el.closest('.navbar-brand')) return;
       el.addEventListener('mouseenter', () => { hovering = true; });
       el.addEventListener('mouseleave', () => { hovering = false; });
     });

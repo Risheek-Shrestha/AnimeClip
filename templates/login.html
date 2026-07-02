@@ -34,9 +34,10 @@
                         </div>
 
                         <div class="d-flex justify-content-between align-items-center mb-4">
-                            <label class="d-flex align-items-center gap-2" style="cursor:pointer;font-size:.9rem;opacity:.8">
-                                <input type="checkbox" name="remember_me" id="remember-me">
-                                {% trans "Remember me" %}
+                            <label class="toggle-row m-0" for="remember-me">
+                                <input type="checkbox" class="toggle-switch-input" name="remember_me" id="remember-me">
+                                <span class="toggle-box" aria-hidden="true"></span>
+                                <span class="checkbox-label">{% trans "Remember me" %}</span>
                             </label>
                             <a href="{% url 'password_reset' %}" class="forgot-link">{% trans "Forgot Password?" %}</a>
                         </div>
@@ -47,15 +48,16 @@
                     </form>
                 </div>
 
-                <div class="toggle-row mb-3 text-start">
-                    <input type="checkbox" class="toggle-switch" id="check">
-                    <label class="checkbox-label" for="check">
-                        {% trans "I wish to receive news and promotions from Animeloop by email." %}
-                    </label>
-                </div>
+                <label class="toggle-row toggle-row-standalone text-start" for="check">
+                    <input type="checkbox" class="toggle-switch-input" id="check">
+                    <span class="toggle-box" aria-hidden="true"></span>
+                    <span class="checkbox-label">
+                        {% trans "I wish to receive news and promotions from AnimeClip by email." %}
+                    </span>
+                </label>
 
                 <p class="policy">
-                    {% blocktrans %}By continuing, you agree to Animeloop <a href="#">Terms of Use</a> and <a href="#">Privacy Policy</a>.{% endblocktrans %}
+                    {% blocktrans %}By continuing, you agree to AnimeClip <a href="#">Terms of Use</a> and <a href="#">Privacy Policy</a>.{% endblocktrans %}
                 </p>
 
                 {% url 'signup' as signup_url %}
