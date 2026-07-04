@@ -11,7 +11,7 @@ from django.utils import timezone
 
 from .content_access import filter_list_age_appropriate
 from .models import Anime, Movie, Season, WatchHistory
-from .views import safe_cache_get, safe_cache_set
+from .views import attach_episode_info, safe_cache_get, safe_cache_set
 
 
 def trending(request):
@@ -42,6 +42,7 @@ def trending(request):
         # Preserve order from annotation
         order_map = {aid: i for i, aid in enumerate(anime_id_list)}
         trending_anime.sort(key=lambda a: order_map.get(a.pk, 99))
+        attach_episode_info(trending_anime)
 
         # Top 12 trending movies
         movie_ids = (

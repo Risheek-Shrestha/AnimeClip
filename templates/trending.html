@@ -15,54 +15,81 @@
 
 <section class="trending-page sec-mar">
   <div class="container">
-    <h2 class="section-title">🔥 Trending Anime — Last 7 Days</h2>
+    <div class="heading style-1">
+      <h2>Trending Anime <span>Last 7 Days</span></h2>
+    </div>
     <div class="row">
       {% for anime in trending_anime %}
-      <div class="col-lg-3 col-md-4 col-sm-6 col-12 mb-4">
-        <div class="single-slider slider-card">
-          {% if anime.card_img %}
-          <img src="{{ anime.card_img.image.url }}" alt="{{ anime.title }}" loading="lazy" class="img-fluid">
-          {% elif anime.thumb_img %}
-          <img src="{{ anime.thumb_img.image.url }}" alt="{{ anime.title }}" loading="lazy" class="img-fluid">
-          {% endif %}
-          <div class="slider-card-caption">
-            <h5>{{ anime.title }}</h5>
-            <div class="slider-card-genre">
-              {% for g in anime.genres.all %}<span>{{ g.name }}</span>{% endfor %}
-            </div>
-            {% if anime.first_episode %}
-            <a href="{% url 'streaming' anime.first_episode.id %}" class="btn btn-sm btn-primary mt-2">▶ Watch</a>
+      <div class="col-xl-3 col-lg-4 col-sm-6 col-12">
+        <div class="anime-blog">
+          <div class="img-block">
+            {% if anime.card_img %}
+            <img src="{{ anime.card_img.image.url }}" alt="{{ anime.title }}" loading="lazy">
+            {% elif anime.thumb_img %}
+            <img src="{{ anime.thumb_img.image.url }}" alt="{{ anime.title }}" loading="lazy">
             {% endif %}
-            <a href="{% url 'anime_detail' anime.slug %}" class="btn btn-sm btn-outline-light mt-2">Details</a>
+            <div class="action-overlay">
+              {% if anime.first_episode %}
+              <a href="{% url 'streaming' anime.first_episode.id %}">
+                <i class="fas fa-play-circle me-1"></i> Play Now
+              </a>
+              {% else %}
+              <a href="{% url 'anime_detail' anime.slug %}">
+                <i class="fas fa-info-circle me-1"></i> Details
+              </a>
+              {% endif %}
+            </div>
+            <div class="card-glow-edge"></div>
+            <div class="card-shine"></div>
           </div>
+          <div class="detail">
+            <div class="tags">
+              {% for g in anime.genres.all|slice:":2" %}
+              <span class="text-box">{{ g.name }}</span>
+              {% endfor %}
+            </div>
+          </div>
+          <a href="{% url 'anime_detail' anime.slug %}"><p>{{ anime.title }}</p></a>
         </div>
       </div>
       {% empty %}
-      <div class="col-12"><p class="text-muted">No trending anime data yet — start watching!</p></div>
+      <div class="col-12"><p class="light-text text-center py-4">No trending anime data yet — start watching!</p></div>
       {% endfor %}
     </div>
 
-    <h2 class="section-title mt-5">🔥 Trending Movies — Last 7 Days</h2>
+    <div class="heading style-1 mt-5">
+      <h2>Trending Movies <span>Last 7 Days</span></h2>
+    </div>
     <div class="row">
       {% for movie in trending_movies %}
-      <div class="col-lg-3 col-md-4 col-sm-6 col-12 mb-4">
-        <div class="single-slider slider-card">
-          {% if movie.card_img %}
-          <img src="{{ movie.card_img.image.url }}" alt="{{ movie.title }}" loading="lazy" class="img-fluid">
-          {% elif movie.thumb_img %}
-          <img src="{{ movie.thumb_img.image.url }}" alt="{{ movie.title }}" loading="lazy" class="img-fluid">
-          {% endif %}
-          <div class="slider-card-caption">
-            <h5>{{ movie.title }}</h5>
-            <div class="slider-card-genre">
-              {% for g in movie.genres.all %}<span>{{ g.name }}</span>{% endfor %}
+      <div class="col-xl-3 col-lg-4 col-sm-6 col-12">
+        <div class="anime-blog">
+          <div class="img-block">
+            {% if movie.card_img %}
+            <img src="{{ movie.card_img.image.url }}" alt="{{ movie.title }}" loading="lazy">
+            {% elif movie.thumb_img %}
+            <img src="{{ movie.thumb_img.image.url }}" alt="{{ movie.title }}" loading="lazy">
+            {% endif %}
+            <div class="action-overlay">
+              <a href="{% url 'streaming_movie' movie.id %}">
+                <i class="fas fa-play-circle me-1"></i> Play Now
+              </a>
             </div>
-            <a href="{% url 'streaming_movie' movie.id %}" class="btn btn-sm btn-primary mt-2">▶ Watch</a>
+            <div class="card-glow-edge"></div>
+            <div class="card-shine"></div>
           </div>
+          <div class="detail">
+            <div class="tags">
+              {% for g in movie.genres.all|slice:":2" %}
+              <span class="text-box">{{ g.name }}</span>
+              {% endfor %}
+            </div>
+          </div>
+          <a href="{% url 'streaming_movie' movie.id %}"><p>{{ movie.title }}</p></a>
         </div>
       </div>
       {% empty %}
-      <div class="col-12"><p class="text-muted">No trending movie data yet.</p></div>
+      <div class="col-12"><p class="light-text text-center py-4">No trending movie data yet.</p></div>
       {% endfor %}
     </div>
   </div>
