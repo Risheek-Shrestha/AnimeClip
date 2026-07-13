@@ -88,8 +88,16 @@ def filter_index_context(ctx, request):
     if not restricted_to_pg13(request):
         return ctx
     ctx = dict(ctx)
-    for key in ('featured_animes', 'Recent_animes', 'Popular_animes', 'top_animes', 'new_animes', 'completed_animes',
-                'trending_animes', 'all_time_favorite_animes'):
+    for key in (
+        'featured_animes',
+        'Recent_animes',
+        'Popular_animes',
+        'top_animes',
+        'new_animes',
+        'completed_animes',
+        'trending_animes',
+        'all_time_favorite_animes',
+    ):
         if key in ctx:
             ctx[key] = _drop_adult(ctx[key])
     if 'category_sections' in ctx:
@@ -110,8 +118,14 @@ def filter_movies_context(ctx, request):
     if not restricted_to_pg13(request):
         return ctx
     ctx = dict(ctx)
-    for key in ('featured_movies', 'recent_movies', 'top_rated_movies', 'popular_movies',
-                'trending_movies', 'all_time_favorite_movies'):
+    for key in (
+        'featured_movies',
+        'recent_movies',
+        'top_rated_movies',
+        'popular_movies',
+        'trending_movies',
+        'all_time_favorite_movies',
+    ):
         if key in ctx:
             ctx[key] = _drop_adult(ctx[key])
     if 'category_sections' in ctx:

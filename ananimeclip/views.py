@@ -246,10 +246,14 @@ def _get_public_index_context():
     )
     attach_episode_info(all_time_favorite_animes)
 
-    genre_counts = Genre.objects.annotate(anime_count=Count('anime')).filter(anime_count__gte=1).order_by('-anime_count')
+    genre_counts = (
+        Genre.objects.annotate(anime_count=Count('anime')).filter(anime_count__gte=1).order_by('-anime_count')
+    )
     category_sections = []
     for genre in genre_counts[:4]:
-        genre_animes = list(Anime.objects.filter(genres=genre).prefetch_related('media_images').order_by('-rating')[:10])
+        genre_animes = list(
+            Anime.objects.filter(genres=genre).prefetch_related('media_images').order_by('-rating')[:10]
+        )
         attach_episode_info(genre_animes)
         if genre_animes:
             category_sections.append({'name': genre.name, 'animes': genre_animes})
@@ -366,7 +370,9 @@ def movies(request):
                 Movie.objects.filter(is_popular=True).prefetch_related('media_images', 'sources', 'genres')
             ),
         }
-        movie_genre_counts = Genre.objects.annotate(movie_count=Count('movie')).filter(movie_count__gte=1).order_by('-movie_count')
+        movie_genre_counts = (
+            Genre.objects.annotate(movie_count=Count('movie')).filter(movie_count__gte=1).order_by('-movie_count')
+        )
         movie_category_sections = []
         for genre in movie_genre_counts[:4]:
             gms = list(Movie.objects.filter(genres=genre).prefetch_related('media_images').order_by('-rating')[:10])
@@ -377,8 +383,12 @@ def movies(request):
             rep = Movie.objects.filter(genres=genre).prefetch_related('media_images').order_by('-rating').first()
             if rep:
                 movie_popular_categories.append({'name': genre.name, 'movie': rep})
-        public['trending_movies'] = list(Movie.objects.order_by('-rating')[:4].prefetch_related('media_images', 'sources', 'genres'))
-        public['all_time_favorite_movies'] = list(Movie.objects.order_by('-rating')[:8].prefetch_related('media_images', 'sources', 'genres'))
+        public['trending_movies'] = list(
+            Movie.objects.order_by('-rating')[:4].prefetch_related('media_images', 'sources', 'genres')
+        )
+        public['all_time_favorite_movies'] = list(
+            Movie.objects.order_by('-rating')[:8].prefetch_related('media_images', 'sources', 'genres')
+        )
         public['category_sections'] = movie_category_sections
         public['popular_categories'] = movie_popular_categories
         safe_cache_set(CACHE_KEY, public, timeout=300)
