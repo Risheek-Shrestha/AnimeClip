@@ -123,20 +123,19 @@
                  aria-expanded="false">
                 {% trans "Categories" %} <i class="fas fa-angle-down"></i>
               </a>
-              <ul class="dropdown-menu" aria-labelledby="genre"
+              <ul class="dropdown-menu categories-dropdown" aria-labelledby="genre"
                   data-popper-placement="bottom-start">
-                <li><div class="custom-control custom-checkbox"><a href="/category/action/"><i class="fas fa-bolt me-2"></i> {% trans "Action" %}</a></div></li>
-                <li><div class="custom-control custom-checkbox"><a href="/category/adventure/"><i class="fas fa-compass me-2"></i> {% trans "Adventure" %}</a></div></li>
-                <li><div class="custom-control custom-checkbox"><a href="/category/comedy/"><i class="fas fa-laugh me-2"></i> {% trans "Comedy" %}</a></div></li>
-                <li><div class="custom-control custom-checkbox"><a href="/category/drama/"><i class="fas fa-theater-masks me-2"></i> {% trans "Drama" %}</a></div></li>
-                <li><div class="custom-control custom-checkbox"><a href="/category/fantasy/"><i class="fas fa-hat-wizard me-2"></i> {% trans "Fantasy" %}</a></div></li>
-                <li><div class="custom-control custom-checkbox"><a href="/category/horror/"><i class="fas fa-skull me-2"></i> {% trans "Horror" %}</a></div></li>
-                <li><div class="custom-control custom-checkbox"><a href="/category/isekai/"><i class="fas fa-door-open me-2"></i> {% trans "Isekai" %}</a></div></li>
-                <li><div class="custom-control custom-checkbox"><a href="/category/romance/"><i class="fas fa-heart me-2"></i> {% trans "Romance" %}</a></div></li>
-                <li><div class="custom-control custom-checkbox"><a href="/category/sci-fi/"><i class="fas fa-rocket me-2"></i> {% trans "Sci-Fi" %}</a></div></li>
-                <li><div class="custom-control custom-checkbox"><a href="/category/slice-of-life/"><i class="fas fa-leaf me-2"></i> {% trans "Slice of Life" %}</a></div></li>
-                <li><div class="custom-control custom-checkbox"><a href="{% url 'all_categories' %}"><i class="fas fa-th me-2"></i> {% trans "View All" %}</a></div></li>
-                <li><hr class="dropdown-divider"></li>
+                <li><a href="/category/action/"><i class="fas fa-bolt me-2"></i> {% trans "Action" %}</a></li>
+                <li><a href="/category/adventure/"><i class="fas fa-compass me-2"></i> {% trans "Adventure" %}</a></li>
+                <li><a href="/category/comedy/"><i class="fas fa-laugh me-2"></i> {% trans "Comedy" %}</a></li>
+                <li><a href="/category/drama/"><i class="fas fa-theater-masks me-2"></i> {% trans "Drama" %}</a></li>
+                <li><a href="/category/fantasy/"><i class="fas fa-hat-wizard me-2"></i> {% trans "Fantasy" %}</a></li>
+                <li><a href="/category/horror/"><i class="fas fa-skull me-2"></i> {% trans "Horror" %}</a></li>
+                <li><a href="/category/isekai/"><i class="fas fa-door-open me-2"></i> {% trans "Isekai" %}</a></li>
+                <li><a href="/category/romance/"><i class="fas fa-heart me-2"></i> {% trans "Romance" %}</a></li>
+                <li><a href="/category/sci-fi/"><i class="fas fa-rocket me-2"></i> {% trans "Sci-Fi" %}</a></li>
+                <li><a href="/category/slice-of-life/"><i class="fas fa-leaf me-2"></i> {% trans "Slice of Life" %}</a></li>
+                <li class="categories-dropdown-footer"><a href="{% url 'all_categories' %}"><i class="fas fa-th me-2"></i> {% trans "View All Categories" %}</a></li>
               </ul>
             </li>
           </ul>

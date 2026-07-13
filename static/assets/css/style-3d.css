@@ -542,20 +542,44 @@ ul.pagination li a:hover, ul.pagination li a.current {
 .header-search-box { width: 340px; margin: 0 12px; }
 
 .header .dropdown-menu.show {
-  width: 420px;
   background: var(--c-panel);
   backdrop-filter: var(--glass-blur);
   border: 1px solid var(--c-border);
   border-radius: 16px;
   box-shadow: var(--shadow-xl);
 }
-.header .dropdown-menu.show li { width: 46%; display: inline-block; }
 .header .dropdown-menu.show a {
   font-weight: 500; font-size: 14px;
   padding: 10px; color: var(--c-text-2);
   border-radius: 8px; transition: var(--transition);
 }
 .header .dropdown-menu.show a:hover { color: var(--c-gold); background: var(--c-gold-dim); }
+
+.header .dropdown-menu.categories-dropdown.show {
+  width: 420px;
+  padding: 10px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px 10px;
+}
+.header .dropdown-menu.categories-dropdown.show li { width: auto; display: block; }
+.header .dropdown-menu.categories-dropdown.show a { display: flex; align-items: center; white-space: nowrap; }
+.header .dropdown-menu.categories-dropdown.show .categories-dropdown-footer {
+  grid-column: 1 / -1;
+  margin-top: 6px;
+  padding-top: 10px;
+  border-top: 1px solid var(--c-border);
+}
+.header .dropdown-menu.categories-dropdown.show .categories-dropdown-footer a {
+  justify-content: center;
+  font-weight: 600;
+  color: var(--c-gold);
+  border: 1px solid var(--c-border-gold);
+}
+.header .dropdown-menu.categories-dropdown.show .categories-dropdown-footer a:hover {
+  background: var(--c-gold);
+  color: var(--c-dark);
+}
 
 @media (max-width:992px) {
   .header.style-1, .header.style-2 { height: 70px; }
@@ -1169,16 +1193,17 @@ ul.pagination li a:hover, ul.pagination li a.current {
 [data-reveal-delay="3"] { transition-delay: 0.24s; }
 [data-reveal-delay="4"] { transition-delay: 0.32s; }
 
-/* Card stagger */
-.recent .row .col-xl-3, .recent .row .col-lg-4, .recent .row .col-sm-6,
-.popular .row .col-xl-3, .popular .row .col-lg-4, .popular .row .col-sm-6 {
-  opacity: 0; transform: translateY(24px) scale(0.96);
-  transition: opacity 0.55s var(--ease-out), transform 0.55s var(--ease-out);
-}
-.recent .row .col-xl-3.is-visible, .recent .row .col-lg-4.is-visible, .recent .row .col-sm-6.is-visible,
-.popular .row .col-xl-3.is-visible, .popular .row .col-lg-4.is-visible, .popular .row .col-sm-6.is-visible {
-  opacity: 1; transform: none;
-}
+/* Card stagger
+   NOTE: this used to set opacity:0 on every .col-xl-3/.col-lg-4/.col-sm-6
+   inside .recent/.popular rows, only removed once JS added `.is-visible`
+   to that *same* column. But the cards in these rows carry `.reveal-card`
+   and live inside a `[data-reveal]` section, which already runs its own
+   independent opacity/is-visible cycle. The two systems raced/duplicated
+   each other, and if the column-level `.is-visible` was never applied
+   (or applied before this rule's opacity:0 took effect), the cards were
+   left permanently invisible or stuck mid-animation. The `[data-reveal]
+   .reveal-card` rules below already cover the entrance animation for
+   these cards, so this duplicate, conflicting rule has been removed. */
 
 /* ?? RIPPLE ????????????????????????????????????????????????????? */
 @keyframes ripple-expand { to { transform: scale(28); opacity: 0; } }

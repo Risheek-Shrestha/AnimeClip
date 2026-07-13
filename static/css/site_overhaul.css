@@ -17,6 +17,16 @@
   .header-search-form { flex:1 1 auto; }
 }
 
+/* ---------- HERO BANNER BACKGROUND ----------
+   The template conditionally adds a `bg-cover` class and an inline
+   background-image style to `.banner-block`, but no rule ever defined
+   `.bg-cover` — so the browser fell back to the CSS default
+   (background-repeat: repeat, background-position: 0 0, no sizing),
+   which tiled the poster image across the whole hero section instead
+   of covering it. */
+.banner-block.bg-cover,
+.banner-block { background-size: cover; background-position: center center; background-repeat: no-repeat; }
+
 /* ---------- WEEKLY SCHEDULE — CSS grid for guaranteed alignment ---------- */
 .schedule-row { display:grid; grid-template-columns: 64px 1fr 140px 120px; align-items:center; column-gap:20px; }
 .schedule-row-head { padding-bottom:14px; }
@@ -24,7 +34,7 @@
 .schedule-row-head .sch-status h4,
 .schedule-row-head .sch-episode h4 { text-align:right; }
 .sch-details { display:flex; align-items:center; gap:14px; min-width:0; }
-.sch-logo { max-height:32px; width:auto; flex:0 0 auto; }
+.sch-logo { max-height:56px; width:56px; height:56px; object-fit:cover; border-radius:8px; flex:0 0 auto; }
 .sch-status,
 .sch-episode { text-align:right; }
 .sch-status .text,
@@ -33,19 +43,31 @@
 .schedule .tab-pane .row-wrap hr { margin:0; opacity:.08; }
 .schedule .schedule-content p { margin:0 0 4px 0; }
 .schedule .schedule-content p:last-child { margin-bottom:0; }
+@media (max-width:575px) {
+  .schedule-row { grid-template-columns: 48px 1fr; row-gap:6px; }
+  .schedule-row-head .sch-status,
+  .schedule-row-head .sch-episode,
+  .schedule-row .sch-status,
+  .schedule-row .sch-episode { display:none; }
+}
 
 /* ---------- BRAND LOGO ---------- */
 .brand-logo { display:inline-flex; align-items:center; gap:8px; font-family:var(--font-heading,inherit); font-weight:800; font-size:24px; letter-spacing:.5px; line-height:1; color:var(--c-text-1,#fff); text-decoration:none; }
-.brand-logo svg { display:block; }
+.brand-logo svg { display:block; color:inherit; opacity:1; }
 .brand-logo .brand-clip { color:var(--c-gold,#f4c542); }
+/* Bootstrap's default .navbar-brand:hover sets color via --bs-navbar-brand-hover-color,
+   which resolves to black on this dark header and made the logo (text + currentColor SVG
+   stroke) blend into the background on hover. Force it back to the brand color. */
 .brand-logo:hover,
 .brand-logo:focus,
 .navbar-brand.brand-logo:hover,
-.navbar-brand.brand-logo:focus { color:var(--c-text-1,#fff); opacity:1; text-decoration:none; }
-.brand-logo:hover .brand-clip,
-.brand-logo:focus .brand-clip { color:var(--c-gold,#f4c542); }
+.navbar-brand.brand-logo:focus,
+.header .navbar-brand.brand-logo:hover,
+.header .navbar-brand.brand-logo:focus { color:var(--c-text-1,#fff) !important; opacity:1 !important; text-decoration:none; }
 .brand-logo:hover svg,
-.brand-logo:focus svg { opacity:1; }
+.brand-logo:focus svg { opacity:1 !important; color:inherit !important; }
+.brand-logo:hover .brand-clip,
+.brand-logo:focus .brand-clip { color:var(--c-gold,#f4c542) !important; }
 .footer .brand-logo { font-size:22px; margin-bottom:16px; }
 
 /* ============================================================
