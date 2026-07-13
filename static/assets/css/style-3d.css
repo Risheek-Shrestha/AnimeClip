@@ -667,13 +667,21 @@ ul.pagination li a:hover, ul.pagination li a.current {
   display: flex;
   align-items: stretch;
 }
-.banner.style-1 .banner-content {
+.banner.style-1 .banner-content,
+.banner.style-2 .banner-content {
   display: flex;
   align-items: center;
   min-height: calc(100vh - 90px);
   position: relative;
   z-index: 2;
   width: 100%;
+}
+.banner.style-2 .banner-block {
+  position: relative;
+  overflow: hidden;
+  min-height: calc(100vh - 90px);
+  display: flex;
+  align-items: stretch;
 }
 .banner-block .container {
   position: relative;
