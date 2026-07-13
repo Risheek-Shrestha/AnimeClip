@@ -13,15 +13,11 @@
         <div class="row align-items-center">
           <div class="col-lg-5 col-12">
             <h2 class="title">{{ movie.title|upper }}</h2>
-            <p class="text">{% for genre in movie.genres.all %}{{ genre.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>
+            <p class="text">{% for genre in movie.genres.all|slice:":3" %}{{ genre.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>
             {% if movie.release_date %}<p class="light-text">{{ movie.release_date }}</p>{% endif %}
             <p class="light-text">MOVIE SUMMARY</p>
             <p>{{ movie.description|truncatewords:30 }}</p>
             <a class="play-butn ripple-host" href="{% url 'streaming_movie' movie.id %}"><span>Play Now</span></a>
-          </div>
-          <div class="col-lg-7 col-12">
-            {% if movie.banner_img %}<img src="{{ movie.banner_img.image.url }}" alt="{{ movie.title }}">
-            {% elif movie.thumb_img %}<img src="{{ movie.thumb_img.image.url }}" alt="{{ movie.title }}">{% endif %}
           </div>
         </div>
       </div>
