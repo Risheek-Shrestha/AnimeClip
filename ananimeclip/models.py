@@ -9,6 +9,16 @@ AGE_CHOICES = [
     ('r', '18+'),
 ]
 
+DAY_CHOICES = [
+    ('Sunday', 'Sunday'),
+    ('Monday', 'Monday'),
+    ('Tuesday', 'Tuesday'),
+    ('Wednesday', 'Wednesday'),
+    ('Thursday', 'Thursday'),
+    ('Friday', 'Friday'),
+    ('Saturday', 'Saturday'),
+]
+
 
 class Profile(models.Model):
     PLAN_CHOICES = [('free', 'Free'), ('premium', 'Premium')]
@@ -165,16 +175,6 @@ class Anime(models.Model):
 
 
 class Movie(models.Model):
-    DAY_CHOICES = [
-        ('Sunday', 'Sunday'),
-        ('Monday', 'Monday'),
-        ('Tuesday', 'Tuesday'),
-        ('Wednesday', 'Wednesday'),
-        ('Thursday', 'Thursday'),
-        ('Friday', 'Friday'),
-        ('Saturday', 'Saturday'),
-    ]
-
     title = models.CharField(max_length=100)
     description = models.TextField()
     genres = models.ManyToManyField('Genre', blank=True)
@@ -242,16 +242,6 @@ class Season(models.Model):
         ('upcoming', 'Upcoming'),
     ]
 
-    DAY_CHOICES = [
-        ('Sunday', 'Sunday'),
-        ('Monday', 'Monday'),
-        ('Tuesday', 'Tuesday'),
-        ('Wednesday', 'Wednesday'),
-        ('Thursday', 'Thursday'),
-        ('Friday', 'Friday'),
-        ('Saturday', 'Saturday'),
-    ]
-
     anime = models.ForeignKey(Anime, on_delete=models.CASCADE, related_name='seasons')
     number = models.PositiveIntegerField()
     title = models.CharField(max_length=100, blank=True)
@@ -268,16 +258,6 @@ class Season(models.Model):
 
 
 class Episode(models.Model):
-    DAY_CHOICES = [
-        ('Sunday', 'Sunday'),
-        ('Monday', 'Monday'),
-        ('Tuesday', 'Tuesday'),
-        ('Wednesday', 'Wednesday'),
-        ('Thursday', 'Thursday'),
-        ('Friday', 'Friday'),
-        ('Saturday', 'Saturday'),
-    ]
-
     season = models.ForeignKey(Season, on_delete=models.CASCADE, related_name='episodes')
     number = models.PositiveIntegerField()
     title = models.CharField(max_length=100, blank=True)

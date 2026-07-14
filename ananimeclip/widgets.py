@@ -36,10 +36,6 @@ class CloudinaryVideoWidget(forms.Widget):
                            cursor:pointer; font-size:14px;">
                 {'Replace Video' if current_value else 'Upload Video'}
             </button>
-            <script
-                src="https://upload-widget.cloudinary.com/global/all.js"
-                type="text/javascript">
-            </script>
             <script type="text/javascript">
                 (function() {{
                     var btn = document.getElementById("upload_btn_{name}");

@@ -24,9 +24,8 @@ Authenticated:
   GET  /api/v1/me/recommendations/     – personalised recommendations
 """
 
-import math
-
 from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django_ratelimit.decorators import ratelimit
@@ -53,22 +52,19 @@ PAGE_SIZE = 20
 
 def _paginate(qs, request):
     """Return (page_objects, pagination_meta_dict)."""
+    paginator = Paginator(qs, PAGE_SIZE)
     try:
-        page = max(1, int(request.GET.get('page', 1)))
+        page_num = max(1, min(int(request.GET.get('page', 1)), paginator.num_pages or 1))
     except (TypeError, ValueError):
-        page = 1
-    total = qs.count()
-    total_pages = max(1, math.ceil(total / PAGE_SIZE))
-    page = min(page, total_pages)
-    offset = (page - 1) * PAGE_SIZE
-    objects = list(qs[offset : offset + PAGE_SIZE])
-    return objects, {
-        'page': page,
+        page_num = 1
+    page = paginator.page(page_num)
+    return list(page.object_list), {
+        'page': page_num,
         'page_size': PAGE_SIZE,
-        'total': total,
-        'total_pages': total_pages,
-        'has_next': page < total_pages,
-        'has_prev': page > 1,
+        'total': paginator.count,
+        'total_pages': paginator.num_pages,
+        'has_next': page.has_next(),
+        'has_prev': page.has_previous(),
     }
 
 
@@ -97,7 +93,7 @@ def _source_dict(src):
 
 
 def _episode_dict(ep):
-    sources = list(ep.sources.all()) if hasattr(ep, '_prefetched_objects_cache') else list(ep.sources.all())
+    sources = list(ep.sources.all())
     return {
         'id': ep.pk,
         'number': ep.number,
@@ -445,6 +441,26 @@ def api_recommendations(request):
 # ---------------------------------------------------------------------------
 
 
+def _comment_dict(c):
+    return {
+        'id': c.pk,
+        'user': c.user.get_full_name() or c.user.username,
+        'body': c.body,
+        'created_at': c.created_at.isoformat(),
+        'total_likes': c.total_likes(),
+        'replies': [
+            {
+                'id': r.pk,
+                'user': r.user.get_full_name() or r.user.username,
+                'body': r.body,
+                'created_at': r.created_at.isoformat(),
+                'total_likes': r.total_likes(),
+            }
+            for r in c.replies.all()
+        ],
+    }
+
+
 @login_required
 @require_http_methods(['GET'])
 def api_episode_comments(request, episode_id):
@@ -461,25 +477,6 @@ def api_episode_comments(request, episode_id):
         .order_by('created_at')
     )
     items, meta = _paginate(qs, request)
-
-    def _comment_dict(c):
-        return {
-            'id': c.pk,
-            'user': c.user.get_full_name() or c.user.username,
-            'body': c.body,
-            'created_at': c.created_at.isoformat(),
-            'total_likes': c.total_likes(),
-            'replies': [
-                {
-                    'id': r.pk,
-                    'user': r.user.get_full_name() or r.user.username,
-                    'body': r.body,
-                    'created_at': r.created_at.isoformat(),
-                    'total_likes': r.total_likes(),
-                }
-                for r in c.replies.all()
-            ],
-        }
 
     return JsonResponse({'pagination': meta, 'results': [_comment_dict(c) for c in items]})
 
@@ -500,25 +497,6 @@ def api_movie_comments(request, movie_id):
         .order_by('created_at')
     )
     items, meta = _paginate(qs, request)
-
-    def _comment_dict(c):
-        return {
-            'id': c.pk,
-            'user': c.user.get_full_name() or c.user.username,
-            'body': c.body,
-            'created_at': c.created_at.isoformat(),
-            'total_likes': c.total_likes(),
-            'replies': [
-                {
-                    'id': r.pk,
-                    'user': r.user.get_full_name() or r.user.username,
-                    'body': r.body,
-                    'created_at': r.created_at.isoformat(),
-                    'total_likes': r.total_likes(),
-                }
-                for r in c.replies.all()
-            ],
-        }
 
     return JsonResponse({'pagination': meta, 'results': [_comment_dict(c) for c in items]})
 

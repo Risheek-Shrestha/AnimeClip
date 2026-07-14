@@ -77,6 +77,17 @@ def attach_episode_info(anime_list):
     return anime_list
 
 
+def attach_progress_pct(history_entries):
+    """Annotate each WatchHistory entry with a 0-100 progress_pct, based on
+    episode/movie duration_mins. Used by both the homepage's "Continue
+    Watching" row and the dedicated continue_watching view."""
+    for entry in history_entries:
+        content = entry.episode or entry.movie
+        total_secs = (content.duration_mins * 60) if content and content.duration_mins else 0
+        entry.progress_pct = min(round(entry.progress_seconds / total_secs * 100), 100) if total_secs else 0
+    return history_entries
+
+
 def safe_cache_get(key):
     try:
         return cache.get(key)
@@ -299,17 +310,7 @@ def index(request):
             .prefetch_related('episode__season__anime__media_images', 'movie__media_images')
             .order_by('-updated_at')[:8]
         )
-        # Annotate progress_pct so the "Continue Watching" row on the homepage
-        # can render the progress bar (same logic as the dedicated continue_watching view).
-        for entry in user_history:
-            if entry.episode and entry.episode.duration_mins:
-                total_secs = entry.episode.duration_mins * 60
-                entry.progress_pct = min(round(entry.progress_seconds / total_secs * 100), 100) if total_secs else 0
-            elif entry.movie and entry.movie.duration_mins:
-                total_secs = entry.movie.duration_mins * 60
-                entry.progress_pct = min(round(entry.progress_seconds / total_secs * 100), 100) if total_secs else 0
-            else:
-                entry.progress_pct = 0
+        attach_progress_pct(user_history)
         user_watch_later = list(
             WatchLater.objects.filter(**_wh_filter)
             .select_related('episode__season__anime', 'movie')
@@ -1104,13 +1105,8 @@ def favourites(request):
             'anime__seasons__episodes',
         )
     )
-    anime_list = []
-    for f in follows:
-        anime = f.anime
-        seasons = list(anime.seasons.all())
-        anime.first_season = seasons[0] if seasons else None
-        anime.first_episode = seasons[0].episodes.first() if anime.first_season else None
-        anime_list.append(anime)
+    anime_list = [f.anime for f in follows]
+    attach_episode_info(anime_list)
 
     movie_follows = (
         Follow.objects.filter(user=request.user, movie__isnull=False)
@@ -1223,14 +1219,10 @@ def live_search(request):
         anime_qs = filter_age_appropriate(Anime.objects.filter(title__icontains=query), request).prefetch_related(
             Prefetch('seasons', queryset=Season.objects.prefetch_related('episodes'))
         )[:5]
+    attach_episode_info(anime_qs)
     for a in anime_qs:
-        seasons = list(a.seasons.all())
-        first_episode = None
-        if seasons:
-            episodes = list(seasons[0].episodes.all())
-            first_episode = episodes[0] if episodes else None
-        if first_episode:
-            results.append({'id': first_episode.id, 'title': a.title, 'type': 'anime'})
+        if a.first_episode:
+            results.append({'id': a.first_episode.id, 'title': a.title, 'type': 'anime'})
 
     safe_cache_set(cache_key, results, timeout=60)
     return JsonResponse({'results': results})
@@ -1421,15 +1413,7 @@ def continue_watching(request):
         .select_related('episode__season__anime', 'movie')
         .prefetch_related('episode__season__anime__media_images', 'movie__media_images')[:20]
     )
-    for entry in history:
-        if entry.episode and entry.episode.duration_mins:
-            total_secs = entry.episode.duration_mins * 60
-            entry.progress_pct = min(round(entry.progress_seconds / total_secs * 100), 100)
-        elif entry.movie and entry.movie.duration_mins:
-            total_secs = entry.movie.duration_mins * 60
-            entry.progress_pct = min(round(entry.progress_seconds / total_secs * 100), 100)
-        else:
-            entry.progress_pct = 0
+    attach_progress_pct(history)
     return render(request, 'continue_watching.html', {'title': 'Continue Watching', 'history': history})
 
 
@@ -1936,10 +1920,8 @@ def anime_detail(request, slug):
     similar = get_similar(anime, limit=6)
 
     # Determine first episode for the "Play" button
-    first_episode = None
-    if seasons:
-        first_eps = list(seasons[0].episodes.all())
-        first_episode = first_eps[0] if first_eps else None
+    attach_episode_info([anime])
+    first_episode = anime.first_episode
 
     return render(
         request,
