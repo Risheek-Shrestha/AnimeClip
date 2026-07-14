@@ -12,7 +12,7 @@ const PRECACHE_ASSETS = [
   '/offline/',
   '/static/assets/css/bootstrap.min.css',
   '/static/assets/css/style-3d.css',
-  '/static/css/player_enhancements.css',
+  '/static/assets/css/player_enhancements.css',
   '/static/manifest.json',
 ];
 

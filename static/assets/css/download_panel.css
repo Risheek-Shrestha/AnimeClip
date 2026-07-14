@@ -1,0 +1,55 @@
+/* Download panel — self-contained include used by streaming.html and streaming_movie.html */
+.download-panel {
+  margin: 1.5rem 0;
+  padding: 1rem 1.25rem;
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: .75rem;
+}
+.download-panel__heading {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 .5rem;
+  color: #e5e7eb;
+}
+.download-panel__icon { width: 1.1em; height: 1.1em; color: #60a5fa; }
+.download-panel__note {
+  font-size: .8rem;
+  color: #9ca3af;
+  margin: 0 0 .75rem;
+}
+.download-panel__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.download-panel__btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: .5rem .85rem;
+  background: rgba(96,165,250,.12);
+  border: 1px solid rgba(96,165,250,.35);
+  border-radius: .5rem;
+  color: #93c5fd;
+  cursor: pointer;
+  transition: background .15s, border-color .15s;
+  font: inherit;
+}
+.download-panel__btn:hover:not(:disabled) {
+  background: rgba(96,165,250,.25);
+  border-color: rgba(96,165,250,.7);
+}
+.download-panel__btn:disabled {
+  opacity: .5;
+  cursor: wait;
+}
+.download-panel__quality { font-size: .9rem; font-weight: 600; }
+.download-panel__hint    { font-size: .75rem; color: #6b7280; }
+.download-panel__status  { font-size: .85rem; margin-top: .6rem; color: #fbbf24; }

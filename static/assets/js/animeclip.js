@@ -53,6 +53,30 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 });
 
+// ── Hero banner slider (featured anime/movies) ────────────────────────────
+document.addEventListener('DOMContentLoaded', function () {
+  if (window.jQuery && jQuery.fn.slick) {
+    const $banner = jQuery('.banner-slider');
+    // Only initialize when there's more than one slide — a single slide
+    // should stay static and skip slick entirely.
+    if ($banner.length && !$banner.hasClass('slick-initialized') && $banner.children('.banner-block').length > 1) {
+      $banner.slick({
+        slidesToShow: 1,
+        slidesToScroll: 1,
+        infinite: true,
+        fade: true,
+        speed: 700,
+        autoplay: true,
+        autoplaySpeed: 6000,
+        arrows: true,
+        dots: true,
+        pauseOnHover: true,
+        adaptiveHeight: false,
+      });
+    }
+  }
+});
+
 document.addEventListener('DOMContentLoaded', function () {
   document.querySelectorAll('.watch-later-btn').forEach(btn => {
     btn.addEventListener('click', function (e) {

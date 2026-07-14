@@ -5,130 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Analytics Dashboard – AnimeClip</title>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      background: #0b0b0f;
-      color: #e0e0e0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      min-height: 100vh;
-    }
-    a { color: inherit; text-decoration: none; }
-
-    /* ── Top bar ── */
-    .topbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: .9rem 2rem;
-      background: rgba(255,255,255,.03);
-      border-bottom: 1px solid rgba(255,255,255,.07);
-    }
-    .topbar-brand { font-size: 1.1rem; font-weight: 700; letter-spacing: .05em; color: #fff; }
-    .topbar-links { display: flex; gap: 1.5rem; font-size: .88rem; color: #888; }
-    .topbar-links a:hover { color: #fff; }
-
-    /* ── Layout ── */
-    .analytics-root {
-      padding: 2rem 1.5rem 4rem;
-      max-width: 1300px;
-      margin: 0 auto;
-    }
-    .analytics-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 1rem;
-      margin-bottom: 2rem;
-    }
-    .analytics-header h1 {
-      font-size: 1.8rem;
-      font-weight: 700;
-      background: linear-gradient(135deg, #7c3aed, #06b6d4);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-    .period-tabs { display: flex; gap: .5rem; flex-wrap: wrap; }
-    .period-tabs a {
-      padding: .4rem .9rem;
-      border-radius: 9999px;
-      font-size: .85rem;
-      background: rgba(255,255,255,.07);
-      color: #ccc;
-      transition: background .2s;
-    }
-    .period-tabs a.active,
-    .period-tabs a:hover { background: #7c3aed; color: #fff; }
-
-    /* ── KPI Cards ── */
-    .kpi-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-      gap: 1rem;
-      margin-bottom: 2rem;
-    }
-    .kpi-card {
-      background: rgba(255,255,255,.05);
-      border: 1px solid rgba(255,255,255,.08);
-      border-radius: 12px;
-      padding: 1.2rem 1.4rem;
-      display: flex;
-      flex-direction: column;
-      gap: .4rem;
-    }
-    .kpi-label { font-size: .78rem; text-transform: uppercase; letter-spacing: .07em; color: #888; }
-    .kpi-value { font-size: 2rem; font-weight: 700; color: #fff; line-height: 1; }
-    .kpi-sub   { font-size: .8rem; color: #777; }
-
-    /* ── Charts ── */
-    .charts-row {
-      display: grid;
-      grid-template-columns: 2fr 1fr;
-      gap: 1.2rem;
-      margin-bottom: 1.5rem;
-    }
-    @media (max-width: 860px) { .charts-row { grid-template-columns: 1fr; } }
-
-    .chart-card {
-      background: rgba(255,255,255,.04);
-      border: 1px solid rgba(255,255,255,.07);
-      border-radius: 12px;
-      padding: 1.4rem;
-      margin-bottom: 1.5rem;
-    }
-    .chart-card h2 { font-size: 1rem; font-weight: 600; margin-bottom: 1rem; color: #ddd; }
-    .chart-card canvas { width: 100% !important; }
-
-    /* ── Tables ── */
-    .tables-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1.2rem;
-    }
-    @media (max-width: 700px) { .tables-row { grid-template-columns: 1fr; } }
-
-    .table-card {
-      background: rgba(255,255,255,.04);
-      border: 1px solid rgba(255,255,255,.07);
-      border-radius: 12px;
-      padding: 1.4rem;
-      overflow-x: auto;
-    }
-    .table-card h2 { font-size: 1rem; font-weight: 600; margin-bottom: 1rem; color: #ddd; }
-
-    .rank-table { width: 100%; border-collapse: collapse; font-size: .88rem; }
-    .rank-table th {
-      text-align: left; color: #555; font-weight: 500;
-      padding: .4rem .6rem;
-      border-bottom: 1px solid rgba(255,255,255,.06);
-    }
-    .rank-table td { padding: .55rem .6rem; border-bottom: 1px solid rgba(255,255,255,.04); }
-    .rank-table tr:last-child td { border-bottom: none; }
-    .rank-num { color: #444; width: 28px; }
-    .empty-msg { color: #444; padding: 1rem 0; }
-  </style>
+  <link rel="stylesheet" href="{% static 'assets/css/analytics_dashboard.css' %}">
 </head>
 <body>
 
@@ -237,51 +114,13 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-<script>
-Chart.defaults.color = "#888";
-Chart.defaults.borderColor = "rgba(255,255,255,0.06)";
-
-new Chart(document.getElementById("playsChart"), {
-  type: "line",
-  data: {
-    labels: {{ plays_by_day_labels|safe }},
-    datasets: [{
-      label: "Plays",
-      data: {{ plays_by_day_data|safe }},
-      borderColor: "rgba(124,58,237,0.85)",
-      backgroundColor: "rgba(124,58,237,0.15)",
-      fill: true, tension: 0.4, pointRadius: 3,
-    }]
-  },
-  options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
-});
-
-new Chart(document.getElementById("genreChart"), {
-  type: "doughnut",
-  data: {
-    labels: {{ genre_labels|safe }},
-    datasets: [{
-      data: {{ genre_data|safe }},
-      backgroundColor: ["#7c3aed","#06b6d4","#10b981","#f59e0b","#ef4444","#8b5cf6","#ec4899","#14b8a6"],
-      borderWidth: 0,
-    }]
-  },
-  options: { plugins: { legend: { position: "bottom", labels: { boxWidth: 12 } } }, cutout: "65%" }
-});
-
-new Chart(document.getElementById("usersChart"), {
-  type: "bar",
-  data: {
-    labels: {{ new_users_labels|safe }},
-    datasets: [{
-      label: "New Users",
-      data: {{ new_users_data|safe }},
-      backgroundColor: "rgba(6,182,212,0.85)",
-      borderRadius: 4,
-    }]
-  },
-  options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
-});
+<script type="application/json" id="dashboard-chart-data">
+{
+  "plays_by_day": {"labels": {{ plays_by_day_labels|safe }}, "data": {{ plays_by_day_data|safe }}},
+  "genres": {"labels": {{ genre_labels|safe }}, "data": {{ genre_data|safe }}},
+  "new_users": {"labels": {{ new_users_labels|safe }}, "data": {{ new_users_data|safe }}}
+}
 </script>
+<script src="{% static 'assets/js/analytics_dashboard.js' %}" defer></script>
 </body>
 </html>

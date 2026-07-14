@@ -1,5 +1,7 @@
-{# _report_modal.html — include once on streaming.html and streaming_movie.html #}
-<div class="modal fade" id="reportModal" tabindex="-1" aria-labelledby="reportModalLabel" aria-hidden="true">
+{# _report_modal.html — include once on streaming.html and streaming_movie.html.
+   Pass report_url: {% include "_report_modal.html" with report_url=... %} #}
+{% load static %}
+<div class="modal fade" id="reportModal" tabindex="-1" aria-labelledby="reportModalLabel" aria-hidden="true" data-report-url="{{ report_url }}">
   <div class="modal-dialog">
     <div class="modal-content bg-dark text-light">
       <div class="modal-header border-secondary">
@@ -37,38 +39,4 @@
     </div>
   </div>
 </div>
-
-<script>
-(function () {
-  const form = document.getElementById('report-form');
-  if (!form) return;
-  form.addEventListener('submit', function (e) {
-    e.preventDefault();
-    const reportUrl = document.body.dataset.reportUrl;
-    if (!reportUrl) return;
-    const fd = new FormData(form);
-    fetch(reportUrl, { method: 'POST', body: fd,
-      headers: { 'X-CSRFToken': fd.get('csrfmiddlewaretoken') }
-    })
-    .then(r => r.json())
-    .then(data => {
-      const fb = document.getElementById('report-feedback');
-      fb.className = 'alert alert-success';
-      fb.textContent = 'Report submitted. Thank you!';
-      fb.classList.remove('d-none');
-      setTimeout(() => {
-        const modal = bootstrap.Modal.getInstance(document.getElementById('reportModal'));
-        if (modal) modal.hide();
-        fb.classList.add('d-none');
-        form.reset();
-      }, 2000);
-    })
-    .catch(() => {
-      const fb = document.getElementById('report-feedback');
-      fb.className = 'alert alert-danger';
-      fb.textContent = 'Failed to submit report. Try again.';
-      fb.classList.remove('d-none');
-    });
-  });
-})();
-</script>
+<script src="{% static 'assets/js/report_modal.js' %}" defer></script>

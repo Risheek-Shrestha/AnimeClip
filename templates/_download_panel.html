@@ -1,3 +1,4 @@
+{% load static %}
 {% comment %}
 _download_panel.html
 
@@ -54,106 +55,6 @@ Required template context variables:
   <p class="download-panel__status" role="status" aria-live="polite" hidden></p>
 </section>
 
-<style>
-.download-panel {
-  margin: 1.5rem 0;
-  padding: 1rem 1.25rem;
-  background: rgba(255,255,255,.05);
-  border: 1px solid rgba(255,255,255,.12);
-  border-radius: .75rem;
-}
-.download-panel__heading {
-  display: flex;
-  align-items: center;
-  gap: .5rem;
-  font-size: 1rem;
-  font-weight: 600;
-  margin: 0 0 .5rem;
-  color: #e5e7eb;
-}
-.download-panel__icon { width: 1.1em; height: 1.1em; color: #60a5fa; }
-.download-panel__note {
-  font-size: .8rem;
-  color: #9ca3af;
-  margin: 0 0 .75rem;
-}
-.download-panel__list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: .5rem;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-.download-panel__btn {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  padding: .5rem .85rem;
-  background: rgba(96,165,250,.12);
-  border: 1px solid rgba(96,165,250,.35);
-  border-radius: .5rem;
-  color: #93c5fd;
-  cursor: pointer;
-  transition: background .15s, border-color .15s;
-  font: inherit;
-}
-.download-panel__btn:hover:not(:disabled) {
-  background: rgba(96,165,250,.25);
-  border-color: rgba(96,165,250,.7);
-}
-.download-panel__btn:disabled {
-  opacity: .5;
-  cursor: wait;
-}
-.download-panel__quality { font-size: .9rem; font-weight: 600; }
-.download-panel__hint    { font-size: .75rem; color: #6b7280; }
-.download-panel__status  { font-size: .85rem; margin-top: .6rem; color: #fbbf24; }
-</style>
-
-<script>
-(function () {
-  document.querySelectorAll('.download-panel__btn').forEach(function (btn) {
-    btn.addEventListener('click', function () {
-      var dlUrl    = btn.dataset.dlUrl;
-      var height   = btn.dataset.height;
-      var sourceId = btn.dataset.sourceId;
-      var csrf     = btn.dataset.csrf;
-      var status   = btn.closest('.download-panel').querySelector('.download-panel__status');
-
-      btn.disabled = true;
-      status.hidden = false;
-      status.textContent = 'Preparing download…';
-
-      fetch(dlUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': csrf,
-        },
-        body: JSON.stringify({ height: parseInt(height, 10), source_id: parseInt(sourceId, 10) }),
-      })
-      .then(function (res) { return res.json(); })
-      .then(function (data) {
-        if (data.url) {
-          status.textContent = 'Starting download…';
-          // Open in new tab so the user stays on the streaming page
-          window.open(data.url, '_blank', 'noopener');
-          setTimeout(function () {
-            status.hidden = true;
-            btn.disabled = false;
-          }, 2000);
-        } else {
-          status.textContent = 'Error: ' + (data.error || 'Unknown error');
-          btn.disabled = false;
-        }
-      })
-      .catch(function () {
-        status.textContent = 'Network error — please try again.';
-        btn.disabled = false;
-      });
-    });
-  });
-})();
-</script>
+<link rel="stylesheet" href="{% static 'assets/css/download_panel.css' %}">
+<script src="{% static 'assets/js/download_panel.js' %}" defer></script>
 {% endif %}

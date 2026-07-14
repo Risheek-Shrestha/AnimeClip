@@ -53,8 +53,8 @@
   <link rel="stylesheet" href="{% static 'assets/css/slick.css' %}">
   <link rel="stylesheet" href="{% static 'assets/css/preloader.css' %}">
 </noscript>
-  <link rel="stylesheet" href="{% static 'css/player_enhancements.css' %}">
-  <link rel="stylesheet" href="{% static 'css/site_overhaul.css' %}">
+  <link rel="stylesheet" href="{% static 'assets/css/player_enhancements.css' %}">
+  <link rel="stylesheet" href="{% static 'assets/css/site_overhaul.css' %}">
 </head>
 
 <body class="sticky-header">
@@ -285,13 +285,7 @@
 <script src="{% static 'assets/js/animeclip.js' %}"          defer></script>
 {% block extra_js %}{% endblock extra_js %}
 
-<script>
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', function () {
-    navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(function () {});
-  });
-}
-</script>
+<script src="{% static 'assets/js/sw_register.js' %}" defer></script>
 
 </body>
 </html>

@@ -158,7 +158,7 @@
 {% if request.user.is_authenticated %}
 <section class="container mb-5">
   <h4>{% trans "Rate this anime" %}</h4>
-  <div class="d-flex gap-2 flex-wrap" id="rating-stars">
+  <div class="d-flex gap-2 flex-wrap" id="rating-stars" data-anime-id="{{ anime.id }}">
     {% for i in "12345678910" %}
     {% with score=forloop.counter %}
     <button class="btn btn-sm {% if user_rating and user_rating.score >= score %}btn-warning{% else %}btn-outline-secondary{% endif %} rate-btn"
@@ -214,60 +214,7 @@
 </div>
 {% endif %}
 
-<script>
-// Follow toggle
-const followBtn = document.getElementById('follow-btn');
-if (followBtn) {
-  followBtn.addEventListener('click', () => {
-    const animeId = followBtn.dataset.animeId;
-    const csrfToken = document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '';
-    fetch(`/anime/${animeId}/follow/`, {
-      method: 'POST',
-      headers: {'X-CSRFToken': csrfToken},
-    })
-    .then(r => r.json())
-    .then(data => {
-      const isFollowing = data.following;
-      followBtn.innerHTML = isFollowing
-        ? '<i class="fa fa-heart"></i> Following'
-        : '<i class="fa fa-heart-o"></i> Follow';
-      followBtn.dataset.following = isFollowing;
-      const counter = document.getElementById('follower-count');
-      if (counter) counter.textContent = data.follower_count;
-    });
-  });
-}
-
-// Rating
-document.querySelectorAll('.rate-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const score = btn.dataset.score;
-    const animeId = {{ anime.id }};
-    const csrfToken = document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '';
-    fetch(`/anime/${animeId}/rate/`, {
-      method: 'POST',
-      headers: {'X-CSRFToken': csrfToken, 'Content-Type': 'application/x-www-form-urlencoded'},
-      body: `score=${score}`,
-    })
-    .then(r => r.json())
-    .then(data => {
-      document.querySelectorAll('.rate-btn').forEach((b, i) => {
-        b.className = `btn btn-sm rate-btn ${i < data.score ? 'btn-warning' : 'btn-outline-secondary'}`;
-      });
-      const fb = document.getElementById('rating-feedback');
-      if (fb) fb.textContent = `Your rating: ${data.score}/10  ·  Community avg: ${data.avg}/10`;
-    });
-  });
-});
-
-// Stop trailer when modal closes
-{% if anime.trailer_url %}
-document.getElementById('trailerModal').addEventListener('hide.bs.modal', () => {
-  const iframe = document.getElementById('trailer-iframe');
-  if (iframe) { const src = iframe.src; iframe.src = ''; iframe.src = src; }
-});
-{% endif %}
-</script>
+<script src="{% static 'assets/js/anime_detail_page.js' %}" defer></script>
 
 <script type="application/ld+json">
 {
