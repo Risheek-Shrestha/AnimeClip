@@ -46,3 +46,49 @@
 .player-osd.visible { opacity: 1; }
 /* ── PiP button ───────────────────────────────────────────────────────────── */
 #pip-btn.is-active { color: var(--primary-color, #e53935); }
+
+/* ── Skip intro / cast controls (extracted from inline styles) ─────────────── */
+/* JS toggles visibility via element.style.display directly (see
+   streaming_page.js, cast_airplay.js); these rules only set the initial
+   hidden state, which inline styles set by JS continue to override. */
+.skip-intro-btn,
+.cast-control-btn {
+  display: none;
+}
+
+/* ── Scrub-preview thumbnail tooltip (extracted from inline styles) ─────────── */
+.scrub-preview {
+  display: none;
+  position: absolute;
+  bottom: 56px;
+  pointer-events: none;
+  background: #000;
+  border: 2px solid rgba(255, 255, 255, .15);
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, .6);
+  z-index: 20;
+}
+.scrub-preview-img {
+  width: 160px;
+  height: 90px;
+  object-fit: cover;
+  display: block;
+}
+.scrub-preview-time {
+  text-align: center;
+  font-size: 11px;
+  color: #fff;
+  padding: 2px 0;
+  background: rgba(0, 0, 0, .7);
+}
+
+/* ── Misc extracted static inline styles ─────────────────────────────────── */
+.no-trailer-msg {
+  padding: 1rem;
+  font-size: .85rem;
+  opacity: .6;
+}
+.input-group-240 {
+  max-width: 240px;
+}

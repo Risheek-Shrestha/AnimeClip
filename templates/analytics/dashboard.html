@@ -77,13 +77,13 @@
     <div class="table-card">
       <h2>Top Anime</h2>
       <table class="rank-table">
-        <thead><tr><th class="rank-num">#</th><th>Title</th><th style="text-align:right">Plays</th></tr></thead>
+        <thead><tr><th class="rank-num">#</th><th>Title</th><th class="text-end">Plays</th></tr></thead>
         <tbody>
           {% for anime in top_anime %}
           <tr>
             <td class="rank-num">{{ forloop.counter }}</td>
-            <td style="color:#b692f6">{{ anime.anime_title }}</td>
-            <td style="text-align:right;color:#ccc">{{ anime.plays }}</td>
+            <td class="rank-title-color">{{ anime.anime_title }}</td>
+            <td class="text-end rank-count-color">{{ anime.plays }}</td>
           </tr>
           {% empty %}
           <tr><td colspan="3" class="empty-msg">No data yet.</td></tr>
@@ -95,13 +95,13 @@
     <div class="table-card">
       <h2>Top Searches</h2>
       <table class="rank-table">
-        <thead><tr><th class="rank-num">#</th><th>Query</th><th style="text-align:right">Count</th></tr></thead>
+        <thead><tr><th class="rank-num">#</th><th>Query</th><th class="text-end">Count</th></tr></thead>
         <tbody>
           {% for s in top_searches %}
           <tr>
             <td class="rank-num">{{ forloop.counter }}</td>
             <td>{{ s.query }}</td>
-            <td style="text-align:right;color:#ccc">{{ s.count }}</td>
+            <td class="text-end rank-count-color">{{ s.count }}</td>
           </tr>
           {% empty %}
           <tr><td colspan="3" class="empty-msg">No searches yet.</td></tr>

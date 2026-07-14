@@ -308,7 +308,7 @@
     <div class="row">
       {% for movie in all_time_favorite_movies %}
       <div class="col-xl-3 col-lg-4 col-sm-6 col-12 reveal-card">
-        <div class="anime-blog" style="position:relative;">
+        <div class="anime-blog">
           <span class="fav-rank">{{ forloop.counter }}</span>
           <div class="img-block">
             {% if movie.poster_img %}<img src="{{ movie.poster_img.image.url }}" alt="{{ movie.title }}">

@@ -48,20 +48,18 @@
                         Your browser does not support the video tag.
                     </video>
                     <!-- Scrub-preview thumbnail tooltip -->
-                    <div id="scrub-preview" style="display:none;position:absolute;bottom:56px;pointer-events:none;
-                         background:#000;border:2px solid rgba(255,255,255,.15);border-radius:4px;overflow:hidden;
-                         box-shadow:0 4px 16px rgba(0,0,0,.6);z-index:20;">
-                      <img id="scrub-preview-img" src="" alt="" style="width:160px;height:90px;object-fit:cover;display:block;">
-                      <div id="scrub-preview-time" style="text-align:center;font-size:11px;color:#fff;padding:2px 0;background:rgba(0,0,0,.7);"></div>
+                    <div id="scrub-preview" class="scrub-preview">
+                      <img id="scrub-preview-img" src="" alt="" class="scrub-preview-img">
+                      <div id="scrub-preview-time" class="scrub-preview-time"></div>
                     </div>
                     {% if episode.intro_end_seconds %}
-                    <button id="skip-intro-btn" class="skip-intro-btn" style="display:none">Skip Intro</button>
+                    <button id="skip-intro-btn" class="skip-intro-btn">Skip Intro</button>
                     {% endif %}
                     <div class="player-cast-controls" aria-label="Cast options">
-                        <button type="button" id="cast-btn" class="cast-control-btn" title="Cast to TV" style="display:none">
+                        <button type="button" id="cast-btn" class="cast-control-btn" title="Cast to TV">
                             <i class="fas fa-tv"></i>
                         </button>
-                        <button type="button" id="airplay-btn" class="cast-control-btn" title="AirPlay" style="display:none">
+                        <button type="button" id="airplay-btn" class="cast-control-btn" title="AirPlay">
                             <i class="fas fa-wifi"></i>
                         </button>
                         <button type="button" id="pip-btn" class="cast-control-btn" title="Picture-in-Picture" aria-label="Picture-in-Picture">
@@ -190,7 +188,7 @@
                                     </a>
                                     <p>Watch Trailer</p>
                                     {% else %}
-                                    <p style="padding:1rem;font-size:.85rem;opacity:.6">No trailer available</p>
+                                    <p class="no-trailer-msg">No trailer available</p>
                                     {% endif %}
                                 </div>
                             </div>
@@ -496,7 +494,7 @@
             data-episode-id="{{ episode.id }}" data-csrf="{{ csrf_token }}">
       🎉 Start Watch Party
     </button>
-    <div class="input-group input-group-sm" style="max-width:240px">
+    <div class="input-group input-group-sm input-group-240">
       <input type="text" class="form-control bg-dark text-light border-secondary"
              id="join-code-input" placeholder="Room code…">
       <button class="btn btn-outline-secondary" id="join-watch-party">Join</button>

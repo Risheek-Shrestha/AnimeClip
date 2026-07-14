@@ -20,13 +20,13 @@
               <div class="d-flex align-items-center gap-2">
                 {% with img=season.anime.poster_img %}
                 {% if img %}<img src="{{ img.image.url }}" alt="{{ season.anime.title }}"
-                     style="width:36px;height:50px;object-fit:cover;border-radius:3px;flex-shrink:0;">{% endif %}
+                     class="calendar-thumb">{% endif %}
                 {% endwith %}
                 <div>
                   <a href="{% url 'anime_detail' season.anime.slug %}" class="text-light text-decoration-none fw-semibold small">
                     {{ season.anime.title }}
                   </a>
-                  <div class="text-muted" style="font-size:11px;">
+                  <div class="text-muted fs-11">
                     Season {{ season.number }}
                     {% if season.release_time %} · {{ season.release_time|time:"H:i" }} UTC{% endif %}
                   </div>

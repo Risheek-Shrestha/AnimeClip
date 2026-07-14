@@ -122,3 +122,10 @@
     .rank-num { color: #444; width: 28px; }
     .empty-msg { color: #444; padding: 1rem 0; }
   
+/* ── Extracted static inline styles ─────────────────────────────────────── */
+.rank-title-color {
+  color: #b692f6;
+}
+.rank-count-color {
+  color: #ccc;
+}

@@ -178,3 +178,60 @@
    FOOTER
    ============================================================ */
 .footer .brand-logo { margin-bottom:14px; }
+
+/* ============================================================
+   EXTRACTED STATIC INLINE STYLES
+   (moved out of templates; dynamic per-row values such as
+   background-image URLs and --progress custom properties stay
+   inline in the templates since they vary per database row)
+   ============================================================ */
+.hero-section {
+  position: relative;
+  overflow: hidden;
+  min-height: 480px;
+}
+.hero-bg {
+  background-size: cover;
+  background-position: center;
+  position: absolute;
+  inset: 0;
+  filter: brightness(0.35);
+}
+.poster-360 {
+  max-height: 360px;
+  object-fit: cover;
+}
+.thumb-96x54 {
+  width: 96px;
+  height: 54px;
+  object-fit: cover;
+}
+.poster-2x3 {
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  width: 100%;
+}
+.faq-summary {
+  cursor: pointer;
+  opacity: .7;
+}
+.calendar-thumb {
+  width: 36px;
+  height: 50px;
+  object-fit: cover;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+.fs-11 {
+  font-size: 11px;
+}
+.qr-code-img {
+  max-width: 200px;
+}
+.offline-emoji {
+  font-size: 5rem;
+}
+.auth-container-400 { max-width: 400px; }
+.auth-container-480 { max-width: 480px; }
+.auth-container-520 { max-width: 520px; }
+.auth-container-600 { max-width: 600px; }

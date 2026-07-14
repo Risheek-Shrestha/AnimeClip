@@ -42,10 +42,10 @@
                         Your browser does not support the video tag.
                     </video>
                     <div class="player-cast-controls" aria-label="Cast options">
-                        <button type="button" id="cast-btn" class="cast-control-btn" title="Cast to TV" style="display:none">
+                        <button type="button" id="cast-btn" class="cast-control-btn" title="Cast to TV">
                             <i class="fas fa-tv"></i>
                         </button>
-                        <button type="button" id="airplay-btn" class="cast-control-btn" title="AirPlay" style="display:none">
+                        <button type="button" id="airplay-btn" class="cast-control-btn" title="AirPlay">
                             <i class="fas fa-wifi"></i>
                         </button>
                         <button type="button" id="pip-btn" class="cast-control-btn" title="Picture-in-Picture" aria-label="Picture-in-Picture">
@@ -120,7 +120,7 @@
                                 </a>
                                 <p>Watch Trailer</p>
                                 {% else %}
-                                <p style="padding:1rem;font-size:.85rem;opacity:.6">No trailer available</p>
+                                <p class="no-trailer-msg">No trailer available</p>
                                 {% endif %}
                             </div>
                         </div>
@@ -415,7 +415,7 @@
             data-movie-id="{{ movie.id }}" data-csrf="{{ csrf_token }}">
       🎉 Start Watch Party
     </button>
-    <div class="input-group input-group-sm" style="max-width:240px">
+    <div class="input-group input-group-sm input-group-240">
       <input type="text" class="form-control bg-dark text-light border-secondary" id="join-code-input" placeholder="Room code…">
       <button class="btn btn-outline-secondary" id="join-watch-party">Join</button>
     </div>

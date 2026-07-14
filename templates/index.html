@@ -360,7 +360,7 @@
     <div class="row">
       {% for anime in all_time_favorite_animes %}
       <div class="col-xl-3 col-lg-4 col-sm-6 col-12 reveal-card">
-        <div class="anime-blog" style="position:relative;">
+        <div class="anime-blog">
           <span class="fav-rank">{{ forloop.counter }}</span>
           <div class="img-block">
             {% if anime.poster_img %}<img src="{{ anime.poster_img.image.url }}" alt="{{ anime.title }}">

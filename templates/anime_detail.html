@@ -5,24 +5,21 @@
 {% block body %}
 
 <!-- ── Hero banner ──────────────────────────────────────────────────── -->
-<section class="hero-section" style="position:relative;overflow:hidden;min-height:480px;">
+<section class="hero-section">
   {% with banner=anime.banner_img %}
   {% if banner %}
-  <div class="hero-bg"
-       style="background-image:url('{{ banner.image.url }}');
-              background-size:cover;background-position:center;
-              position:absolute;inset:0;filter:brightness(0.35);"></div>
+  <div class="hero-bg" style="background-image:url('{{ banner.image.url }}');"></div>
   {% endif %}
   {% endwith %}
 
-  <div class="container position-relative py-5" style="z-index:1;">
+  <div class="container position-relative py-5 z-1">
     <div class="row align-items-center g-4">
       <!-- Poster -->
       <div class="col-md-3 text-center">
         {% with poster=anime.poster_img %}
         {% if poster %}
         <img src="{{ poster.image.url }}" alt="{{ anime.title }} poster"
-             class="img-fluid rounded shadow" style="max-height:360px;object-fit:cover;">
+             class="img-fluid rounded shadow poster-360">
         {% endif %}
         {% endwith %}
       </div>
@@ -133,7 +130,7 @@
           <div>
             {% if episode.thumbnail_url %}
             <img src="{{ episode.thumbnail_url }}" alt=""
-                 class="rounded me-3" style="width:96px;height:54px;object-fit:cover;">
+                 class="rounded me-3 thumb-96x54">
             {% endif %}
             <strong>{% trans "Ep" %} {{ episode.number }}</strong>
             {% if episode.title %} — {{ episode.title }}{% endif %}
@@ -181,7 +178,7 @@
       <a href="{% url 'anime_detail' item.slug %}" class="text-decoration-none">
         {% if img %}
         <img src="{{ img.image.url }}" alt="{{ item.title }}"
-             class="img-fluid rounded mb-1" style="aspect-ratio:2/3;object-fit:cover;width:100%;">
+             class="img-fluid rounded mb-1 poster-2x3">
         {% endif %}
         <small class="text-light">{{ item.title }}</small>
       </a>
