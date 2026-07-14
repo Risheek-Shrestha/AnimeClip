@@ -1,5 +1,7 @@
-{# _report_modal.html — include once on streaming.html and streaming_movie.html.
-   Pass report_url: {% include "_report_modal.html" with report_url=... %} #}
+{% comment %}
+_report_modal.html — include once on streaming.html and streaming_movie.html.
+Pass report_url: {% include "_report_modal.html" with report_url=... %}
+{% endcomment %}
 {% load static %}
 <div class="modal fade" id="reportModal" tabindex="-1" aria-labelledby="reportModalLabel" aria-hidden="true" data-report-url="{{ report_url }}">
   <div class="modal-dialog">

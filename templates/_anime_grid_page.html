@@ -1,0 +1,88 @@
+{% load static %}
+
+<section class="breadcrumb">
+    <div class="container">
+        <div class="breadcrumb-content">
+            <ul>
+                <li><a href="{% url 'index' %}">Anime</a></li>
+                <li><a class="active">{{ breadcrumb_active }}</a></li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<section class="recent sec-mar">
+    <div class="container">
+        <div class="heading style-1">
+            <h2>{{ page_heading }}
+                <span>{{ anime_list|length }} Title{{ anime_list|length|pluralize }}</span>
+            </h2>
+        </div>
+
+        <form method="GET" class="filter-bar row g-2 align-items-center mb-4">
+            <div class="col-auto">
+                <select name="genre" class="form-select" onchange="this.form.submit()">
+                    <option value="">All Genres</option>
+                    {% for g in genres %}
+                    <option value="{{ g }}" {% if g == active_genre %}selected{% endif %}>{{ g }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-auto">
+                <select name="sort" class="form-select" onchange="this.form.submit()">
+                    {% for key, opt in sort_options.items %}
+                    <option value="{{ key }}" {% if key == active_sort %}selected{% endif %}>{{ opt.1 }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </form>
+
+        {% if anime_list %}
+        <div class="row g-4">
+            {% for a in anime_list %}
+            <div class="col-xl-3 col-lg-4 col-sm-6 col-12">
+                <div class="anime-blog">
+                    <div class="img-block">
+                        {% if a.age_rating == 'r' %}
+                        <div class="label-tag">18+</div>
+                        {% endif %}
+                        {% if a.poster_img %}
+                        <img src="{{ a.poster_img.image.url }}" alt="{{ a.title }}">
+                        {% elif a.thumb_img %}
+                        <img src="{{ a.thumb_img.image.url }}" alt="{{ a.title }}">
+                        {% else %}
+                        <img src="{% static 'assets/media/anime-sm-img/anime-img-1.png' %}" alt="{{ a.title }}">
+                        {% endif %}
+                        <div class="action-overlay">
+                            <a href="{% if a.first_episode %}{% url 'streaming' a.first_episode.id %}{% else %}#{% endif %}">
+                                <i class="fas fa-play-circle"></i> Play Now
+                            </a>
+                        </div>
+                    </div>
+                    <div class="detail">
+                        <div class="tags">
+                            {% if a.first_episode %}
+                            {% for source in a.first_episode.sources.all %}
+                            <a href="{% url 'streaming' a.first_episode.id %}" class="text-box">
+                                {{ source.type }}
+                            </a>
+                            {% endfor %}
+                            {% endif %}
+                        </div>
+                    </div>
+                    <a href="{% if a.first_episode %}{% url 'streaming' a.first_episode.id %}{% else %}#{% endif %}">
+                        <p>{{ a.title }}</p>
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="col-12 empty-state">
+            <i class="fas fa-film"></i>
+            <p>{{ empty_message }}</p>
+            <a href="{% url 'index' %}" class="anime-btn btn-dark border-change mt-3">Browse All Anime</a>
+        </div>
+        {% endif %}
+    </div>
+</section>

@@ -1,0 +1,80 @@
+{% load static %}
+
+<section class="breadcrumb">
+    <div class="container">
+        <div class="breadcrumb-content">
+            <ul>
+                <li><a href="{% url 'index' %}">Movies</a></li>
+                <li><a class="active">{{ breadcrumb_active }}</a></li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<section class="recent sec-mar">
+    <div class="container">
+        <div class="heading style-1">
+            <h2>{{ page_heading }}
+                <span>{{ movies|length }} Title{{ movies|length|pluralize }}</span>
+            </h2>
+        </div>
+
+        <form method="GET" class="filter-bar row g-2 align-items-center mb-4">
+            <div class="col-auto">
+                <select name="genre" class="form-select" onchange="this.form.submit()">
+                    <option value="">All Genres</option>
+                    {% for g in genres %}
+                    <option value="{{ g }}" {% if g == active_genre %}selected{% endif %}>{{ g }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-auto">
+                <select name="sort" class="form-select" onchange="this.form.submit()">
+                    {% for key, opt in sort_options.items %}
+                    <option value="{{ key }}" {% if key == active_sort %}selected{% endif %}>{{ opt.1 }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </form>
+
+        {% if movies %}
+        <div class="row g-4">
+            {% for movie in movies %}
+            <div class="col-xl-3 col-lg-4 col-sm-6 col-12">
+                <div class="anime-blog">
+                    <div class="img-block">
+                        {% if movie.age_rating == 'r' %}
+                        <div class="label-tag">18+</div>
+                        {% endif %}
+                        {% if movie.poster_img %}
+                        <img src="{{ movie.poster_img.image.url }}" alt="{{ movie.title }}">
+                        {% elif movie.thumb_img %}
+                        <img src="{{ movie.thumb_img.image.url }}" alt="{{ movie.title }}">
+                        {% else %}
+                        <img src="{% static 'assets/media/anime-sm-img/anime-img-1.png' %}" alt="{{ movie.title }}">
+                        {% endif %}
+                        <div class="action-overlay">
+                            <a href="{% url 'streaming_movie' movie.id %}">
+                                <i class="fas fa-play-circle"></i> Play Now
+                            </a>
+                        </div>
+                    </div>
+                    <div class="detail">
+                        <div class="tags"><p class="text">Movie</p></div>
+                    </div>
+                    <a href="{% url 'streaming_movie' movie.id %}">
+                        <p>{{ movie.title }}</p>
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="col-12 empty-state">
+            <i class="fas fa-film"></i>
+            <p>{{ empty_message }}</p>
+            <a href="{% url 'index' %}" class="anime-btn btn-dark border-change mt-3">Browse All Anime</a>
+        </div>
+        {% endif %}
+    </div>
+</section>
