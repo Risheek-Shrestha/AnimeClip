@@ -7,12 +7,20 @@ Messages: {"type": "chat", "username": "...", "body": "...", "is_staff": bool}
 """
 
 import json
+import logging
 
 try:
     from channels.db import database_sync_to_async
     from channels.generic.websocket import AsyncWebsocketConsumer
-
+except ImportError:
+    pass
+else:
+    # Only a missing Channels dependency should disable this consumer;
+    # any other import error (e.g. a broken support-models import) should
+    # fail loudly rather than silently vanish.
     from ananimeclip.support.models import SupportTicket
+
+    logger = logging.getLogger(__name__)
 
     class SupportChatConsumer(AsyncWebsocketConsumer):
         async def connect(self):
@@ -44,9 +52,14 @@ try:
             user = self.scope.get('user')
             try:
                 data = json.loads(text_data or '{}')
-                body = str(data.get('body', '')).strip()[:1000]
-            except Exception:
+            except (json.JSONDecodeError, TypeError):
+                await self.send(text_data=json.dumps({'type': 'error', 'message': 'Invalid JSON.'}))
                 return
+            except Exception:
+                logger.exception('Unexpected error handling support chat message')
+                await self.send(text_data=json.dumps({'type': 'error', 'message': 'Something went wrong.'}))
+                return
+            body = str(data.get('body', '')).strip()[:1000]
             if not body:
                 return
             await self.channel_layer.group_send(
@@ -70,6 +83,3 @@ try:
                     }
                 )
             )
-
-except ImportError:
-    pass

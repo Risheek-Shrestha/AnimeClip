@@ -24,10 +24,14 @@ Authenticated:
   GET  /api/v1/me/recommendations/     – personalised recommendations
 """
 
+import logging
+
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
+
+logger = logging.getLogger(__name__)
 from django_ratelimit.decorators import ratelimit
 
 from .content_access import filter_age_appropriate
@@ -525,7 +529,7 @@ def api_post_episode_comment(request, episode_id):
     parent_id = data.get('parent_id')
     comment = Comment(episode=episode, user=request.user, body=body)
     if parent_id:
-        comment.parent = get_object_or_404(Comment, pk=parent_id)
+        comment.parent = get_object_or_404(Comment, pk=parent_id, episode=episode)
     comment.save()
     return JsonResponse(
         {'id': comment.pk, 'body': comment.body, 'created_at': comment.created_at.isoformat()}, status=201
@@ -556,7 +560,7 @@ def api_post_movie_comment(request, movie_id):
     parent_id = data.get('parent_id')
     comment = Comment(movie=movie, user=request.user, body=body)
     if parent_id:
-        comment.parent = get_object_or_404(Comment, pk=parent_id)
+        comment.parent = get_object_or_404(Comment, pk=parent_id, movie=movie)
     comment.save()
     return JsonResponse(
         {'id': comment.pk, 'body': comment.body, 'created_at': comment.created_at.isoformat()}, status=201
@@ -689,12 +693,19 @@ def api_search(request):
     movie_qs = filter_age_appropriate(Movie.objects.prefetch_related('media_images', 'genres'), request)
     anime_qs = filter_age_appropriate(Anime.objects.prefetch_related('media_images', 'genres'), request)
 
+    from django.db import NotSupportedError, OperationalError, ProgrammingError
+
+    used_search_rank = False
     try:
         vec = SearchVector('title', weight='A') + SearchVector('description', weight='B')
         sq = SearchQuery(query)
         movie_qs = movie_qs.annotate(rank=SearchRank(vec, sq)).filter(rank__gt=0)
         anime_qs = anime_qs.annotate(rank=SearchRank(vec, sq)).filter(rank__gt=0)
-    except Exception:
+        used_search_rank = True
+    except (NotSupportedError, OperationalError, ProgrammingError) as exc:
+        # Full-text search isn't available on this database backend
+        # (e.g. SQLite in dev/CI) — fall back to a simple substring match.
+        logger.info('Falling back to icontains search: %s', exc)
         movie_qs = movie_qs.filter(Q(title__icontains=query) | Q(description__icontains=query))
         anime_qs = anime_qs.filter(Q(title__icontains=query) | Q(description__icontains=query))
 
@@ -702,14 +713,15 @@ def api_search(request):
         movie_qs = movie_qs.filter(genres__name__iexact=genre)
         anime_qs = anime_qs.filter(genres__name__iexact=genre)
 
-    sort_map = {'rating': '-rating', 'newest': '-release_date', 'relevance': 'title'}
-    movie_qs = movie_qs.order_by(sort_map.get(sort, 'title')).distinct()
+    relevance_order = '-rank' if used_search_rank else 'title'
+    sort_map = {'rating': '-rating', 'newest': '-release_date', 'relevance': relevance_order}
+    movie_qs = movie_qs.order_by(sort_map.get(sort, relevance_order)).distinct()
 
-    anime_sort_map = {'rating': '-rating', 'relevance': 'title'}
+    anime_sort_map = {'rating': '-rating', 'relevance': relevance_order}
     if sort == 'newest':
         anime_qs = anime_qs.annotate(latest_rel=Max('seasons__release_date')).order_by('-latest_rel').distinct()
     else:
-        anime_qs = anime_qs.order_by(anime_sort_map.get(sort, 'title')).distinct()
+        anime_qs = anime_qs.order_by(anime_sort_map.get(sort, relevance_order)).distinct()
 
     movies_page, movies_meta = _paginate(movie_qs, request)
     anime_page, anime_meta = _paginate(anime_qs, request)
@@ -829,14 +841,20 @@ def api_trending(request):
         from .models import Anime as _Anime
         from .models import Movie as _Movie
 
-        anime_list = list(
-            _Anime.objects.filter(pk__in=[r['episode__season__anime_id'] for r in anime_ids]).prefetch_related(
-                'media_images', 'genres'
-            )
-        )
-        movie_list = list(
-            _Movie.objects.filter(pk__in=[r['movie_id'] for r in movie_ids]).prefetch_related('media_images', 'genres')
-        )
+        anime_pk_order = [r['episode__season__anime_id'] for r in anime_ids]
+        movie_pk_order = [r['movie_id'] for r in movie_ids]
+
+        anime_by_pk = {
+            a.pk: a
+            for a in _Anime.objects.filter(pk__in=anime_pk_order).prefetch_related('media_images', 'genres')
+        }
+        movie_by_pk = {
+            m.pk: m
+            for m in _Movie.objects.filter(pk__in=movie_pk_order).prefetch_related('media_images', 'genres')
+        }
+        # pk__in doesn't preserve order, so re-apply the ranking computed above.
+        anime_list = [anime_by_pk[pk] for pk in anime_pk_order if pk in anime_by_pk]
+        movie_list = [movie_by_pk[pk] for pk in movie_pk_order if pk in movie_by_pk]
         ctx = {
             'anime': [_anime_summary(a) for a in anime_list],
             'movies': [_movie_summary(m) for m in movie_list],

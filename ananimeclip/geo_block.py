@@ -45,8 +45,13 @@ def _get_reader():
 
         _reader = geoip2.database.Reader(db_path)
         logger.info('GeoBlockMiddleware: loaded %s', db_path)
-    except Exception as exc:
+    except (OSError, ValueError) as exc:
+        # Missing/corrupt/unreadable database file.
         logger.error('GeoBlockMiddleware: could not open DB — %s', exc)
+    except Exception:
+        # Unexpected programming error - log with full traceback rather
+        # than silently disabling geo-blocking.
+        logger.exception('GeoBlockMiddleware: unexpected error opening DB')
     return _reader
 
 
@@ -58,12 +63,19 @@ def get_country_code(ip: str) -> str | None:
         response = reader.country(ip)
         return response.country.iso_code  # e.g. "US", "JP"
     except Exception:
+        logger.debug('GeoBlockMiddleware: lookup failed for ip=%s', ip, exc_info=True)
         return None
 
 
 def _client_ip(request) -> str:
-    xff = request.META.get('HTTP_X_FORWARDED_FOR', '')
-    return xff.split(',')[0].strip() if xff else request.META.get('REMOTE_ADDR', '')
+    # Only trust X-Forwarded-For when the deployment is explicitly configured
+    # to sit behind a trusted reverse proxy (Nginx/Cloudflare/ALB/etc.).
+    # Otherwise a client could spoof this header to bypass geo-blocking.
+    if getattr(settings, 'GEOBLOCK_TRUST_X_FORWARDED_FOR', False):
+        xff = request.META.get('HTTP_X_FORWARDED_FOR', '')
+        if xff:
+            return xff.split(',')[0].strip()
+    return request.META.get('REMOTE_ADDR', '')
 
 
 class GeoBlockMiddleware:
@@ -88,8 +100,10 @@ class GeoBlockMiddleware:
 
         if country:
             if self.denied and country in self.denied:
+                logger.info('GeoBlockMiddleware: blocked ip=%s country=%s path=%s', ip, country, request.path)
                 return HttpResponseForbidden(f'This content is not available in your region ({country}).')
             if self.allowed and country not in self.allowed:
+                logger.info('GeoBlockMiddleware: blocked ip=%s country=%s path=%s', ip, country, request.path)
                 return HttpResponseForbidden(f'This content is not available in your region ({country}).')
 
         return self.get_response(request)

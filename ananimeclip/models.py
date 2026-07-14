@@ -252,6 +252,9 @@ class Season(models.Model):
 
     class Meta:
         ordering = ['number']
+        constraints = [
+            models.UniqueConstraint(fields=['anime', 'number'], name='unique_season_number_per_anime'),
+        ]
 
     def __str__(self):
         return f'{self.anime.title} - {self.number}'
@@ -283,6 +286,19 @@ class Episode(models.Model):
 
     class Meta:
         ordering = ['number']
+        constraints = [
+            models.UniqueConstraint(fields=['season', 'number'], name='unique_episode_number_per_season'),
+            models.CheckConstraint(
+                condition=models.Q(intro_end_seconds=0) | models.Q(intro_start_seconds__lt=models.F('intro_end_seconds')),
+                name='episode_intro_start_before_end',
+            ),
+        ]
+
+    def clean(self):
+        if self.intro_end_seconds and self.intro_start_seconds >= self.intro_end_seconds:
+            raise ValidationError('intro_start_seconds must be before intro_end_seconds')
+        if self.duration_mins and self.intro_end_seconds > self.duration_mins * 60:
+            raise ValidationError('intro_end_seconds cannot exceed the episode duration')
 
     def __str__(self):
         return f'{self.season} - {self.number}'
@@ -296,6 +312,11 @@ class VideoSource(models.Model):
     video_url = models.URLField(max_length=500, null=True, blank=True)  # changed
     poster = models.ImageField(upload_to='posters/', null=True, blank=True)
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['episode', 'label', 'type'], name='unique_video_source_variant'),
+        ]
+
     def __str__(self):
         return f'{self.episode} - {self.label} ({self.type})'
 
@@ -307,6 +328,11 @@ class MovieSource(models.Model):
     type = models.CharField(max_length=50, choices=TYPE_CHOICES)
     video_url = models.URLField(max_length=500, null=True, blank=True)  # changed
     poster = models.ImageField(upload_to='posters/', null=True, blank=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['movie', 'label', 'type'], name='unique_movie_source_variant'),
+        ]
 
     def __str__(self):
         return f'{self.movie.title} - {self.label} ({self.type})'
@@ -338,6 +364,8 @@ class Comment(models.Model):
             raise ValidationError('Comment must be linked to either Episode or Movie')
         if self.episode and self.movie:
             raise ValidationError('Comment cannot be linked to both Episode and Movie')
+        if self.parent_id and (self.parent.episode_id != self.episode_id or self.parent.movie_id != self.movie_id):
+            raise ValidationError('A reply must belong to the same episode/movie as its parent comment')
 
 
 class CommentLike(models.Model):
@@ -410,6 +438,20 @@ class MediaImage(models.Model):
         if self.anime and self.movie:
             raise ValidationError('Image cannot be linked to both Anime and Movie')
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['anime', 'type'],
+                condition=models.Q(anime__isnull=False),
+                name='unique_media_image_type_per_anime',
+            ),
+            models.UniqueConstraint(
+                fields=['movie', 'type'],
+                condition=models.Q(movie__isnull=False),
+                name='unique_media_image_type_per_movie',
+            ),
+        ]
+
 
 class WatchHistory(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='watch_history')
@@ -451,6 +493,13 @@ class WatchHistory(models.Model):
                 fields=['user', 'movie'],
                 condition=models.Q(subprofile__isnull=True, movie__isnull=False),
                 name='wh_unique_user_movie_no_sp',
+            ),
+            models.CheckConstraint(
+                condition=(
+                    models.Q(episode__isnull=False, movie__isnull=True)
+                    | models.Q(episode__isnull=True, movie__isnull=False)
+                ),
+                name='wh_exactly_one_of_episode_or_movie',
             ),
         ]
         indexes = [
@@ -495,6 +544,13 @@ class WatchLater(models.Model):
                 condition=models.Q(subprofile__isnull=True, movie__isnull=False),
                 name='wl_unique_user_movie_no_sp',
             ),
+            models.CheckConstraint(
+                condition=(
+                    models.Q(episode__isnull=False, movie__isnull=True)
+                    | models.Q(episode__isnull=True, movie__isnull=False)
+                ),
+                name='wl_exactly_one_of_episode_or_movie',
+            ),
         ]
         indexes = [
             models.Index(fields=['subprofile', '-added_at'], name='wl_subprofile_added_idx'),
@@ -528,6 +584,18 @@ class Recommendation(models.Model):
             models.Index(fields=['user', 'rank']),
         ]
         constraints = [
+            # anime and movie recommendations are ranked independently (see
+            # save_recommendations), so rank is only unique within each type.
+            models.UniqueConstraint(
+                fields=['user', 'rank'],
+                condition=models.Q(anime__isnull=False),
+                name='unique_recommendation_rank_per_user_anime',
+            ),
+            models.UniqueConstraint(
+                fields=['user', 'rank'],
+                condition=models.Q(movie__isnull=False),
+                name='unique_recommendation_rank_per_user_movie',
+            ),
             # bulk_create() (used by save_recommendations) skips Model.clean(),
             # so the "exactly one of anime/movie" rule needs a real DB constraint
             # too, or it's only enforced when something calls full_clean().
@@ -555,6 +623,11 @@ class Playlist(models.Model):
     name = models.CharField(max_length=100)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['user', 'name'], name='unique_playlist_name_per_user'),
+        ]
+
     def __str__(self):
         return f'{self.user.username} - {self.name}'
 
@@ -570,6 +643,31 @@ class PlaylistItem(models.Model):
         indexes = [
             models.Index(fields=['playlist', 'added_at'], name='pi_playlist_added_idx'),
         ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['playlist', 'episode'],
+                condition=models.Q(episode__isnull=False),
+                name='unique_playlist_episode',
+            ),
+            models.UniqueConstraint(
+                fields=['playlist', 'movie'],
+                condition=models.Q(movie__isnull=False),
+                name='unique_playlist_movie',
+            ),
+            models.CheckConstraint(
+                condition=(
+                    models.Q(episode__isnull=False, movie__isnull=True)
+                    | models.Q(episode__isnull=True, movie__isnull=False)
+                ),
+                name='pi_exactly_one_of_episode_or_movie',
+            ),
+        ]
+
+    def clean(self):
+        if not self.episode and not self.movie:
+            raise ValidationError('Playlist item must be linked to either Episode or Movie')
+        if self.episode and self.movie:
+            raise ValidationError('Playlist item cannot be linked to both Episode and Movie')
 
     def __str__(self):
         return f'{self.playlist.name} - {self.episode or self.movie}'
@@ -658,6 +756,16 @@ class Subtitle(models.Model):
                 ),
                 name='subtitle_exactly_one_of_video_or_movie_source',
             ),
+            models.UniqueConstraint(
+                fields=['video_source', 'language_code'],
+                condition=models.Q(video_source__isnull=False),
+                name='unique_subtitle_language_per_video_source',
+            ),
+            models.UniqueConstraint(
+                fields=['movie_source', 'language_code'],
+                condition=models.Q(movie_source__isnull=False),
+                name='unique_subtitle_language_per_movie_source',
+            ),
         ]
 
     def __str__(self):
@@ -695,6 +803,15 @@ class ContentReport(models.Model):
         indexes = [
             models.Index(fields=['resolved', '-created_at'], name='report_resolved_created_idx'),
         ]
+        constraints = [
+            models.CheckConstraint(
+                condition=(
+                    models.Q(episode__isnull=False, movie__isnull=True)
+                    | models.Q(episode__isnull=True, movie__isnull=False)
+                ),
+                name='contentreport_exactly_one_of_episode_or_movie',
+            ),
+        ]
 
     def __str__(self):
         target = self.episode or self.movie
@@ -716,6 +833,21 @@ class WatchParty(models.Model):
 
     class Meta:
         ordering = ['-created_at']
+        constraints = [
+            models.CheckConstraint(
+                condition=(
+                    models.Q(episode__isnull=False, movie__isnull=True)
+                    | models.Q(episode__isnull=True, movie__isnull=False)
+                ),
+                name='watchparty_exactly_one_of_episode_or_movie',
+            ),
+        ]
+
+    def clean(self):
+        if not self.episode and not self.movie:
+            raise ValidationError('Watch party must be linked to either Episode or Movie')
+        if self.episode and self.movie:
+            raise ValidationError('Watch party cannot be linked to both Episode and Movie')
 
     def __str__(self):
         return f'Party {self.room_code} hosted by {self.host.username}'

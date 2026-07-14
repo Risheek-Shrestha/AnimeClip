@@ -42,8 +42,24 @@ def _stripe():
     return stripe
 
 
+def _checkout_idempotency_key(user_id) -> str:
+    """
+    Dedupe retried checkout submissions (double-click, network retry) within a
+    short window without permanently blocking the user from checking out
+    again later.
+    """
+    import time
+
+    window = int(time.time() // 60)  # 1-minute bucket
+    return f'checkout-{user_id}-{window}'
+
+
 def billing_configured() -> bool:
-    return bool(getattr(settings, 'STRIPE_SECRET_KEY', None) and getattr(settings, 'STRIPE_PRICE_ID', None))
+    return bool(
+        getattr(settings, 'STRIPE_SECRET_KEY', None)
+        and getattr(settings, 'STRIPE_PRICE_ID', None)
+        and getattr(settings, 'STRIPE_WEBHOOK_SECRET', None)
+    )
 
 
 @login_required
@@ -66,9 +82,13 @@ def create_checkout_session(request):
             success_url=request.build_absolute_uri(reverse('billing_success')) + '?session_id={CHECKOUT_SESSION_ID}',
             cancel_url=request.build_absolute_uri(reverse('billing_cancel')),
             metadata={'user_id': str(request.user.id)},
+            idempotency_key=_checkout_idempotency_key(request.user.id),
         )
-    except Exception:
+    except stripe.error.StripeError:
         logger.exception('Stripe checkout session creation failed for user %s', request.user.id)
+        return HttpResponseServerError('Could not start checkout. Please try again shortly.')
+    except Exception:
+        logger.exception('Unexpected error creating checkout session for user %s', request.user.id)
         return HttpResponseServerError('Could not start checkout. Please try again shortly.')
 
     return redirect(session.url, permanent=False)
@@ -101,8 +121,11 @@ def create_customer_portal_session(request):
             customer=profile.stripe_customer_id,
             return_url=request.build_absolute_uri(reverse('profile')),
         )
-    except Exception:
+    except stripe.error.StripeError:
         logger.exception('Stripe portal session creation failed for user %s', request.user.id)
+        return HttpResponseServerError('Could not open the billing portal. Please try again shortly.')
+    except Exception:
+        logger.exception('Unexpected error creating billing portal session for user %s', request.user.id)
         return HttpResponseServerError('Could not open the billing portal. Please try again shortly.')
 
     return redirect(session.url, permanent=False)
@@ -134,9 +157,20 @@ def stripe_webhook(request):
 
     try:
         event = stripe.Webhook.construct_event(payload, sig_header, webhook_secret)
-    except (ValueError, Exception) as exc:  # invalid payload or bad signature
+    except (ValueError, stripe.error.SignatureVerificationError) as exc:
         logger.warning('Stripe webhook signature verification failed: %s', exc)
         return HttpResponseBadRequest('Invalid payload or signature.')
+
+    # Guard against Stripe retrying the same event (network hiccup, timeout,
+    # etc.) so we don't double-apply plan changes.
+    event_id = event.get('id')
+    if event_id:
+        from django.core.cache import cache
+
+        cache_key = f'stripe-webhook-processed:{event_id}'
+        if not cache.add(cache_key, True, timeout=60 * 60 * 24):
+            logger.info('Stripe webhook: duplicate event %s ignored', event_id)
+            return HttpResponse(status=200)
 
     event_type = event['type']
     data = event['data']['object']
